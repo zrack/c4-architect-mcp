@@ -1,12 +1,11 @@
-// src/index.ts
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
+import { analyzeDirectory } from "./parsers/astParser.js";
 
-// Initialize the MCP Server
 const server = new McpServer({
   name: "c4-architect-mcp",
   version: "0.1.0",
@@ -22,30 +21,13 @@ server.tool(
   },
   async ({ targetDir, c4Level }) => {
     const resolvedPath = path.resolve(targetDir);
-    
-    // V1 Placeholder: We will wire src/parsers/astParser.ts here next
-    const mockAstGraph = {
-      metadata: {
-        scannedDirectory: resolvedPath,
-        abstractionLevel: c4Level,
-        timestamp: new Date().toISOString(),
-      },
-      nodes: [
-        { id: "OrderService", type: "Container", technology: "TypeScript / Node.js", path: "src/orders" },
-        { id: "PaymentGateway", type: "ExternalSystem", technology: "REST API", path: "external" },
-        { id: "OrdersDB", type: "ContainerDb", technology: "PostgreSQL", path: "prisma/schema" }
-      ],
-      edges: [
-        { source: "OrderService", target: "PaymentGateway", label: "Processes payments via", protocol: "HTTPS/JSON" },
-        { source: "OrderService", target: "OrdersDB", label: "Reads/Writes order state", protocol: "TCP/Prisma" }
-      ]
-    };
+    const astGraph = await analyzeDirectory(resolvedPath, c4Level);
 
     return {
       content: [
         {
           type: "text",
-          text: JSON.stringify(mockAstGraph, null, 2),
+          text: JSON.stringify(astGraph, null, 2),
         },
       ],
     };
@@ -86,7 +68,6 @@ server.tool(
       ""
     ];
 
-    // Format C4 Nodes
     for (const n of nodes) {
       const tech = n.technology ? `, "${n.technology}"` : "";
       const desc = n.description ? `, "${n.description}"` : "";
@@ -95,7 +76,6 @@ server.tool(
 
     lines.push("");
 
-    // Format C4 Relationships
     for (const r of relationships) {
       const tech = r.technology ? `, "${r.technology}"` : "";
       lines.push(`  Rel(${r.from}, ${r.to}, "${r.label}"${tech})`);

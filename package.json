@@ -1,0 +1,24 @@
+{
+  "name": "c4-architect-mcp",
+  "version": "0.1.0",
+  "description": "Enterprise C4 Architecture MCP Server using Tree-sitter AST extraction",
+  "type": "module",
+  "bin": {
+    "c4-architect-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "tree-sitter": "^0.21.1",
+    "tree-sitter-typescript": "^0.21.2",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
