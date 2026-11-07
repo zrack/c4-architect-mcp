@@ -108,7 +108,8 @@ async function layoutDiagram(diagram: C4Diagram): Promise<CompactLayout> {
   const { graph, direction } = candidates.sort((a, b) => a.score - b.score)[0];
   const titleLines = wrap(diagram.title.replace(/\s+/g, " "), 90);
   const headerExtra = Math.max(0, titleLines.length - 1) * 24;
-  const width = Math.ceil(Math.max(graph.width! + 48, await textWidth(titleLines, 21) + 48));
+  const captionWidth = diagram.caption ? await textWidth([diagram.caption], 12) : 0;
+  const width = Math.ceil(Math.max(graph.width!, await textWidth(titleLines, 21), captionWidth) + 48);
   const offset = { x: (width - graph.width!) / 2, y: 88 + headerExtra };
   const positionedNodes = nodes.map(node => {
     const position = graph.children!.find(candidate => candidate.id === node.alias)!;
@@ -122,7 +123,7 @@ async function layoutDiagram(diagram: C4Diagram): Promise<CompactLayout> {
       .map(point => ({ x: point.x + offset.x, y: point.y + offset.y }));
     const box = edge.labels![0];
     return { id: relationship.id, from: relationship.from, to: relationship.to, label: relationship.label,
-      technology: relationship.technology, displayLines: relationship.displayLines, points,
+      technology: relationship.technology, description: relationship.description, displayLines: relationship.displayLines, points,
       labelBox: { x: box.x! + offset.x, y: box.y! + offset.y, width: box.width!, height: box.height! } };
   });
   return { width, height: Math.ceil(graph.height! + 112 + headerExtra), direction,
@@ -132,9 +133,10 @@ async function layoutDiagram(diagram: C4Diagram): Promise<CompactLayout> {
 function drawSvg(diagram: C4Diagram, layout: CompactLayout): string {
   const titleLines = wrap(diagram.title.replace(/\s+/g, " "), 90);
   const title = svgText(titleLines, layout.width / 2, 28, 21, 24, "diagram-title");
+  const caption = diagram.caption ?? `${layout.nodes.length} nodes · ${layout.relationships.length} relationships · R IDs identify individual arrows`;
   const paths = layout.relationships.map(relationship => {
     const d = relationship.points.map((point, index) => `${index ? "L" : "M"}${point.x},${point.y}`).join(" ");
-    const description = `${relationship.id}: ${relationship.from} → ${relationship.to}. ${relationship.label}${relationship.technology ? ` [${relationship.technology}]` : ""}`;
+    const description = [`${relationship.id}: ${relationship.from} → ${relationship.to}. ${relationship.label}${relationship.technology ? ` [${relationship.technology}]` : ""}`, relationship.description].filter(Boolean).join("\n");
     return `<g class="edge" data-edge-id="${relationship.id}"><title>${xml(description)}</title><path class="edge-halo" d="${d}"/><path class="flowchart-link" id="${relationship.id}" data-edge-id="${relationship.id}" d="${d}" marker-end="url(#arrow)"/></g>`;
   }).join("");
   const nodeShapes = layout.nodes.map(node => {
@@ -146,11 +148,12 @@ function drawSvg(diagram: C4Diagram, layout: CompactLayout): string {
   }).join("");
   const labels = layout.relationships.map(relationship => {
     const box = relationship.labelBox;
-    return `<g class="edgeLabel" data-edge-id="${relationship.id}"><title>${xml(`${relationship.id}: ${relationship.label}${relationship.technology ? ` [${relationship.technology}]` : ""}`)}</title><g class="label" data-id="${relationship.id}"><rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="3"/>${svgText(relationship.displayLines, box.x + box.width / 2, box.y + 16, 14, 18, "edge-label-text")}</g></g>`;
+    const description = [`${relationship.id}: ${relationship.label}${relationship.technology ? ` [${relationship.technology}]` : ""}`, relationship.description].filter(Boolean).join("\n");
+    return `<g class="edgeLabel" data-edge-id="${relationship.id}"><title>${xml(description)}</title><g class="label" data-id="${relationship.id}"><rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="3"/>${svgText(relationship.displayLines, box.x + box.width / 2, box.y + 16, 14, 18, "edge-label-text")}</g></g>`;
   }).join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}" data-engine="elk" role="img" aria-labelledby="diagram-title diagram-description"><title id="diagram-title">${xml(diagram.title)}</title><desc id="diagram-description">${layout.nodes.length} architecture nodes and ${layout.relationships.length} directed relationships. Select a component in the interactive view to trace its connections.</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#4d657c"/></marker></defs><style>
 text{font-family:Arial,Helvetica,sans-serif;fill:#172b43}.diagram-title{font-weight:500}.node rect{fill:#e7f0fb;stroke:#5381b7;stroke-width:1.2}.node.external rect{fill:#f0f2f5;stroke:#818d9d}.node-kind,.node-technology{fill:#4a5e76}.edge-halo,.flowchart-link{fill:none;stroke-linejoin:round}.edge-halo{stroke:white;stroke-width:5}.flowchart-link{stroke:#4d657c;stroke-width:1.5}.edgeLabel rect{fill:white}.node:focus rect{stroke:#174fbb;stroke-width:2.5}.node{cursor:pointer}.edge,.edgeLabel{cursor:pointer}.dimmed{opacity:.12}.selected rect{stroke:#174fbb;stroke-width:2.5}.outgoing .flowchart-link{stroke:#155dd5;stroke-width:2.5}.incoming .flowchart-link{stroke:#a94a10;stroke-width:2.5}.outgoing .edge-label-text{fill:#124da7}.incoming .edge-label-text{fill:#8f3e0d}
-</style><rect class="background" width="100%" height="100%" fill="white"/>${title}<text x="${layout.width / 2}" y="${55 + Math.max(0, titleLines.length - 1) * 24}" text-anchor="middle" font-size="12">${layout.nodes.length} nodes · ${layout.relationships.length} relationships · R IDs identify individual arrows</text>${paths}${nodeShapes}${labels}</svg>`;
+</style><rect class="background" width="100%" height="100%" fill="white"/>${title}<text x="${layout.width / 2}" y="${55 + Math.max(0, titleLines.length - 1) * 24}" text-anchor="middle" font-size="12">${xml(caption)}</text>${paths}${nodeShapes}${labels}</svg>`;
 }
 
 function drawHtml(diagram: C4Diagram, svg: string, layout: CompactLayout): string {
@@ -169,7 +172,7 @@ function show(selection){
  root.querySelectorAll('.node').forEach(element=>{const id=element.dataset.nodeId;element.classList.toggle('dimmed',!!selection&&!visibleNodes.has(id));element.classList.toggle('selected',selection?.kind==='node'&&id===selection.id);});
  root.querySelectorAll('.edge,.edgeLabel').forEach(element=>{const edge=graph.relationships.find(edge=>edge.id===element.dataset.edgeId),active=ids.has(edge.id);element.classList.toggle('dimmed',!!selection&&!active);element.classList.toggle('outgoing',!!selection&&active&&(selection.kind==='edge'||edge.from===selection.id));element.classList.toggle('incoming',!!selection&&active&&selection.kind==='node'&&edge.to===selection.id&&edge.from!==selection.id);});
  const node=selection?.kind==='node'?nodes.get(selection.id):null,edge=selection?.kind==='edge'?related[0]:null;
- title.textContent=node?.label??(edge?edge.id+' · '+edge.label:'All connections');details.textContent=node?[node.technology,node.description,related.length+' connected relationships'].filter(Boolean).join('\\n'):edge?[nodes.get(edge.from).label+' → '+nodes.get(edge.to).label,edge.technology].filter(Boolean).join('\\n'):'Select a component to highlight its incoming and outgoing arrows. Select an arrow or relationship below to isolate it.';
+ title.textContent=node?.label??(edge?edge.id+' · '+edge.label:'All connections');details.textContent=node?[node.technology,node.description,related.length+' connected relationships'].filter(Boolean).join('\\n'):edge?[nodes.get(edge.from).label+' → '+nodes.get(edge.to).label,edge.technology,edge.description].filter(Boolean).join('\\n'):'Select a component to highlight its incoming and outgoing arrows. Select an arrow or relationship below to isolate it.';
  list.replaceChildren();for(const edge of related){const item=document.createElement('li'),button=document.createElement('button'),small=document.createElement('small');button.textContent=edge.id+' · '+nodes.get(edge.from).label+' → '+nodes.get(edge.to).label;small.textContent=edge.label+(edge.technology?' · '+edge.technology:'');button.append(small);button.addEventListener('click',()=>{locked={kind:'edge',id:edge.id};show(locked);});item.append(button);list.append(item);}
 }
 root.querySelectorAll('.node').forEach(element=>{const select=()=>{locked={kind:'node',id:element.dataset.nodeId};show(locked);};element.addEventListener('click',select);element.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}});element.addEventListener('mouseenter',()=>{if(!locked)show({kind:'node',id:element.dataset.nodeId});});element.addEventListener('mouseleave',()=>{if(!locked)show(null);});});

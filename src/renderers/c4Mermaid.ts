@@ -21,10 +21,12 @@ export interface DiagramRelationship {
   to: string;
   label: string;
   technology?: string;
+  description?: string;
 }
 
 export interface C4Diagram {
   title: string;
+  caption?: string;
   c4Level: C4Level;
   nodes: DiagramNode[];
   relationships: DiagramRelationship[];

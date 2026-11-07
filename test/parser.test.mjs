@@ -249,3 +249,76 @@ test('package names matching Object prototype keys remain ordinary inferred pack
     assert.equal(node.classification.rule, 'package-as-external-dependency');
   }
 });
+
+test('TypeScript 5 star and namespace type re-exports retain type-only evidence without false syntax errors', async t => {
+  const directory = await temporary(t);
+  await write(directory, 'index.ts', `export type * from './types.ts';\nexport /* comment */ type * as Models from './types.ts';\nexport * from './types.ts';`);
+  await write(directory, 'types.ts', 'export interface Model { id: string }');
+  const graph = await analyzeDirectory(directory, 'Component');
+  assert.equal(graph.metadata.analysisStatus, 'complete', JSON.stringify(graph.diagnostics));
+  assert.equal(graph.sources.find(source => source.path === 'index.ts').parseStatus, 'complete');
+  const typeEdge = graph.edges.find(edge => edge.kind === 'type-re-export');
+  assert.deepEqual(typeEdge.evidence.map(item => [item.line, item.specifier, item.typeOnly]), [[1, './types.ts', true], [2, './types.ts', true]]);
+  assert.ok(byPath(graph, 'index.ts').exports.includes('namespace:Models'));
+  assert.equal(graph.edges.find(edge => edge.kind === 're-export').evidence[0].typeOnly, false);
+  assert.equal(graph.diagnostics.filter(item => item.code === 'PARSE_ERROR').length, 0);
+
+  const mixed = extractSourceFacts(`export type * from './types.ts';\nexport const broken = ;`, 'mixed.ts');
+  assert.equal(mixed.parseStatus, 'partial');
+  assert.equal(mixed.dependencies[0].typeOnly, true);
+  assert.ok(mixed.diagnostics.some(item => item.code === 'PARSE_ERROR' && item.line === 2));
+  assert.ok(!mixed.diagnostics.some(item => item.code === 'PARSE_ERROR' && item.line === 1));
+  assert.equal(extractSourceFacts('export type * from', 'incomplete.ts').parseStatus, 'partial');
+});
+
+test('BOM-marked TypeScript source preserves decoded evidence positions and raw-byte hashes', async t => {
+  const directory = await temporary(t);
+  const statement = `import { value } from './target.js';`;
+  const sourceText = `${statement}\r\n// Éditeur 日本語\r\nexport const result = value;\r\n`;
+  const utf16le = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(sourceText, 'utf16le')]);
+  const utf16be = Buffer.concat([Buffer.from([0xfe, 0xff]), Buffer.from(sourceText, 'utf16le').swap16()]);
+  const utf8bom = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(sourceText, 'utf8')]);
+  const inputs = [['le.ts', utf16le], ['be.ts', utf16be], ['utf8.ts', utf8bom]];
+  for (const [filename, bytes] of inputs) await write(directory, filename, bytes);
+  await write(directory, 'target.ts', 'export const value = 1;');
+  const graph = await analyzeDirectory(directory, 'Component');
+  assert.equal(graph.metadata.analysisStatus, 'complete', JSON.stringify(graph.diagnostics));
+  const target = byPath(graph, 'target.ts');
+  for (const [filename, bytes] of inputs) {
+    const source = graph.sources.find(item => item.path === filename);
+    assert.equal(source.parseStatus, 'complete');
+    assert.equal(source.contentHash, createHash('sha256').update(bytes).digest('hex'));
+    const edge = graph.edges.find(item => item.source === byPath(graph, filename).id && item.target === target.id);
+    assert.equal(edge.evidence[0].line, 1);
+    assert.equal(edge.evidence[0].column, statement.indexOf("'") + 1);
+    assert.equal(edge.evidence[0].specifier, './target.js');
+  }
+
+  const invalidBytes = Buffer.from([0xff, 0xfe, 0x65]); // truncated UTF-16 code unit
+  await write(directory, 'invalid.ts', invalidBytes);
+  const invalidGraph = await analyzeDirectory(directory, 'Component');
+  assert.equal(invalidGraph.metadata.analysisStatus, 'partial');
+  const invalidSource = invalidGraph.sources.find(item => item.path === 'invalid.ts');
+  assert.equal(invalidSource.parseStatus, 'error');
+  assert.equal(invalidSource.contentHash, createHash('sha256').update(invalidBytes).digest('hex'));
+  assert.ok(invalidGraph.diagnostics.some(item => item.code === 'SOURCE_ENCODING_ERROR' && item.path === 'invalid.ts'));
+});
+
+test('existing local assets reached via baseUrl, paths aliases or relative imports are not external packages', async t => {
+  const directory = await temporary(t);
+  await write(directory, 'tsconfig.json', JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@theme': ['styles/main.css'], '@images/*': ['assets/*'] } } }));
+  await write(directory, 'styles/main.css', 'body { color: red; }');
+  await write(directory, 'assets/logo.svg', '<svg/>');
+  await write(directory, 'src/local.scss', '$x: red;');
+  await write(directory, 'src/main.ts', [
+    `import 'styles/main.css';`, `import '@theme';`, `import logo from '@images/logo.svg';`, `import './local.scss';`,
+    `import missing from '@images/missing.svg';`, `import external from 'external-icons/logo.svg';`,
+  ].join('\n'));
+  const graph = await analyzeDirectory(path.join(directory, 'src'), 'Component');
+  const assetDiagnostics = graph.diagnostics.filter(item => item.code === 'UNSUPPORTED_MODULE_TYPE');
+  assert.deepEqual(assetDiagnostics.map(item => [item.line, item.specifier]), [[1, 'styles/main.css'], [2, '@theme'], [3, '@images/logo.svg'], [4, './local.scss']]);
+  assert.ok(graph.diagnostics.some(item => item.code === 'UNRESOLVED_IMPORT' && item.specifier === '@images/missing.svg'));
+  assert.ok(!byPath(graph, 'package:styles'), 'A verified local stylesheet must not become an external system');
+  assert.ok(byPath(graph, 'package:external-icons'), 'A missing ordinary package import remains observed');
+  assert.equal(graph.edges.length, 1);
+});

@@ -104,3 +104,49 @@ test('CLI and MCP query/diff honor the actual UTF-8 text budget', { timeout: 300
     }
   } finally { await client.close(); await fs.rm(temporary, { recursive: true, force: true }); }
 });
+
+test('focused render limits the view to connected nodes and shows source evidence', { timeout: 30000 }, async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'c4-focused-render-'));
+  const client = new Client({ name: 'focused-render-test', version: '1.0.0' });
+  try {
+    const files = {
+      'api.ts': 'import "./storage.js";\nimport "./storage.ts";\n',
+      'storage.ts': 'export const data = true;\n',
+      'audit.ts': 'import "./api.js";\n',
+      'unrelated.ts': 'export const other = true;\n',
+    };
+    await Promise.all(Object.entries(files).map(([file, source]) => fs.writeFile(path.join(temporary, file), source)));
+    const entry = path.join(root, 'dist/index.js');
+    const graphPath = path.join(temporary, 'graph.json');
+    await client.connect(new StdioClientTransport({ command: process.execPath, args: [entry], cwd: temporary }));
+    const graph = text(await client.callTool({ name: 'analyze_architectural_boundaries', arguments: {
+      targetDir: temporary, c4Level: 'Component', outputPath: graphPath,
+    } }));
+    const nodeId = graph.nodes.find(node => node.path === 'api.ts').id;
+    const outputPath = path.join(temporary, 'outgoing.md');
+    const result = await client.callTool({ name: 'render_architecture_graph', arguments: {
+      graphPath, outputPath, focus: { nodeId, direction: 'outgoing' },
+    } });
+    assert.notEqual(result.isError, true, JSON.stringify(result));
+    assert.equal(result.structuredContent.layout.nodeCount, 2);
+    assert.equal(result.structuredContent.layout.relationshipCount, 2);
+    assert.equal(result.structuredContent.focus.omittedNodes, 2);
+    assert.equal(result.structuredContent.focus.omittedEdges, 1);
+    assert.deepEqual(result.structuredContent.focus.truncated, { nodes: false, edges: false });
+    const markdown = await fs.readFile(outputPath, 'utf8');
+    assert.match(markdown, /2 of 4 nodes · 2 of 3 relationships/);
+    assert.match(markdown, /Imports module · \.\/storage\.js/);
+    assert.match(markdown, /Imports module · \.\/storage\.ts/);
+    assert.match(markdown, /api\.ts:2:8 \(\.\/storage\.ts\)/);
+    assert.doesNotMatch(markdown, /audit\.ts|unrelated\.ts/);
+    const html = await fs.readFile(outputPath.replace('.md', '.html'), 'utf8');
+    assert.match(html, /api\.ts:2:8/);
+
+    const cli = await exec(process.execPath, [entry, 'render', graphPath, '--out', path.join(temporary, 'capped.md'),
+      '--node', nodeId, '--edges', '0', '--depth', '2'], { cwd: temporary });
+    const capped = JSON.parse(cli.stdout);
+    assert.equal(capped.layout.nodeCount, 1, 'A connection budget must not leave orphan neighbors');
+    assert.equal(capped.layout.relationshipCount, 0);
+    assert.equal(capped.focus.truncated.edges, true);
+  } finally { await client.close(); await fs.rm(temporary, { recursive: true, force: true }); }
+});

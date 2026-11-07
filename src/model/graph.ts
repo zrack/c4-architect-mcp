@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
+import path from "node:path";
 import { z } from "zod";
 
 export const GRAPH_SCHEMA_VERSION = "1.0" as const;
@@ -325,28 +326,61 @@ export const queryGraph = queryArchitectureGraph;
 
 const canonical = (value: unknown): string => JSON.stringify(value, (_key, item) => item && typeof item === "object" && !Array.isArray(item)
   ? Object.fromEntries(Object.entries(item).filter(([, value]) => value !== undefined).sort(([a], [b]) => a.localeCompare(b))) : item);
-const nodeSemantics = (node: ArchitectureNode) => ({ id: node.id, label: node.label, type: node.type, technology: node.technology,
+
+function labelForComparison(element: ArchitectureNode | Boundary, scanDirectory: string): string | undefined {
+  if (element.type !== "System" || element.classification.basis !== "inferred"
+    || element.classification.rule !== "default-scan-scope-boundary") return element.label;
+  const localPath = path.win32.isAbsolute(scanDirectory) && !path.posix.isAbsolute(scanDirectory) ? path.win32 : path.posix;
+  const generatedLabel = localPath.basename(scanDirectory) || "Scanned system";
+  return element.label === generatedLabel ? undefined : element.label;
+}
+
+const nodeSemantics = (node: ArchitectureNode, scanDirectory: string) => ({ id: node.id, label: labelForComparison(node, scanDirectory), type: node.type, technology: node.technology,
   path: node.path, exports: [...(node.exports ?? [])].sort(), parentId: node.parentId, description: node.description, classification: node.classification });
-const edgeSemantics = (edge: ArchitectureEdge) => ({ id: edge.id, source: edge.source, target: edge.target,
+const edgeSemantics = (edge: ArchitectureEdge) => ({ source: edge.source, target: edge.target,
   label: edge.label, protocol: edge.protocol, kind: edge.kind });
+
+function reconcileUnmatchedEdges(before: ArchitectureEdge[], after: ArchitectureEdge[]): ArchitectureEdge[] {
+  const beforeIds = new Set(before.map(edge => edge.id));
+  const afterIds = new Set(after.map(edge => edge.id));
+  const unmatchedByDependency = new Map<string, string[]>();
+  for (const edge of before) {
+    if (afterIds.has(edge.id)) continue;
+    const key = JSON.stringify(edgeSemantics(edge));
+    const ids = unmatchedByDependency.get(key) ?? [];
+    ids.push(edge.id);
+    unmatchedByDependency.set(key, ids);
+  }
+  for (const ids of unmatchedByDependency.values()) ids.sort().reverse();
+
+  // Existing IDs take precedence. Pair leftover equivalent dependencies once
+  // each so a specifier spelling change does not hide a parallel edge change.
+  return [...after].sort((left, right) => left.id.localeCompare(right.id)).map(edge => {
+    if (beforeIds.has(edge.id)) return edge;
+    const previousId = unmatchedByDependency.get(JSON.stringify(edgeSemantics(edge)))?.pop();
+    return previousId === undefined ? edge : { ...edge, id: previousId };
+  });
+}
 
 export function compareArchitectureGraphs(beforeInput: ArchitectureGraph, afterInput: ArchitectureGraph, options: { limit?: number; maxBytes?: number } = {}) {
   const before = validateArchitectureGraph(beforeInput), after = validateArchitectureGraph(afterInput);
   if (before.metadata.abstractionLevel !== after.metadata.abstractionLevel) throw new Error("Compare graphs at the same abstraction level");
   const limit = bounded(options.limit, 50, 1, 100, "limit"), maxBytes = bounded(options.maxBytes, 16000, 2048, 64000, "maxBytes");
-  const compare = <T>(left: T[], right: T[], key: (item: T) => string, value: (item: T) => unknown) => {
+  const compare = <T>(left: T[], right: T[], key: (item: T) => string, value: (item: T, scanDirectory: string) => unknown) => {
     const previous = new Map(left.map(item => [key(item), item])), next = new Map(right.map(item => [key(item), item]));
     const added = [...next.keys()].filter(id => !previous.has(id)).sort();
     const removed = [...previous.keys()].filter(id => !next.has(id)).sort();
-    const changed = [...next.keys()].filter(id => previous.has(id) && canonical(value(previous.get(id)!)) !== canonical(value(next.get(id)!))).sort();
+    const changed = [...next.keys()].filter(id => previous.has(id)
+      && canonical(value(previous.get(id)!, before.metadata.scannedDirectory)) !== canonical(value(next.get(id)!, after.metadata.scannedDirectory))).sort();
     return { counts: { added: added.length, removed: removed.length, changed: changed.length },
       added: added.slice(0, limit), removed: removed.slice(0, limit), changed: changed.slice(0, limit) };
   };
   const result = {
     graphVersion: before.schemaVersion, abstractionLevel: before.metadata.abstractionLevel,
     nodes: compare(before.nodes, after.nodes, node => node.id, nodeSemantics),
-    edges: compare(before.edges, after.edges, edge => edge.id, edgeSemantics),
-    hierarchy: compare(before.hierarchy, after.hierarchy, boundary => boundary.id, boundary => boundary),
+    edges: compare(before.edges, reconcileUnmatchedEdges(before.edges, after.edges), edge => edge.id, edgeSemantics),
+    hierarchy: compare(before.hierarchy, after.hierarchy, boundary => boundary.id,
+      (boundary, scanDirectory) => ({ ...boundary, label: labelForComparison(boundary, scanDirectory) })),
     sources: compare(before.sources, after.sources, source => source.path, source => source),
     truncated: false,
   };

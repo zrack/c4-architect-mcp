@@ -6,7 +6,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { analyzeDirectory } from "./parsers/astParser.js";
 import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph } from "./model/graph.js";
-import { graphToDiagram, renderArtifacts } from "./renderers/artifacts.js";
+import { graphFocusSchema } from "./model/neighborhood.js";
+import { renderArchitectureGraph, renderArtifacts } from "./renderers/artifacts.js";
 import { runCli } from "./cli.js";
 import { version } from "./version.js";
 
@@ -43,9 +44,10 @@ server.tool("compare_architecture_graphs", "Compare two saved graphs at the same
   { beforePath: z.string(), afterPath: z.string(), limit: z.number().int().min(1).max(100).default(25), maxBytes: z.number().int().min(2048).max(64000).default(16000) },
   async ({ beforePath, afterPath, ...options }) => textResult(compareArchitectureGraphs(await readArchitectureGraph(beforePath), await readArchitectureGraph(afterPath), options)));
 
-server.tool("render_architecture_graph", "Render a saved validated graph directly to a compact C4 image, Mermaid source, and optional Markdown/SVG/PNG/interactive HTML files. Inferred boundaries are labeled.",
-  { graphPath: z.string(), title: z.string().optional(), outputPath: z.string().optional() },
-  async ({ graphPath, title, outputPath }) => renderArtifacts(graphToDiagram(await readArchitectureGraph(graphPath), title), outputPath));
+server.tool("render_architecture_graph", "Render a saved graph or a focused node neighborhood as a compact C4 image, Mermaid source, and optional Markdown/SVG/PNG/interactive HTML files.",
+  { graphPath: z.string(), title: z.string().optional(), outputPath: z.string().optional(),
+    focus: graphFocusSchema.optional().describe("Render only a node and its neighbors. Use query_architecture_graph to find the node ID.") },
+  async ({ graphPath, ...options }) => renderArchitectureGraph(await readArchitectureGraph(graphPath), options));
 
 server.tool("render_c4_mermaid",
   "Renders a compact C4 PNG using server-side orthogonal layout, plus Mermaid source. With outputPath saves Markdown, SVG, PNG and interactive HTML with connection highlighting and full-diagram PNG/SVG exports.",
