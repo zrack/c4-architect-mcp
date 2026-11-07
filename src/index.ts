@@ -2,111 +2,62 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import fs from "fs/promises";
-import path from "path";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { analyzeDirectory } from "./parsers/astParser.js";
+import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph } from "./model/graph.js";
+import { graphToDiagram, renderArtifacts } from "./renderers/artifacts.js";
+import { runCli } from "./cli.js";
+import { version } from "./version.js";
 
-const server = new McpServer({
-  name: "c4-architect-mcp",
-  version: "0.1.0",
-});
+const server = new McpServer({ name: "c4-architect-mcp", version });
+const textResult = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value) }] });
 
-// Tool 1: Analyze Architectural Boundaries (Tree-sitter AST -> JSON Graph)
-server.tool(
-  "analyze_architectural_boundaries",
-  "Scans a target directory using local Tree-sitter AST parsing to extract structural dependencies, module imports, and service boundaries without burning LLM tokens.",
+server.tool("analyze_architectural_boundaries",
+  "Locally parses TypeScript/TSX dependencies with source evidence, inferred or declared C4 mappings, and diagnostics. Save a graph and return a summary to keep the response small.",
   {
-    targetDir: z.string().describe("Absolute or relative path to the directory or microservice to analyze"),
-    c4Level: z.enum(["Context", "Container", "Component"]).describe("Target C4 abstraction level"),
-  },
-  async ({ targetDir, c4Level }) => {
-    const resolvedPath = path.resolve(targetDir);
-    const astGraph = await analyzeDirectory(resolvedPath, c4Level);
+    targetDir: z.string().describe("Directory to scan"), c4Level: z.enum(["Context", "Container", "Component"]),
+    configPath: z.string().optional().describe("Explicit JSON boundary configuration path"),
+    tsconfigPath: z.string().optional().describe("TypeScript resolution configuration; read as data"),
+    outputPath: z.string().optional().describe("Save canonical versioned graph JSON"),
+    responseMode: z.enum(["graph", "summary"]).default("graph"),
+  }, async ({ targetDir, c4Level, configPath, tsconfigPath, outputPath, responseMode }) => {
+    if (responseMode === "summary" && !outputPath) throw new Error("summary mode requires outputPath so the complete graph remains available");
+    const graph = await analyzeDirectory(path.resolve(targetDir), c4Level, { configPath, tsconfigPath });
+    if (outputPath) { await fs.mkdir(path.dirname(path.resolve(outputPath)), { recursive: true }); await writeArchitectureGraph(outputPath, graph); }
+    return textResult(responseMode === "summary" ? { ...summarizeArchitectureGraph(graph), graphPath: path.resolve(outputPath!) } : graph);
+  });
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(astGraph, null, 2),
-        },
-      ],
-    };
-  }
-);
+server.tool("get_architecture_summary", "Read counts and analysis status from a saved, validated architecture graph.",
+  { graphPath: z.string() }, async ({ graphPath }) => textResult(summarizeArchitectureGraph(await readArchitectureGraph(graphPath))));
 
-// Tool 2: Render C4 Mermaid Diagram (JSON Graph -> Validated C4 Mermaid)
-server.tool(
-  "render_c4_mermaid",
-  "Validates architectural nodes and relationships against C4 rules and outputs a Mermaid.js C4 diagram.",
+server.tool("query_architecture_graph", "Read a bounded neighborhood or search result from a saved graph. Returns truncation flags; source evidence is opt-in.",
   {
-    title: z.string().describe("Title of the C4 diagram"),
-    c4Level: z.enum(["C4Context", "C4Container", "C4Component"]).describe("Mermaid C4 diagram header type"),
-    nodes: z.array(
-      z.object({
-        id: z.string().describe("Alphanumeric ID without spaces"),
-        label: z.string().describe("Display name of the node"),
-        type: z.enum(["Person", "System", "System_Ext", "Container", "ContainerDb", "Component"]),
-        technology: z.string().optional().describe("Technology stack (e.g., 'TypeScript, Express')"),
-        description: z.string().optional().describe("Brief responsibility description"),
-      })
-    ),
-    relationships: z.array(
-      z.object({
-        from: z.string().describe("Source node ID"),
-        to: z.string().describe("Target node ID"),
-        label: z.string().describe("Action or relationship description"),
-        technology: z.string().optional().describe("Protocol or transport (e.g., 'JSON/HTTPS', 'gRPC')"),
-      })
-    ),
-    outputPath: z.string().optional().describe("Optional file path to save the generated architecture.md"),
-  },
-  async ({ title, c4Level, nodes, relationships, outputPath }) => {
-    const lines: string[] = [
-      "```mermaid",
-      c4Level,
-      `  title ${title}`,
-      ""
-    ];
+    graphPath: z.string(), nodeId: z.string().optional(), search: z.string().max(500).optional(),
+    direction: z.enum(["incoming", "outgoing", "both"]).default("both"), maxDepth: z.number().int().min(0).max(5).default(1),
+    maxNodes: z.number().int().min(1).max(100).default(25), maxEdges: z.number().int().min(0).max(200).default(50),
+    includeEvidence: z.boolean().default(false), maxBytes: z.number().int().min(2048).max(64000).default(16000),
+  }, async ({ graphPath, ...options }) => textResult(queryArchitectureGraph(await readArchitectureGraph(graphPath), options)));
 
-    for (const n of nodes) {
-      const tech = n.technology ? `, "${n.technology}"` : "";
-      const desc = n.description ? `, "${n.description}"` : "";
-      lines.push(`  ${n.type}(${n.id}, "${n.label}"${tech}${desc})`);
-    }
+server.tool("compare_architecture_graphs", "Compare two saved graphs at the same abstraction level. Reports full change counts with bounded detail; timestamps and scan-root location do not create changes.",
+  { beforePath: z.string(), afterPath: z.string(), limit: z.number().int().min(1).max(100).default(25), maxBytes: z.number().int().min(2048).max(64000).default(16000) },
+  async ({ beforePath, afterPath, ...options }) => textResult(compareArchitectureGraphs(await readArchitectureGraph(beforePath), await readArchitectureGraph(afterPath), options)));
 
-    lines.push("");
+server.tool("render_architecture_graph", "Render a saved validated graph directly to a compact C4 image, Mermaid source, and optional Markdown/SVG/PNG/interactive HTML files. Inferred boundaries are labeled.",
+  { graphPath: z.string(), title: z.string().optional(), outputPath: z.string().optional() },
+  async ({ graphPath, title, outputPath }) => renderArtifacts(graphToDiagram(await readArchitectureGraph(graphPath), title), outputPath));
 
-    for (const r of relationships) {
-      const tech = r.technology ? `, "${r.technology}"` : "";
-      lines.push(`  Rel(${r.from}, ${r.to}, "${r.label}"${tech})`);
-    }
-
-    lines.push("```");
-    const mermaidOutput = lines.join("\n");
-
-    if (outputPath) {
-      const fullOutputPath = path.resolve(outputPath);
-      await fs.writeFile(fullOutputPath, `# ${title}\n\n${mermaidOutput}\n`, "utf-8");
-    }
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: mermaidOutput,
-        },
-      ],
-    };
-  }
-);
+server.tool("render_c4_mermaid",
+  "Renders a compact C4 PNG using server-side orthogonal layout, plus Mermaid source. With outputPath saves Markdown, SVG, PNG and interactive HTML with connection highlighting and full-diagram PNG/SVG exports.",
+  {
+    title: z.string(), c4Level: z.enum(["C4Context", "C4Container", "C4Component"]),
+    nodes: z.array(z.object({ id: z.string(), label: z.string(), type: z.enum(["Person", "System", "System_Ext", "ExternalSystem", "Container", "ContainerDb", "Component"]), technology: z.string().optional(), description: z.string().optional() })),
+    relationships: z.array(z.object({ from: z.string(), to: z.string(), label: z.string(), technology: z.string().optional() })),
+    outputPath: z.string().optional().describe("Markdown destination ending in .md"),
+  }, async ({ outputPath, ...diagram }) => renderArtifacts(diagram, outputPath));
 
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("C4-Architect MCP Server running on stdio");
+  if (await runCli(process.argv.slice(2))) return;
+  await server.connect(new StdioServerTransport());
 }
-
-main().catch((error) => {
-  console.error("Fatal server error:", error);
-  process.exit(1);
-});
+main().catch(error => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });

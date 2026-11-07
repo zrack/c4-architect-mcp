@@ -1,24 +1,72 @@
 {
   "name": "c4-architect-mcp",
-  "version": "0.1.0",
-  "description": "Enterprise C4 Architecture MCP Server using Tree-sitter AST extraction",
+  "version": "0.2.0-alpha.1",
+  "description": "Local TypeScript architecture analysis with source evidence, C4 diagrams, and interactive exports over MCP",
   "type": "module",
   "bin": {
     "c4-architect-mcp": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/prepare-bin.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "test:layout": "npm run build && node scripts/render-component-fixtures.mjs && node scripts/check-component-layout.mjs",
     "start": "node dist/index.js",
-    "dev": "tsc -w"
+    "dev": "tsc -w",
+    "prepack": "npm run build",
+    "test:package": "node scripts/check-package.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "tree-sitter": "^0.21.1",
-    "tree-sitter-typescript": "^0.21.2",
-    "zod": "^3.25.0"
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "elkjs": "0.12.1",
+    "sharp": "0.35.5",
+    "tree-sitter": "0.21.1",
+    "tree-sitter-typescript": "0.21.2",
+    "typescript": "5.9.3",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.6.0"
+    "mermaid": "12.3.0",
+    "playwright": "1.62.1"
+  },
+  "license": "MIT",
+  "author": "Scott Zeitner",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zrack/c4-architect-mcp.git"
+  },
+  "homepage": "https://github.com/zrack/c4-architect-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/zrack/c4-architect-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "c4",
+    "architecture",
+    "typescript",
+    "tree-sitter",
+    "diagrams"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist/",
+    "scripts/prepare-bin.mjs",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "THIRD_PARTY_NOTICES.md",
+    "CHANGELOG.md",
+    "docs/images/",
+    "examples/",
+    "ROADMAP.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "CODE_OF_CONDUCT.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "tag": "alpha"
   }
 }

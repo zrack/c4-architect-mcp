@@ -1,0 +1,10 @@
+C4-Architect MCP Server
+Copyright (c) 2026 Scott Zeitner and contributors
+
+Project source and project-authored documentation are licensed under MIT.
+Dependencies retain their own licenses. See THIRD_PARTY_NOTICES.md and the
+license/notice files distributed with the installed dependency packages.
+
+C4 is a modeling approach created by Simon Brown. This is an independent
+project and is not affiliated with or endorsed by the C4 model, the Model
+Context Protocol project, OpenAI, Anthropic, or Eclipse.

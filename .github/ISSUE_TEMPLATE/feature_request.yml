@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose a concrete workflow or extension.
+title: "[Feature] "
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What are you trying to do?
+      description: Describe the user and the task, including the limitation in the current tools.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example input and desired result
+      description: Use a small synthetic example. Explain which facts are observed, inferred, or manually declared.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: How would we verify it works?
+      description: Describe a testable outcome and any compatibility or format requirements.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include existing tools, smaller scope, or links to related roadmap items.

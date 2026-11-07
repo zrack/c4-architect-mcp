@@ -1,268 +1,219 @@
-import Parser from "tree-sitter";
-import TypeScript from "tree-sitter-typescript";
-import fs from "fs/promises";
-import path from "path";
+import { createHash } from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
+import {
+  GRAPH_SCHEMA_VERSION, stableId, validateArchitectureGraph,
+  type AbstractionLevel, type ArchitectureGraph, type ArchitectureNode, type ArchitectureEdge,
+  type GraphDiagnostic, type SourceEvidence, type SourceFile,
+} from "../model/graph.js";
+import { createBoundaryMapper, loadBoundaryConfig, type BoundaryConfig, type BoundaryAssignment } from "../model/config.js";
+import { extractSourceFacts, type SourceFacts, type DependencyFact } from "./syntaxFacts.js";
+import { createModuleResolver } from "./moduleResolver.js";
 
-export interface C4Node {
-  id: string;
-  label: string;
-  type: "System" | "ExternalSystem" | "Container" | "ContainerDb" | "Component";
-  technology: string;
-  path: string;
-  exports?: string[];
+// These names remain available to callers of the original parser API.
+export type C4Node = ArchitectureNode;
+export type C4Edge = ArchitectureEdge;
+export type AstGraph = ArchitectureGraph;
+export interface AnalyzeOptions {
+  /** Explicit JSON boundary configuration, resolved from the process directory. */
+  configPath?: string;
+  /** Programmatic equivalent of configPath; do not supply both. */
+  config?: BoundaryConfig;
+  /** Explicit tsconfig.json; otherwise the nearest parent config is used. */
+  tsconfigPath?: string;
 }
 
-export interface C4Edge {
-  source: string;
-  target: string;
-  label: string;
-  protocol: string;
-}
-
-export interface AstGraph {
-  metadata: {
-    scannedDirectory: string;
-    abstractionLevel: string;
-    filesScanned: number;
-    timestamp: string;
-  };
-  nodes: C4Node[];
-  edges: C4Edge[];
-}
-
-const DB_PACKAGES: Record<string, string> = {
-  "@prisma/client": "Prisma ORM / SQL DB",
-  prisma: "Prisma ORM",
-  pg: "PostgreSQL",
-  mysql2: "MySQL",
-  mongoose: "MongoDB",
-  mongodb: "MongoDB",
-  redis: "Redis Cache",
-  ioredis: "Redis Cache",
-  typeorm: "TypeORM / SQL DB",
-  "drizzle-orm": "Drizzle ORM / SQL DB",
-  sqlite3: "SQLite",
-  "better-sqlite3": "SQLite",
+const DATABASE_PACKAGES: Record<string, string> = {
+  "@prisma/client": "Prisma", prisma: "Prisma", pg: "PostgreSQL driver", mysql2: "MySQL driver",
+  mongoose: "Mongoose", mongodb: "MongoDB driver", redis: "Redis client", ioredis: "Redis client",
+  typeorm: "TypeORM", "drizzle-orm": "Drizzle ORM", sqlite3: "SQLite driver", "better-sqlite3": "SQLite driver",
 };
-
-const EXTERNAL_SYSTEM_PACKAGES: Record<string, { label: string; tech: string; protocol: string }> = {
-  axios: { label: "External REST API", tech: "HTTP/REST", protocol: "HTTPS/JSON" },
-  "node-fetch": { label: "External HTTP Endpoint", tech: "Fetch API", protocol: "HTTPS" },
-  stripe: { label: "Stripe Payment Gateway", tech: "Stripe SDK", protocol: "HTTPS/REST" },
-  openai: { label: "OpenAI LLM API", tech: "OpenAI SDK", protocol: "HTTPS/JSON" },
-  "@anthropic-ai/sdk": { label: "Anthropic Claude API", tech: "Anthropic SDK", protocol: "HTTPS/JSON" },
-  "@aws-sdk": { label: "AWS Cloud Services", tech: "AWS SDK", protocol: "HTTPS" },
-  "@grpc/grpc-js": { label: "Remote gRPC Service", tech: "gRPC", protocol: "HTTP/2 / Protobuf" },
-  ws: { label: "WebSocket Stream", tech: "WebSockets", protocol: "WSS" },
-  "@modelcontextprotocol/sdk": { label: "MCP Host Client", tech: "Model Context Protocol", protocol: "JSON-RPC / stdio" },
+const SDK_PACKAGES: Record<string, string> = {
+  axios: "Axios HTTP client", "node-fetch": "Fetch client", stripe: "Stripe SDK", openai: "OpenAI SDK",
+  "@anthropic-ai/sdk": "Anthropic SDK", "@grpc/grpc-js": "gRPC SDK", ws: "WebSocket client",
+  "@modelcontextprotocol/sdk": "MCP SDK",
 };
+const IGNORE_DIRS = new Set(["node_modules", "dist", "build", "output", "out", "coverage", "vendor", "generated"]);
+const slash = (value: string) => value.replace(/\\/g, "/");
+const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+const within = (root: string, filename: string) => {
+  const relative = path.relative(root, filename);
+  return relative === "" || !path.isAbsolute(relative) && relative !== ".." && !relative.startsWith(`..${path.sep}`);
+};
+const isSource = (filename: string) => /\.tsx?$/.test(filename) && !/\.d\.ts$/.test(filename);
+const evidenceSort = (a: SourceEvidence, b: SourceEvidence) => compare(a.path, b.path) || a.line - b.line || a.column - b.column || compare(a.kind, b.kind);
 
-const IGNORE_DIRS = new Set(["node_modules", "dist", "build", ".git", ".next", "coverage"]);
+interface ScannedFile { absolutePath: string; relativePath: string; facts: SourceFacts; assignment: BoundaryAssignment; nodeId: string }
 
-function sanitizeId(raw: string): string {
-  return raw.replace(/[^a-zA-Z0-9_]/g, "_").replace(/^_+|_+$/g, "");
-}
-
-async function getTypeScriptFiles(dir: string): Promise<string[]> {
-  const results: string[] = [];
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    if (IGNORE_DIRS.has(entry.name) || entry.name.startsWith(".")) continue;
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...(await getTypeScriptFiles(fullPath)));
-    } else if (
-      (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) &&
-      !entry.name.endsWith(".d.ts")
-    ) {
-      results.push(fullPath);
+async function discover(root: string, diagnostics: GraphDiagnostic[]): Promise<{ sources: string[]; manifests: string[] }> {
+  const sources: string[] = [], manifests: string[] = [];
+  async function walk(directory: string) {
+    let entries;
+    try { entries = await fs.readdir(directory, { withFileTypes: true }); }
+    catch (error) {
+      diagnostics.push({ code: "READ_DIRECTORY_ERROR", severity: "error", path: slash(path.relative(root, directory)) || ".",
+        message: `Could not enumerate directory: ${error instanceof Error ? error.message : String(error)}` });
+      return;
     }
-  }
-  return results;
-}
-
-function extractFileFacts(sourceCode: string, isTsx: boolean): { imports: string[]; exports: string[] } {
-  const parser = new Parser();
-  parser.setLanguage((isTsx ? TypeScript.tsx : TypeScript.typescript) as any);
-
-  const tree = parser.parse(sourceCode);
-  const imports: string[] = [];
-  const exports: string[] = [];
-
-  function walk(node: Parser.SyntaxNode) {
-    if (node.type === "import_statement") {
-      const sourceNode = node.childForFieldName("source");
-      if (sourceNode) {
-        imports.push(sourceNode.text.replace(/['"]/g, ""));
-      }
-    } else if (node.type === "export_statement") {
-      const decl = node.childForFieldName("declaration");
-      if (decl) {
-        const nameNode = decl.childForFieldName("name");
-        if (nameNode) {
-          exports.push(`${decl.type.replace("_declaration", "")}:${nameNode.text}`);
-        }
-      }
-    }
-    for (const child of node.namedChildren) {
-      walk(child);
-    }
-  }
-
-  walk(tree.rootNode);
-  return { imports, exports };
-}
-
-export async function analyzeDirectory(
-  targetDir: string,
-  c4Level: "Context" | "Container" | "Component"
-): Promise<AstGraph> {
-  const files = await getTypeScriptFiles(targetDir);
-  const nodesMap = new Map<string, C4Node>();
-  const edgesMap = new Map<string, C4Edge>();
-
-  for (const filePath of files) {
-    const relPath = path.relative(targetDir, filePath).replace(/\\/g, "/");
-    const sourceCode = await fs.readFile(filePath, "utf-8");
-    const isTsx = filePath.endsWith(".tsx");
-    const { imports, exports } = extractFileFacts(sourceCode, isTsx);
-
-    // Determine source node based on C4 abstraction level
-    const parsedPath = path.parse(relPath);
-    const parts = relPath.split("/");
-    let sourceId: string;
-    let sourceLabel: string;
-    let nodeType: C4Node["type"];
-
-    if (c4Level === "Context") {
-      sourceId = sanitizeId(path.basename(targetDir) || "CoreSystem");
-      sourceLabel = path.basename(targetDir) || "Core System";
-      nodeType = "System";
-    } else if (c4Level === "Container") {
-      const groupName = parts.length > 1 ? parts[0] : "app";
-      sourceId = sanitizeId(`Container_${groupName}`);
-      sourceLabel = `${groupName} module`;
-      nodeType = "Container";
-    } else {
-      const withoutExt = path.join(parsedPath.dir, parsedPath.name).replace(/\\/g, "/");
-      sourceId = sanitizeId(withoutExt);
-      sourceLabel = withoutExt;
-      nodeType = "Component";
-    }
-
-    if (!nodesMap.has(sourceId)) {
-      nodesMap.set(sourceId, {
-        id: sourceId,
-        label: sourceLabel,
-        type: nodeType,
-        technology: isTsx ? "React / TypeScript" : "TypeScript / Node.js",
-        path: c4Level === "Component" ? relPath : parts[0] || ".",
-        exports: [],
-      });
-    }
-
-    const currentNode = nodesMap.get(sourceId)!;
-    if (exports.length > 0 && currentNode.exports) {
-      currentNode.exports.push(...exports);
-    }
-
-    for (const imp of imports) {
-      // 1. Check for Database / ORM Imports
-      const dbMatch = Object.keys(DB_PACKAGES).find((pkg) => imp === pkg || imp.startsWith(`${pkg}/`));
-      if (dbMatch) {
-        const dbId = sanitizeId(`DB_${dbMatch}`);
-        if (!nodesMap.has(dbId)) {
-          nodesMap.set(dbId, {
-            id: dbId,
-            label: `${ dbMatch } Database`,
-            type: "ContainerDb",
-            technology: DB_PACKAGES[dbMatch],
-            path: `package:${dbMatch}`,
-          });
-        }
-        const edgeKey = `${sourceId}->${dbId}`;
-        if (!edgesMap.has(edgeKey)) {
-          edgesMap.set(edgeKey, {
-            source: sourceId,
-            target: dbId,
-            label: "Reads/Writes data",
-            protocol: DB_PACKAGES[dbMatch],
-          });
-        }
-        continue;
-      }
-
-      // 2. Check for External System / Protocol SDK Imports
-      const extMatch = Object.keys(EXTERNAL_SYSTEM_PACKAGES).find(
-        (pkg) => imp === pkg || imp.startsWith(`${pkg}/`)
-      );
-      if (extMatch) {
-        const extInfo = EXTERNAL_SYSTEM_PACKAGES[extMatch];
-        const extId = sanitizeId(`Ext_${extMatch}`);
-        if (!nodesMap.has(extId)) {
-          nodesMap.set(extId, {
-            id: extId,
-            label: extInfo.label,
-            type: "ExternalSystem",
-            technology: extInfo.tech,
-            path: `package:${extMatch}`,
-          });
-        }
-        const edgeKey = `${sourceId}->${extId}`;
-        if (!edgesMap.has(edgeKey)) {
-          edgesMap.set(edgeKey, {
-            source: sourceId,
-            target: extId,
-            label: `Communicates via ${extMatch}`,
-            protocol: extInfo.protocol,
-          });
-        }
-        continue;
-      }
-
-      // 3. Check for Internal Relative Module Imports
-      if (imp.startsWith(".")) {
-        if (c4Level === "Context") continue; // Internal edges omitted at System Context level
-
-        const resolvedImp = path.resolve(path.dirname(filePath), imp);
-        const relImp = path
-          .relative(targetDir, resolvedImp)
-          .replace(/\\/g, "/")
-          .replace(/\.(js|ts|tsx)$/, "");
-
-        let targetId: string;
-        if (c4Level === "Container") {
-          const targetParts = relImp.split("/");
-          const targetGroup = targetParts.length > 1 ? targetParts[0] : "app";
-          targetId = sanitizeId(`Container_${targetGroup}`);
-        } else {
-          targetId = sanitizeId(relImp);
-        }
-
-        if (sourceId !== targetId) {
-          const edgeKey = `${sourceId}->${targetId}`;
-          if (!edgesMap.has(edgeKey)) {
-            edgesMap.set(edgeKey, {
-              source: sourceId,
-              target: targetId,
-              label: "Imports / Invokes",
-              protocol: "Internal TS Module",
-            });
-          }
-        }
+    for (const entry of entries.sort((a, b) => compare(a.name, b.name))) {
+      if (entry.name.startsWith(".")) continue;
+      const absolutePath = path.join(directory, entry.name);
+      // Never recurse into symlinks, including package-manager workspaces.
+      if (entry.isSymbolicLink()) continue;
+      if (entry.isDirectory()) {
+        if (!IGNORE_DIRS.has(entry.name)) await walk(absolutePath);
+      } else if (entry.isFile()) {
+        if (isSource(entry.name)) sources.push(absolutePath);
+        else if (entry.name === "package.json") manifests.push(absolutePath);
       }
     }
   }
+  await walk(root);
+  return { sources, manifests };
+}
 
+function nodeForFile(relativePath: string, assignment: BoundaryAssignment, level: AbstractionLevel): ArchitectureNode {
+  const selected = level === "Context" ? assignment.system : level === "Container" ? assignment.container : assignment.component;
   return {
-    metadata: {
-      scannedDirectory: targetDir,
-      abstractionLevel: c4Level,
-      filesScanned: files.length,
-      timestamp: new Date().toISOString(),
-    },
-    nodes: Array.from(nodesMap.values()),
-    edges: Array.from(edgesMap.values()),
+    id: selected?.id ?? stableId("component", relativePath),
+    label: selected?.label ?? relativePath,
+    type: level === "Context" ? "System" : level === "Container" ? "Container" : "Component",
+    technology: selected?.technology ?? (relativePath.endsWith(".tsx") ? "TypeScript / TSX" : "TypeScript"),
+    path: level === "Component" && !assignment.component ? relativePath : ".",
+    ...(level === "Context" ? {} : { parentId: level === "Container" ? assignment.system.id : assignment.container.id }),
+    ...(selected?.description ? { description: selected.description } : {}),
+    classification: selected?.classification ?? { basis: "inferred", confidence: "low", rule: "source-file-as-component" },
+    exports: [], evidence: [],
   };
+}
+
+function relationshipLabel(fact: DependencyFact, external: boolean): string {
+  if (fact.typeOnly) return fact.kind === "re-export" ? "Re-exports types" : "Imports types";
+  if (fact.kind === "re-export") return "Re-exports module";
+  if (fact.kind === "dynamic-import") return "Literal dynamic import";
+  if (fact.kind === "require") return "Literal require syntax";
+  return external ? "Imports package" : "Imports module";
+}
+
+/** Build a source-backed, versioned graph. Analysis reads source/configuration
+ * data only; it never imports scanned code or executes repository scripts. */
+export async function analyzeDirectory(targetDir: string, c4Level: AbstractionLevel, options: AnalyzeOptions = {}): Promise<ArchitectureGraph> {
+  if (!["Context", "Container", "Component"].includes(c4Level)) throw new Error(`Unsupported C4 level: ${c4Level}`);
+  if (options.config && options.configPath) throw new Error("Supply config or configPath, not both");
+  const root = await fs.realpath(path.resolve(targetDir));
+  if (!(await fs.stat(root)).isDirectory()) throw new Error(`Analysis target is not a directory: ${targetDir}`);
+  const diagnostics: GraphDiagnostic[] = [];
+  const configPath = options.configPath ? path.resolve(options.configPath) : undefined;
+  const mapper = createBoundaryMapper(root, options.config ?? (configPath ? await loadBoundaryConfig(configPath) : undefined));
+  const discovered = await discover(root, diagnostics);
+  const resolver = createModuleResolver(root, discovered.manifests, options.tsconfigPath);
+  diagnostics.push(...resolver.diagnostics);
+  const nodes = new Map<string, ArchitectureNode>(), edges = new Map<string, ArchitectureEdge>();
+  const sources: SourceFile[] = [], files = new Map<string, ScannedFile>();
+  for (const absolutePath of discovered.sources.filter(filename => !resolver.outputDirectories.some(directory => within(directory, filename)))) {
+    const relativePath = slash(path.relative(root, absolutePath));
+    let sourceBytes: Buffer;
+    try { sourceBytes = await fs.readFile(absolutePath); }
+    catch (error) {
+      diagnostics.push({ code: "READ_ERROR", severity: "error", path: relativePath,
+        message: `Could not read source file: ${error instanceof Error ? error.message : String(error)}` });
+      continue;
+    }
+    const sourceCode = sourceBytes.toString("utf8");
+    let facts: SourceFacts;
+    try { facts = extractSourceFacts(sourceCode, relativePath, absolutePath.endsWith(".tsx")); }
+    catch (error) {
+      diagnostics.push({ code: "PARSER_ERROR", severity: "error", path: relativePath,
+        message: `Source parsing failed: ${error instanceof Error ? error.message : String(error)}` });
+      sources.push({ path: relativePath, contentHash: createHash("sha256").update(sourceBytes).digest("hex"), parseStatus: "error" });
+      continue;
+    }
+    sources.push({ path: relativePath, contentHash: createHash("sha256").update(sourceBytes).digest("hex"), parseStatus: facts.parseStatus,
+      language: absolutePath.endsWith(".tsx") ? "TSX" : "TypeScript" });
+    diagnostics.push(...facts.diagnostics);
+    const assignment = mapper.forFile(relativePath);
+    const selected = nodeForFile(relativePath, assignment, c4Level);
+    const existing = nodes.get(selected.id);
+    if (existing && existing.parentId !== selected.parentId) {
+      throw new Error(`Component ${selected.id} spans multiple container boundaries; configure distinct components or an explicit containerId`);
+    }
+    const node = existing ?? selected;
+    node.evidence.push({ path: relativePath, line: 1, column: 1, kind: "source-file" });
+    node.exports!.push(...facts.exports);
+    node.evidence.push(...facts.exportEvidence);
+    nodes.set(node.id, node);
+    files.set(absolutePath, { absolutePath, relativePath, facts, assignment, nodeId: node.id });
+  }
+  diagnostics.push(...mapper.diagnostics);
+  if (c4Level === "Component" && new Set([...files.values()].map(file => file.assignment.container.id)).size > 1) {
+    diagnostics.push({ code: "MULTIPLE_COMPONENT_CONTAINERS", severity: "info",
+      message: "Component view spans multiple declared containers; parent boundary IDs retain their deployment grouping." });
+  }
+  function diagnostic(fact: DependencyFact, code: string, severity: GraphDiagnostic["severity"], message: string) {
+    diagnostics.push({ code, severity, message, path: fact.evidence.path, line: fact.evidence.line, column: fact.evidence.column, specifier: fact.specifier });
+  }
+  function connect(source: string, target: string, fact: DependencyFact, external: boolean) {
+    if (source === target) return; // Rolled-up boundaries intentionally hide their internal relationships.
+    const kind = fact.typeOnly && fact.kind === "re-export" ? "type-re-export" : fact.kind;
+    const id = stableId("relationship", `${source}\0${target}\0${kind}\0${fact.specifier}`);
+    const edge = edges.get(id) ?? { id, source, target, label: relationshipLabel(fact, external), protocol: "unknown", kind, evidence: [] };
+    edge.evidence.push(fact.evidence);
+    edges.set(id, edge);
+  }
+  for (const file of files.values()) {
+    for (const fact of file.facts.dependencies) {
+      const resolved = resolver.resolve(fact.specifier, file.absolutePath, fact.kind, fact.resolutionMode);
+      const targetFile = resolved.resolvedPath ? files.get(resolved.resolvedPath) : undefined;
+      if (targetFile) { connect(file.nodeId, targetFile.nodeId, fact, false); continue; }
+      if (resolved.builtin) {
+        diagnostic(fact, "BUILTIN_MODULE", "info", "Observed a platform built-in import; a built-in library is not inferred to be an external system.");
+        continue;
+      }
+      if (resolved.resolvedPath && within(root, resolved.resolvedPath) && !resolved.resolvedPath.split(path.sep).includes("node_modules")) {
+        diagnostic(fact, isSource(resolved.resolvedPath) ? "EXCLUDED_SOURCE_TARGET" : "UNSUPPORTED_MODULE_TYPE", "warning",
+          "Resolved module is not among the parsed source files (excluded scope, declaration file, or unsupported language); no dependency node was fabricated.");
+        continue;
+      }
+      if (resolved.resolvedPath && !resolved.externalPackage) {
+        diagnostic(fact, "OUTSIDE_SCAN_SCOPE", "warning", "Resolved local module is outside the scan scope; expand the scan root to include its source.");
+        continue;
+      }
+      if (!resolved.packageName || resolved.localSpecifier) {
+        diagnostic(fact, "UNRESOLVED_IMPORT", "warning", "Module could not be resolved by the TypeScript resolver; no dependency target was guessed.");
+        continue;
+      }
+      const name = resolved.packageName;
+      const databaseTechnology = Object.hasOwn(DATABASE_PACKAGES, name) ? DATABASE_PACKAGES[name] : undefined;
+      const sdkTechnology = Object.hasOwn(SDK_PACKAGES, name) ? SDK_PACKAGES[name] : undefined;
+      const technology = databaseTechnology ?? sdkTechnology ?? (name.startsWith("@aws-sdk/") ? "AWS SDK" : "Package dependency");
+      const database = databaseTechnology !== undefined;
+      const sdk = sdkTechnology !== undefined || name.startsWith("@aws-sdk/");
+      const id = stableId("package", name);
+      const node = nodes.get(id) ?? {
+        id, label: database ? `${name} database integration (inferred)` : sdk ? `${name} integration (inferred)` : `Package: ${name}`,
+        type: database && c4Level !== "Context" ? "ContainerDb" as const : "ExternalSystem" as const, technology, path: `package:${name}`,
+        description: "Observed package reference. External system/database placement is an inference; deployment, runtime use and protocol are unknown.",
+        classification: { basis: "inferred" as const, confidence: "low" as const, rule: database ? "known-database-package" : sdk ? "known-sdk-package" : "package-as-external-dependency" },
+        evidence: [],
+      };
+      node.evidence.push(fact.evidence);
+      nodes.set(id, node);
+      connect(file.nodeId, id, fact, true);
+      if (!resolved.resolvedPath) diagnostic(fact, "UNRESOLVED_PACKAGE", "warning", "Package reference was observed but no installed module target was resolved; package boundary classification remains an inference.");
+    }
+  }
+  for (const node of nodes.values()) {
+    if (node.exports) node.exports = [...new Set(node.exports)].sort(compare);
+    node.evidence.sort(evidenceSort);
+  }
+  for (const edge of edges.values()) edge.evidence.sort(evidenceSort);
+  diagnostics.sort((a, b) => compare(a.path ?? "", b.path ?? "") || (a.line ?? 0) - (b.line ?? 0) || (a.column ?? 0) - (b.column ?? 0) || compare(a.code, b.code));
+  return validateArchitectureGraph({
+    schemaVersion: GRAPH_SCHEMA_VERSION,
+    metadata: { scannedDirectory: root, abstractionLevel: c4Level, filesScanned: sources.length, timestamp: new Date().toISOString(),
+      analysisStatus: diagnostics.some(item => item.severity !== "info") || sources.some(source => source.parseStatus !== "complete") ? "partial" : "complete",
+      ...(configPath ? { configPath } : {}), ...(resolver.configPath ? { tsconfigPath: resolver.configPath } : {}) },
+    nodes: [...nodes.values()].sort((a, b) => compare(a.id, b.id)), edges: [...edges.values()].sort((a, b) => compare(a.id, b.id)),
+    hierarchy: mapper.hierarchy.sort((a, b) => compare(a.id, b.id)), sources: sources.sort((a, b) => compare(a.path, b.path)), diagnostics,
+  });
 }
