@@ -1,0 +1,20 @@
+import { dashed } from './a-b.js';
+import { underscored } from './a_b.js';
+import { plain } from './same.ts';
+import View from './same.tsx';
+import { feature } from './feature';
+import { order } from '@app/services/orders';
+import { shared } from '@fixture/shared';
+import type { Thing } from './types.js';
+import { type Thing as AnotherThing } from './types.js';
+export { order as orderAlias } from '@app/services/orders';
+export type { Thing } from './types.js';
+export * from './feature';
+export * as featureNamespace from './feature';
+export const a = dashed, b = underscored;
+export let { x, y: renamed } = { x: plain, y: shared };
+export default () => feature;
+const lazy = import('./feature');
+const common = require('./feature');
+type Imported = import('./types.js').Thing;
+namespace Private { export const hidden = 1; }

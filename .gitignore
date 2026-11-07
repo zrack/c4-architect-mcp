@@ -3,3 +3,13 @@ dist/
 *.log
 .DS_Store
 .env
+.env.*
+!.env.example
+output/
+.local/
+.c4-cache/
+*.tgz
+/ARCHITECTURE.md
+/ARCHITECTURE.png
+/ARCHITECTURE.svg
+/ARCHITECTURE.html

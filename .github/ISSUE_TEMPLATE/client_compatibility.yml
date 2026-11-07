@@ -1,0 +1,25 @@
+name: Client compatibility
+description: Share a reproducible MCP client or platform setup result.
+title: "[Client] "
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: Client, platform, and versions
+      placeholder: Client/version; OS/version; Node.js/version; repository revision
+    validations:
+      required: true
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Sanitized setup and commands
+      description: Remove usernames, private paths, environment values, and credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Observed result
+      description: Distinguish connection, analysis, image display, saved HTML interaction, and exports. Include errors when a step fails.
+    validations:
+      required: true

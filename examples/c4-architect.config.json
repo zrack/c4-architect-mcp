@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "system": {
+    "id": "order-demo",
+    "label": "Order processing example",
+    "description": "A synthetic application for demonstrating source evidence and declared C4 boundaries."
+  },
+  "defaultContainer": {
+    "id": "order-service",
+    "label": "Order service",
+    "technology": "TypeScript / Node.js",
+    "description": "The example is modeled as one application container."
+  },
+  "components": [
+    {
+      "id": "api",
+      "label": "Order API",
+      "paths": ["api"],
+      "containerId": "order-service"
+    },
+    {
+      "id": "orders",
+      "label": "Order orchestration",
+      "paths": ["orders"],
+      "containerId": "order-service"
+    },
+    {
+      "id": "inventory",
+      "label": "Inventory reservation",
+      "paths": ["inventory"],
+      "containerId": "order-service"
+    },
+    {
+      "id": "payments",
+      "label": "Payment simulator",
+      "paths": ["payments"],
+      "containerId": "order-service"
+    },
+    {
+      "id": "storage",
+      "label": "In-memory order repository",
+      "paths": ["storage"],
+      "containerId": "order-service"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+name: Bug report
+description: Report an analysis, graph, rendering, or client-connection problem.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share a small, sanitized reproduction. Do not include private source, credentials, internal hostnames, or sensitive diagrams. For vulnerabilities, follow SECURITY.md instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Explain the trigger, expected behavior, and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include source or graph input, tool arguments, and steps. A small fixture is ideal.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics and output
+      description: Include relevant diagnostics, errors, or a sanitized SVG/HTML and screenshot for rendering problems.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Repository revision, operating system, Node.js version, MCP client/version, and browser/version if relevant.
+    validations:
+      required: true
