@@ -2,6 +2,10 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+- Add `review` to compare saved graphs and write a Markdown PR architecture report with source evidence, scan diagnostics, and a focused diagram when applicable.
+
 ## 0.2.0-alpha.2 — 2026-11-06
 
 ### Added

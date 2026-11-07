@@ -261,6 +261,16 @@ For MCP, pass `focus` to `render_architecture_graph`. Find the ID with `query_ar
 }
 ```
 
+### Review architecture changes for a pull request
+
+From a built checkout, pass `review` two saved graphs at the same C4 level. Use the same scan scope and boundary configuration for each revision.
+
+```sh
+node dist/index.js review base.graph.json head.graph.json --out PR-ARCHITECTURE.md
+```
+
+The report separates dependency changes, declared boundaries, and file reassignments from ordinary source edits. It lists source locations and flags partial scans. The focused diagram uses the head snapshot for an added or changed dependency and the base snapshot when dependencies were only removed. Keep the diagram files beside the Markdown when sharing the report.
+
 ## Read the diagram
 
 ![Five-component order-service diagram derived from the checked-in TypeScript example](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-example.png)

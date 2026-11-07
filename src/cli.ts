@@ -4,6 +4,7 @@ import { analyzeDirectory } from "./parsers/astParser.js";
 import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph, type AbstractionLevel } from "./model/graph.js";
 import { graphFocusSchema } from "./model/neighborhood.js";
 import { renderArchitectureGraph } from "./renderers/artifacts.js";
+import { writeArchitectureReview } from "./renderers/review.js";
 import { version } from "./version.js";
 
 const help = `C4-Architect ${version}
@@ -15,6 +16,7 @@ No arguments: start the MCP server over stdio.
   summary <graph.json>
   query <graph.json> [--node ID | --search TEXT] [--direction both] [--depth 1] [--nodes 25] [--edges 50] [--bytes 16000] [--evidence]
   diff <before.json> <after.json> [--limit 25] [--bytes 16000]
+  review <before.json> <after.json> --out REVIEW.md [--title "Architecture review"]
 
 Levels: Context, Container, Component. Paths are relative to the current directory.
 Boundary configuration is loaded only with --config. Rendering writes Markdown,
@@ -30,6 +32,7 @@ export async function runCli(args: string[]): Promise<boolean> {
   const specs: Record<string, string[]> = {
     analyze: ["level", "out", "config", "tsconfig", "summary"], render: ["out", "title", "node", "direction", "depth", "nodes", "edges"], summary: [],
     query: ["node", "search", "direction", "depth", "nodes", "edges", "bytes", "evidence"], diff: ["limit", "bytes"],
+    review: ["out", "title"],
   };
   if (!Object.hasOwn(specs, command)) throw new Error(`Unknown command: ${command}. Use --help.`);
   const flags = new Map<string, string | boolean>(), positional: string[] = [];
@@ -45,7 +48,7 @@ export async function runCli(args: string[]): Promise<boolean> {
       flags.set(flag, value);
     }
   }
-  if (positional.length !== (command === "diff" ? 2 : 1)) throw new Error(`Invalid arguments for ${command}. Use --help.`);
+  if (positional.length !== (["diff", "review"].includes(command) ? 2 : 1)) throw new Error(`Invalid arguments for ${command}. Use --help.`);
   const str = (key: string) => flags.get(key) as string | undefined;
   const num = (key: string) => flags.has(key) ? Number(str(key)) : undefined;
   if (command === "analyze") {
@@ -71,6 +74,10 @@ export async function runCli(args: string[]): Promise<boolean> {
     nodeId: str("node"), search: str("search"), direction: str("direction") as "both" | undefined,
     maxDepth: num("depth"), maxNodes: num("nodes"), maxEdges: num("edges"), maxBytes: num("bytes"), includeEvidence: flags.has("evidence"),
   }));
-  else json(compareArchitectureGraphs(await readArchitectureGraph(positional[0]), await readArchitectureGraph(positional[1]), { limit: num("limit"), maxBytes: num("bytes") }));
+  else if (command === "review") {
+    const out = str("out");
+    if (!out) throw new Error("review requires --out REVIEW.md");
+    json(await writeArchitectureReview(positional[0], positional[1], out, str("title")));
+  } else json(compareArchitectureGraphs(await readArchitectureGraph(positional[0]), await readArchitectureGraph(positional[1]), { limit: num("limit"), maxBytes: num("bytes") }));
   return true;
 }
