@@ -9,7 +9,6 @@ import test from 'node:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { graphToDiagram } from '../dist/renderers/artifacts.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { graphToDiagram } from '../dist/renderers/artifacts.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const exec = promisify(execFile);
 const text = result => { assert.notEqual(result.isError, true, JSON.stringify(result)); return JSON.parse(result.content.find(item => item.type === 'text').text); };
