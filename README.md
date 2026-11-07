@@ -39,7 +39,7 @@ Use Node.js 22 or 24 and npm. Run the pinned alpha without a checkout:
 npx -y c4-architect-mcp@0.2.0-alpha.1 --help
 ```
 
-The examples pin `0.2.0-alpha.1` so a later release does not silently change your MCP setup. Alpha releases are an opt-in prerelease channel: `c4-architect-mcp@alpha` selects the version currently assigned to that tag and can advance over time. Use the explicit version for a repeatable setup.
+The examples pin `0.2.0-alpha.1` so a later release does not silently change your MCP setup. `c4-architect-mcp@alpha` follows the prerelease tag and can advance over time. This first release currently has both `alpha` and `latest` tags; there is no stable release yet. Use the explicit version for a repeatable setup.
 
 The server communicates over `stdio`; starting it without a subcommand waits for an MCP client rather than opening a browser page or an HTTP port. The following configurations let your client start it through `npx`.
 
