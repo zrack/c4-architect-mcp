@@ -165,6 +165,71 @@ test('graph comparisons ignore scan location, timestamps and evidence line drift
   assert.throws(() => compareArchitectureGraphs(before, after), /same abstraction level/);
 });
 
+test('checkout-derived system names do not create graph changes, while declared names do', () => {
+  const before = sampleGraph();
+  before.metadata.scannedDirectory = '/checkout/first-copy';
+  before.metadata.abstractionLevel = 'Context';
+  const system = { id: stableId('system', 'default'), type: 'System', label: 'first-copy',
+    classification: { basis: 'inferred', rule: 'default-scan-scope-boundary', confidence: 'low' } };
+  before.hierarchy = [system];
+  before.nodes = [{ ...system, technology: 'Unknown', path: '.', evidence: [] }];
+  before.edges = [];
+  const after = structuredClone(before);
+  after.metadata.scannedDirectory = 'C:\\checkout\\second-copy';
+  after.hierarchy[0].label = after.nodes[0].label = 'second-copy';
+  const renamedCheckout = compareArchitectureGraphs(before, after);
+  assert.deepEqual(renamedCheckout.nodes.changed, []);
+  assert.deepEqual(renamedCheckout.hierarchy.changed, []);
+
+  after.hierarchy[0].label = after.nodes[0].label = 'Custom inferred name';
+  const renamedSystem = compareArchitectureGraphs(before, after);
+  assert.deepEqual(renamedSystem.nodes.changed, [system.id]);
+  assert.deepEqual(renamedSystem.hierarchy.changed, [system.id]);
+
+  // Even if declared names equal their checkout basenames, they carry intent.
+  after.hierarchy[0].label = after.nodes[0].label = 'second-copy';
+  for (const graph of [before, after]) {
+    graph.hierarchy[0].classification = graph.nodes[0].classification = { basis: 'declared', rule: 'explicit-boundary-configuration' };
+  }
+  const renamedDeclaredSystem = compareArchitectureGraphs(before, after);
+  assert.deepEqual(renamedDeclaredSystem.nodes.changed, [system.id]);
+  assert.deepEqual(renamedDeclaredSystem.hierarchy.changed, [system.id]);
+});
+
+test('specifier-only edge ID changes are paired without hiding parallel dependencies', () => {
+  const before = sampleGraph(), after = structuredClone(before);
+  before.edges[0].evidence[0].specifier = './b';
+  after.edges[0].id = 'edge:a-b-explicit';
+  after.edges[0].evidence[0].specifier = './b.ts';
+  after.sources[0].contentHash = hash('updated specifier');
+
+  const spellingChange = compareArchitectureGraphs(before, after);
+  assert.deepEqual(spellingChange.edges.counts, { added: 0, removed: 0, changed: 0 });
+  assert.deepEqual(spellingChange.sources.changed, ['a.ts']);
+  assert.equal(after.edges[0].id, 'edge:a-b-explicit', 'Comparison must not rewrite canonical graph IDs');
+
+  after.edges.push({ ...after.edges[0], id: 'edge:a-b-parallel' });
+  const addedParallel = compareArchitectureGraphs(before, after);
+  assert.deepEqual(addedParallel.edges.added, ['edge:a-b-parallel']);
+  assert.deepEqual(addedParallel.edges.removed, []);
+  const removedParallel = compareArchitectureGraphs(after, before);
+  assert.deepEqual(removedParallel.edges.added, []);
+  assert.deepEqual(removedParallel.edges.removed, ['edge:a-b-parallel']);
+});
+
+test('matching edge IDs take priority over pairing unmatched dependencies', () => {
+  const before = sampleGraph();
+  before.edges.push({ ...before.edges[0], id: 'edge:a-b-types', kind: 'type-import' });
+  const after = structuredClone(before);
+  after.edges[0].kind = 'type-import';
+  after.edges[3].kind = 'import';
+  after.edges[3].id = 'edge:a-b-explicit';
+  const diff = compareArchitectureGraphs(before, after);
+  assert.deepEqual(diff.edges.changed, ['edge:a-b']);
+  assert.deepEqual(diff.edges.removed, ['edge:a-b-types']);
+  assert.deepEqual(diff.edges.added, ['edge:a-b-explicit']);
+});
+
 test('boundary configuration preserves declared group IDs and labels across rescans', () => {
   const config = validateBoundaryConfig({ schemaVersion: '1.0', system: { id: 'shop', label: 'Shopping' },
     containers: [{ id: 'api', label: 'Ordering API', paths: ['api'], technology: 'Node.js' }],

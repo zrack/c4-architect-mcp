@@ -2,7 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { analyzeDirectory } from "./parsers/astParser.js";
 import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph, type AbstractionLevel } from "./model/graph.js";
-import { graphToDiagram, renderArtifacts } from "./renderers/artifacts.js";
+import { graphFocusSchema } from "./model/neighborhood.js";
+import { renderArchitectureGraph } from "./renderers/artifacts.js";
 import { version } from "./version.js";
 
 const help = `C4-Architect ${version}
@@ -10,7 +11,7 @@ const help = `C4-Architect ${version}
 No arguments: start the MCP server over stdio.
 
   analyze <directory> --level Component --out graph.json [--config config.json] [--tsconfig tsconfig.json] [--summary]
-  render <graph.json> --out ARCHITECTURE.md [--title "Architecture"]
+  render <graph.json> --out ARCHITECTURE.md [--title "Architecture"] [--node ID [--direction both] [--depth 1] [--nodes 25] [--edges 50]]
   summary <graph.json>
   query <graph.json> [--node ID | --search TEXT] [--direction both] [--depth 1] [--nodes 25] [--edges 50] [--bytes 16000] [--evidence]
   diff <before.json> <after.json> [--limit 25] [--bytes 16000]
@@ -27,7 +28,7 @@ export async function runCli(args: string[]): Promise<boolean> {
   if (args.length === 1 && ["--version", "-v"].includes(args[0])) { process.stdout.write(version + "\n"); return true; }
   const [command, ...rest] = args;
   const specs: Record<string, string[]> = {
-    analyze: ["level", "out", "config", "tsconfig", "summary"], render: ["out", "title"], summary: [],
+    analyze: ["level", "out", "config", "tsconfig", "summary"], render: ["out", "title", "node", "direction", "depth", "nodes", "edges"], summary: [],
     query: ["node", "search", "direction", "depth", "nodes", "edges", "bytes", "evidence"], diff: ["limit", "bytes"],
   };
   if (!Object.hasOwn(specs, command)) throw new Error(`Unknown command: ${command}. Use --help.`);
@@ -58,7 +59,12 @@ export async function runCli(args: string[]): Promise<boolean> {
     json(flags.has("summary") ? { ...summarizeArchitectureGraph(graph), graphPath: path.resolve(out) } : graph);
   } else if (command === "render") {
     const out = str("out"); if (!out) throw new Error("render requires --out ARCHITECTURE.md");
-    const result = await renderArtifacts(graphToDiagram(await readArchitectureGraph(positional[0]), str("title")), out);
+    const nodeId = str("node");
+    if (!nodeId && ["direction", "depth", "nodes", "edges"].some(flag => flags.has(flag))) throw new Error("Render scope options require --node ID");
+    const focus = nodeId ? graphFocusSchema.parse({
+      nodeId, direction: str("direction"), maxDepth: num("depth"), maxNodes: num("nodes"), maxEdges: num("edges"),
+    }) : undefined;
+    const result = await renderArchitectureGraph(await readArchitectureGraph(positional[0]), { title: str("title"), outputPath: out, focus });
     json(result.structuredContent);
   } else if (command === "summary") json(summarizeArchitectureGraph(await readArchitectureGraph(positional[0])));
   else if (command === "query") json(queryArchitectureGraph(await readArchitectureGraph(positional[0]), {

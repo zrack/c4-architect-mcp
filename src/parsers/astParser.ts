@@ -95,6 +95,13 @@ function relationshipLabel(fact: DependencyFact, external: boolean): string {
   return external ? "Imports package" : "Imports module";
 }
 
+function decodeSource(bytes: Buffer): string {
+  const encoding = bytes[0] === 0xff && bytes[1] === 0xfe ? "utf-16le"
+    : bytes[0] === 0xfe && bytes[1] === 0xff ? "utf-16be" : "utf-8";
+  // Strip the BOM for source positions, while hashing the original bytes.
+  return new TextDecoder(encoding, { fatal: true }).decode(bytes);
+}
+
 /** Build a source-backed, versioned graph. Analysis reads source/configuration
  * data only; it never imports scanned code or executes repository scripts. */
 export async function analyzeDirectory(targetDir: string, c4Level: AbstractionLevel, options: AnalyzeOptions = {}): Promise<ArchitectureGraph> {
@@ -119,17 +126,26 @@ export async function analyzeDirectory(targetDir: string, c4Level: AbstractionLe
         message: `Could not read source file: ${error instanceof Error ? error.message : String(error)}` });
       continue;
     }
-    const sourceCode = sourceBytes.toString("utf8");
+    const isTsx = absolutePath.endsWith(".tsx");
+    const sourceRecord = { path: relativePath, contentHash: createHash("sha256").update(sourceBytes).digest("hex"),
+      language: isTsx ? "TSX" : "TypeScript" };
+    let sourceCode: string;
+    try { sourceCode = decodeSource(sourceBytes); }
+    catch {
+      diagnostics.push({ code: "SOURCE_ENCODING_ERROR", severity: "error", path: relativePath,
+        message: "Source is not valid UTF-8 or BOM-marked UTF-16; it could not be parsed." });
+      sources.push({ ...sourceRecord, parseStatus: "error" });
+      continue;
+    }
     let facts: SourceFacts;
-    try { facts = extractSourceFacts(sourceCode, relativePath, absolutePath.endsWith(".tsx")); }
+    try { facts = extractSourceFacts(sourceCode, relativePath, isTsx); }
     catch (error) {
       diagnostics.push({ code: "PARSER_ERROR", severity: "error", path: relativePath,
         message: `Source parsing failed: ${error instanceof Error ? error.message : String(error)}` });
-      sources.push({ path: relativePath, contentHash: createHash("sha256").update(sourceBytes).digest("hex"), parseStatus: "error" });
+      sources.push({ ...sourceRecord, parseStatus: "error" });
       continue;
     }
-    sources.push({ path: relativePath, contentHash: createHash("sha256").update(sourceBytes).digest("hex"), parseStatus: facts.parseStatus,
-      language: absolutePath.endsWith(".tsx") ? "TSX" : "TypeScript" });
+    sources.push({ ...sourceRecord, parseStatus: facts.parseStatus });
     diagnostics.push(...facts.diagnostics);
     const assignment = mapper.forFile(relativePath);
     const selected = nodeForFile(relativePath, assignment, c4Level);
@@ -165,6 +181,10 @@ export async function analyzeDirectory(targetDir: string, c4Level: AbstractionLe
       const resolved = resolver.resolve(fact.specifier, file.absolutePath, fact.kind, fact.resolutionMode);
       const targetFile = resolved.resolvedPath ? files.get(resolved.resolvedPath) : undefined;
       if (targetFile) { connect(file.nodeId, targetFile.nodeId, fact, false); continue; }
+      if (resolved.localAsset) {
+        diagnostic(fact, "UNSUPPORTED_MODULE_TYPE", "warning", "Module specifier names an existing local asset outside supported TypeScript/TSX source; no dependency node was fabricated.");
+        continue;
+      }
       if (resolved.builtin) {
         diagnostic(fact, "BUILTIN_MODULE", "info", "Observed a platform built-in import; a built-in library is not inferred to be an external system.");
         continue;

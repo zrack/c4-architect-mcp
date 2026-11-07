@@ -24,6 +24,7 @@ export interface Resolution {
   resolvedPath?: string;
   packageName?: string;
   builtin: boolean;
+  localAsset?: boolean;
   /** Bare dependency resolved through package lookup rather than a local alias. */
   externalPackage: boolean;
   localSpecifier: boolean;
@@ -129,22 +130,53 @@ export function createModuleResolver(scanRoot: string, manifestFiles: string[], 
     return mode;
   }
   const outputDirectories = [options.outDir, options.declarationDir].filter((item): item is string => Boolean(item) && path.resolve(item!) !== scanRoot).map(item => path.resolve(item));
-  function matchesPathAlias(specifier: string): boolean {
-    return Object.keys(options.paths ?? {}).some(pattern => {
+  const aliases = options.paths ?? {};
+  function pathAliasTargets(specifier: string): string[] | undefined {
+    if (Object.hasOwn(aliases, specifier)) return aliases[specifier];
+    let best: { prefixLength: number; wildcard: string; targets: string[] } | undefined;
+    for (const [pattern, targets] of Object.entries(aliases)) {
       const star = pattern.indexOf("*");
-      return star < 0 ? specifier === pattern : specifier.startsWith(pattern.slice(0, star)) && specifier.endsWith(pattern.slice(star + 1));
-    });
+      if (star < 0 || pattern.indexOf("*", star + 1) >= 0) continue;
+      const prefix = pattern.slice(0, star), suffix = pattern.slice(star + 1);
+      if (specifier.length >= prefix.length + suffix.length && specifier.startsWith(prefix) && specifier.endsWith(suffix)
+        && (!best || prefix.length > best.prefixLength)) {
+        best = { prefixLength: prefix.length, wildcard: specifier.slice(prefix.length, specifier.length - suffix.length), targets };
+      }
+    }
+    if (!best) return undefined;
+    const { targets, wildcard } = best;
+    return targets.map(target => target.replace("*", () => wildcard));
+  }
+  function existingLocalAsset(specifier: string, containingFile: string, mapped: string[] | undefined): string | undefined {
+    // TS resolves source/declaration modules, but bundlers may accept these
+    // literal asset imports as well. Check existence without reading the asset.
+    if (/[?#]/.test(specifier)) return undefined;
+    function isExistingAsset(candidate: string): boolean {
+      const extension = path.extname(candidate);
+      return Boolean(extension) && !/^\.[cm]?[jt]sx?$/i.test(extension) && ts.sys.fileExists(candidate);
+    }
+    if (path.isAbsolute(specifier) || specifier.startsWith("./") || specifier.startsWith("../")) {
+      const candidate = path.resolve(path.dirname(containingFile), specifier);
+      return isExistingAsset(candidate) ? candidate : undefined;
+    }
+    const pathsBase = options.baseUrl ?? (typeof options.pathsBasePath === "string" ? options.pathsBasePath : undefined)
+      ?? (configPath ? path.dirname(configPath) : undefined);
+    const candidates = pathsBase ? (mapped ?? []).map(target => path.resolve(pathsBase, target)) : [];
+    if (options.baseUrl) candidates.push(path.resolve(options.baseUrl, specifier));
+    return candidates.find(isExistingAsset);
   }
   return { configPath, outputDirectories, diagnostics, resolve(specifier, containingFile, kind, modeOverride) {
     const resolved = ts.resolveModuleName(specifier, containingFile, options, host, cache, undefined, resolutionMode(containingFile, modeOverride === "require" ? "require" : kind)).resolvedModule;
-    const resolvedPath = resolved ? path.resolve(host.realpath?.(resolved.resolvedFileName) ?? resolved.resolvedFileName) : undefined;
     const bare = !specifier.startsWith(".") && !path.isAbsolute(specifier) && !specifier.startsWith("#");
+    const aliasTargets = bare ? pathAliasTargets(specifier) : undefined;
+    const localAsset = !resolved ? existingLocalAsset(specifier, containingFile, aliasTargets) : undefined;
+    const resolvedPath = resolved ? path.resolve(host.realpath?.(resolved.resolvedFileName) ?? resolved.resolvedFileName) : localAsset;
     // URL/runtime schemes and invalid package names are not npm packages.
     const candidate = bare ? packageName(specifier) : undefined;
     const name = candidate && /^(?:@[^/\s:]+\/)?[^/\s:]+$/.test(candidate) ? candidate : undefined;
-    const localSpecifier = !bare || specifier.startsWith("node:") || matchesPathAlias(specifier) && (!resolved || !resolved.isExternalLibraryImport)
+    const localSpecifier = !bare || Boolean(localAsset) || specifier.startsWith("node:") || Boolean(aliasTargets && (!resolved || !resolved.isExternalLibraryImport))
       || Boolean(name && (workspacePackages.has(name) || ambiguousPackages.has(name)));
-    return { ...(resolvedPath ? { resolvedPath } : {}), ...(name ? { packageName: name } : {}),
+    return { ...(resolvedPath ? { resolvedPath } : {}), ...(name ? { packageName: name } : {}), ...(localAsset ? { localAsset: true } : {}),
       externalPackage: bare && !localSpecifier && (!resolved || Boolean(resolved.isExternalLibraryImport && resolvedPath?.split(path.sep).includes("node_modules"))), localSpecifier,
       builtin: isBuiltin(specifier) };
   } };

@@ -2,6 +2,19 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## 0.2.0-alpha.2 — 2026-11-06
+
+### Added
+
+- Render a focused neighborhood from a saved graph through `render_architecture_graph` or CLI `render --node`. Choose a direction and set depth, node, and relationship limits. Focused artifacts show the view's scope and include relationship source locations.
+
+### Fixed
+
+- Recognize TypeScript `export type *` re-exports as type-only dependencies.
+- Parse UTF-8, UTF-16LE, and UTF-16BE sources that start with a byte order mark and preserve the hash of the original bytes.
+- Report existing local assets reached through relative imports, TypeScript `paths` aliases, or `baseUrl` as unsupported local modules.
+- Compare snapshots across checkout directories and reconcile equivalent import spellings by resolved endpoints, kind, label, and protocol while preserving relationship multiplicity.
+
 ## 0.2.0-alpha.1 — 2026-11-06
 
 ### Added
