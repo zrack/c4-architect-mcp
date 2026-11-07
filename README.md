@@ -1,4 +1,4 @@
-![C4 Architect — local source, reviewable evidence, readable diagrams](docs/images/hero.svg)
+![C4 Architect — local source, reviewable evidence, readable diagrams](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/hero.svg)
 
 # C4 Architect
 
@@ -8,9 +8,9 @@ C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io
 
 **0.2.0-alpha.1 · TypeScript / TSX · Local parsing · MIT licensed**
 
-[Get started](#get-started) · [See the diagrams](#read-the-diagram) · [Contribute](CONTRIBUTING.md) · [Roadmap](ROADMAP.md)
+[Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#read-the-diagram) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
-![Workflow: parse local source, preserve evidence, declare boundaries, query and compare, render and export](docs/images/workflow.svg)
+![Workflow: parse local source, preserve evidence, declare boundaries, query and compare, render and export](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/workflow.svg)
 
 ## Start with evidence
 
@@ -29,22 +29,19 @@ The result is a starting point for application and solution architecture review.
 | Context, Container, and Component diagrams | Render a graph projection or a graph supplied by the caller. |
 | Compact PNG, SVG, and interactive HTML | Trace orthogonal connections, inspect relationship labels, and export a selected view. |
 
-Draw.io, Structurizr DSL, wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are **planned**, not implemented. See the [roadmap](ROADMAP.md).
+Draw.io, Structurizr DSL, wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are **planned**, not implemented. See the [roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md).
 
 ## Get started
 
-Use Node.js 22 or 24 and npm. This alpha is installed from a checkout; the examples do not depend on a published npm package.
+Use Node.js 22 or 24 and npm. Run the pinned alpha without a checkout:
 
 ```sh
-git clone https://github.com/zrack/c4-architect-mcp.git
-cd c4-architect-mcp
-npm ci
-npm test
+npx -y c4-architect-mcp@0.2.0-alpha.1 --help
 ```
 
-`npm test` builds `dist/index.js` and runs the automated tests. The server communicates over `stdio`; launch it through an MCP client rather than expecting a browser page or an HTTP port from `npm start`.
+The examples pin `0.2.0-alpha.1` so a later release does not silently change your MCP setup. Alpha releases are an opt-in prerelease channel: `c4-architect-mcp@alpha` selects the version currently assigned to that tag and can advance over time. Use the explicit version for a repeatable setup.
 
-Use the absolute path to your checkout in the following configuration. If a desktop client cannot find `node`, use the absolute path to the Node executable as its command.
+The server communicates over `stdio`; starting it without a subcommand waits for an MCP client rather than opening a browser page or an HTTP port. The following configurations let your client start it through `npx`.
 
 <details>
 <summary><strong>Codex</strong></summary>
@@ -53,14 +50,14 @@ Add this to `~/.codex/config.toml`, or use the MCP server settings in the Codex 
 
 ```toml
 [mcp_servers.c4-architect]
-command = "node"
-args = ["/absolute/path/to/c4-architect-mcp/dist/index.js"]
+command = "npx"
+args = ["-y", "c4-architect-mcp@0.2.0-alpha.1"]
 ```
 
 You can also register it from the Codex CLI:
 
 ```sh
-codex mcp add c4-architect -- node /absolute/path/to/c4-architect-mcp/dist/index.js
+codex mcp add c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.1
 ```
 
 Reconnect the server after configuration changes. See the [official Codex MCP setup guide](https://learn.chatgpt.com/docs/extend/mcp).
@@ -71,7 +68,7 @@ Reconnect the server after configuration changes. See the [official Codex MCP se
 <summary><strong>Claude Code</strong></summary>
 
 ```sh
-claude mcp add --transport stdio c4-architect -- node /absolute/path/to/c4-architect-mcp/dist/index.js
+claude mcp add --transport stdio c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.1
 ```
 
 Use `/mcp` to inspect the connection. See the [official Claude Code MCP documentation](https://code.claude.com/docs/en/mcp).
@@ -87,8 +84,8 @@ Open **Settings → Developer → Edit Config** and merge this entry with your e
 {
   "mcpServers": {
     "c4-architect": {
-      "command": "node",
-      "args": ["/absolute/path/to/c4-architect-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "c4-architect-mcp@0.2.0-alpha.1"]
     }
   }
 }
@@ -98,21 +95,45 @@ Completely restart Claude Desktop after saving. For Windows JSON paths, use forw
 
 </details>
 
-These are local `stdio` configurations. A successful build and an MCP connection are separate checks; verify the connection in your chosen client. After changing the server's TypeScript, run `npm run build` and reconnect it to load the new code.
+These are local `stdio` configurations. Verify the connection in your chosen client. If a desktop app cannot find `npx`, use the executable's absolute path. On Windows, a client that cannot launch `npx` directly can use `command: "cmd"` with `args: ["/c", "npx", "-y", "c4-architect-mcp@0.2.0-alpha.1"]`.
+
+### Optional global installation
+
+```sh
+npm install -g c4-architect-mcp@0.2.0-alpha.1
+c4-architect-mcp --help
+```
+
+With a global installation, use `c4-architect-mcp` as the MCP command with no arguments, or use it in place of the pinned `npx` command below. Use an absolute executable path if your desktop client's PATH differs from your terminal's.
 
 ### Use the CLI directly
 
 You can analyze and render without an MCP client:
 
 ```sh
+npx -y c4-architect-mcp@0.2.0-alpha.1 analyze /absolute/path/to/project/src --level Component --out /absolute/path/to/project/architecture.graph.json --summary
+npx -y c4-architect-mcp@0.2.0-alpha.1 summary /absolute/path/to/project/architecture.graph.json
+npx -y c4-architect-mcp@0.2.0-alpha.1 render /absolute/path/to/project/architecture.graph.json --out /absolute/path/to/project/ARCHITECTURE.md
+```
+
+Replace `/absolute/path/to/project` with your project's location. Open the generated `ARCHITECTURE.html` beside the Markdown to explore the diagram.
+
+For explicit compiler settings, add `--tsconfig /absolute/path/to/tsconfig.json` to `analyze`. The nearest `tsconfig.json` is otherwise discovered and read as data. Boundary configuration is loaded only when `--config` is supplied. The CLI also provides `query` and `diff` commands; `--help` lists their options.
+
+### Run from a checkout or try the sample
+
+Clone the repository to contribute, inspect the source, or try the included [synthetic order-service example](https://github.com/zrack/c4-architect-mcp/blob/main/examples/README.md):
+
+```sh
+git clone https://github.com/zrack/c4-architect-mcp.git
+cd c4-architect-mcp
+npm ci
+npm test
 node dist/index.js analyze examples/order-service/src --level Component --config examples/c4-architect.config.json --out output/order-service.graph.json --summary
-node dist/index.js summary output/order-service.graph.json
 node dist/index.js render output/order-service.graph.json --out output/ORDER-SERVICE.md
 ```
 
-This uses the included [synthetic order-service example](examples/README.md). Open `output/ORDER-SERVICE.html` to explore it. Replace the source directory and output paths to analyze your own project.
-
-For explicit compiler settings, add `--tsconfig /absolute/path/to/tsconfig.json` to `analyze`. The nearest `tsconfig.json` is otherwise discovered and read as data. Boundary configuration is loaded only when `--config` is supplied. The CLI also provides `query` and `diff` commands. Run `node dist/index.js --help` for their options. A launch without a subcommand starts the MCP server.
+`npm test` builds `dist/index.js` and runs the automated tests. Open `output/ORDER-SERVICE.html` to explore the sample. To connect an MCP client to your checkout, use `node` as the command and the absolute path to `dist/index.js` as its only argument. After changing TypeScript, run `npm run build` and reconnect the server to load the new code.
 
 ## Analyze a project
 
@@ -137,7 +158,7 @@ Use absolute paths: an MCP client's working directory may differ from the reposi
 
 The current parser covers `.ts` and `.tsx`, excluding declaration files, dependency/build/output directories, and symlink trees. It uses one nearest or explicitly supplied `tsconfig.json` per scan; nested project configurations are not orchestrated automatically. Static imports, re-exports, and literal `import()` / `require()` dependencies are supported; computed dependencies and parse problems remain visible through diagnostics.
 
-To name architectural boundaries, supply `configPath` explicitly. The [example configuration](examples/c4-architect.config.json) demonstrates the format:
+To name architectural boundaries, supply `configPath` explicitly. The [example configuration](https://github.com/zrack/c4-architect-mcp/blob/main/examples/c4-architect.config.json) demonstrates the format:
 
 ```json
 {
@@ -205,11 +226,11 @@ Analysis levels are `Context`, `Container`, and `Component`; renderer levels are
 
 ## Read the diagram
 
-![Five-component order-service diagram derived from the checked-in TypeScript example](docs/images/component-example.png)
+![Five-component order-service diagram derived from the checked-in TypeScript example](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-example.png)
 
-*Five declared components and five source-observed dependencies from the checked-in [order-service example](examples/README.md). The application is synthetic; the dependencies come from its actual source imports.*
+*Five declared components and five source-observed dependencies from the checked-in [order-service example](https://github.com/zrack/c4-architect-mcp/blob/main/examples/README.md). The application is synthetic; the dependencies come from its actual source imports.*
 
-[Full-size PNG](docs/images/component-example.png) · [Scalable SVG](docs/images/component-example.svg)
+[Full-size PNG](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-example.png) · [Scalable SVG](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-example.svg)
 
 The server computes the image layout with ELK, compares horizontal and vertical arrangements, and reserves space for the wrapped labels it draws. PNG and SVG rendering do not require a browser at runtime. Mermaid remains a compatible source export; a client's Mermaid layout may differ from the server image.
 
@@ -220,37 +241,39 @@ Saving `ARCHITECTURE.md` also writes `ARCHITECTURE.svg`, `ARCHITECTURE.png`, and
 <details>
 <summary><strong>Explore the larger 20-node renderer example</strong></summary>
 
-![Synthetic 20-node Component graph used to exercise compact routing and long relationship labels](docs/images/component-20.png)
+![Synthetic 20-node Component graph used to exercise compact routing and long relationship labels](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-20.png)
 
 This separate stress fixture has 20 nodes and 35 relationships, including branching, cycles, shared dependencies, and long labels. Its connections are authored test data rather than extracted source dependencies.
 
-[Full-size PNG](docs/images/component-20.png) · [Scalable SVG](docs/images/component-20.svg)
+[Full-size PNG](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-20.png) · [Scalable SVG](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-20.svg)
 
 </details>
 
-![Interactive Component diagram with Order orchestration selected and its incoming and outgoing connections highlighted](docs/images/selection-example.png)
+![Interactive Component diagram with Order orchestration selected and its incoming and outgoing connections highlighted](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/selection-example.png)
 
 *The 20-node stress fixture with Order orchestration selected, saved through the interactive view's export buttons.*
 
-[Full-size selected PNG](docs/images/selection-example.png) · [Scalable selected SVG](docs/images/selection-example.svg)
+[Full-size selected PNG](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/selection-example.png) · [Scalable selected SVG](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/selection-example.svg)
 
 Select a component to highlight outgoing connections in blue and incoming connections in brown. Other routes fade. Select a relationship ID to isolate that route and inspect its full label. Zoom, keyboard selection, Escape, and **Show all** help you move between details and the complete picture.
 
-![Interactive diagram toolbar with full-size PNG and SVG export buttons](docs/images/export-toolbar.png)
+![Interactive diagram toolbar with full-size PNG and SVG export buttons](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/export-toolbar.png)
 
 **Export PNG** and **Export SVG** preserve the current selection and connection highlighting across the full diagram, regardless of zoom or scroll position. PNG exports at twice the diagram's natural dimensions; SVG remains scalable. The self-contained HTML works as a local file without contacting the MCP server or an external service.
 
 Automatic layout cannot make every graph readable at every size. Crossings can remain, and a large full-graph image may need zoom. Use selection and bounded graph queries to follow a particular change or dependency.
 
-See [image provenance and regeneration instructions](docs/images/README.md) to reproduce these examples.
+See [image provenance and regeneration instructions](https://github.com/zrack/c4-architect-mcp/blob/main/docs/images/README.md) to reproduce these examples.
 
 ## Local execution and data
 
 The parser reads local source files and does not call an LLM API. Generated diagrams and their interaction code are self-contained. Your MCP client receives the tool results, and its own settings determine whether those results are sent to a model or another service. Review those settings before analyzing private source.
 
-Analysis is static; it does not run the analyzed application's code. Output options write the requested graph and diagram files. See [SECURITY.md](SECURITY.md) for the security scope and reporting process.
+Analysis is static; it does not run the analyzed application's code. Output options write the requested graph and diagram files. See [SECURITY.md](https://github.com/zrack/c4-architect-mcp/blob/main/SECURITY.md) for the security scope and reporting process.
 
 ## Develop and verify
+
+From a repository checkout:
 
 ```sh
 npm ci
@@ -270,7 +293,7 @@ C4_BROWSER_CHANNEL=chromium npm run test:layout
 
 For PowerShell, set `$env:C4_BROWSER_CHANNEL = "chromium"` before running the test. Browser reports and generated fixtures are written under `output/playwright/component-scale/`. These checks cover the included cases, not every possible graph topology.
 
-The [CI workflow](.github/workflows/ci.yml) configures tests on Node.js 22 and 24 across Linux, macOS, and Windows, plus a Chromium layout job. Hosted CI results are available only after the workflow runs on GitHub.
+The [CI workflow](https://github.com/zrack/c4-architect-mcp/blob/main/.github/workflows/ci.yml) configures tests on Node.js 22 and 24 across Linux, macOS, and Windows, plus a Chromium layout job. See the [GitHub Actions runs](https://github.com/zrack/c4-architect-mcp/actions) for results.
 
 ## Build this with us
 
@@ -282,8 +305,8 @@ Useful contributions start with a concrete case: an import that resolves incorre
 - **Design an extension:** discuss its graph contract before adding a new language, renderer, or publisher.
 - **Improve documentation:** try the setup on your platform and client, and report the exact versions used.
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md), the [Code of Conduct](CODE_OF_CONDUCT.md), and the [roadmap](ROADMAP.md). Public API details may change during the alpha; preserve a copy of important graph snapshots and boundary configurations.
+Read [CONTRIBUTING.md](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md), the [Code of Conduct](https://github.com/zrack/c4-architect-mcp/blob/main/CODE_OF_CONDUCT.md), and the [roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md). Public API details may change during the alpha; preserve a copy of important graph snapshots and boundary configurations.
 
 ## License
 
-C4 Architect is available under the [MIT License](LICENSE). You may use, modify, and redistribute it, including commercially, subject to the license terms. Dependency licenses and attribution requirements remain applicable; see [NOTICE](NOTICE) and [third-party notices](THIRD_PARTY_NOTICES.md).
+C4 Architect is available under the [MIT License](https://github.com/zrack/c4-architect-mcp/blob/main/LICENSE). You may use, modify, and redistribute it, including commercially, subject to the license terms. Dependency licenses and attribution requirements remain applicable; see [NOTICE](https://github.com/zrack/c4-architect-mcp/blob/main/NOTICE) and [third-party notices](https://github.com/zrack/c4-architect-mcp/blob/main/THIRD_PARTY_NOTICES.md).
