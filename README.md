@@ -228,6 +228,12 @@ Analysis levels are `Context`, `Container`, and `Component`; renderer levels are
 
 ### Focus a diagram on one node
 
+Both TakeNote diagrams use the same source snapshot. On the right, focusing on `NoteEditor.tsx` and its direct neighbors reduces the view from **108 nodes and 363 arrows** to **15 nodes and 19 arrows**. Follow `TakeNoteApp.tsx` → `NoteEditor.tsx` → `PreviewEditor.tsx` to see the difference.
+
+![Full TakeNote diagram on the left and the focused NoteEditor diagram on the right, with two arrows called out to trace the path from TakeNoteApp to PreviewEditor](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/takenote-side-by-side.png)
+
+[Full-size TakeNote comparison PNG](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/takenote-side-by-side.png)
+
 Use `query --search` to find the exact node ID for a focused diagram. These commands use the graph from the checkout example and show the outgoing dependencies of Order orchestration.
 
 ```sh
