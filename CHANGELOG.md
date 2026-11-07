@@ -2,7 +2,7 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
-## 0.2.0-alpha.1 — unreleased
+## 0.2.0-alpha.1 — 2026-11-06
 
 ### Added
 
@@ -14,6 +14,7 @@ User-visible changes are recorded here. Unreleased work is not a published packa
 - Synthetic 12-node and 20-node layout, interaction, and export regression cases.
 - Public-alpha documentation, contribution guidance, issue templates, a security policy, a code of conduct, and cross-platform CI configuration.
 - Direct CLI analysis, rendering, summaries, queries, and comparisons alongside the local MCP server.
+- Version-pinned npm/npx installation and client configuration instructions.
 - MIT licensing and dependency notices.
 
 ### Clarified
