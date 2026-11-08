@@ -86,9 +86,13 @@ function wikiServer({ content, etag = '"wiki-v1"', attachmentStatus = 201, write
 }
 
 test('CLI and MCP build an offline Trail Notes Wiki preview with the same four diagrams', { timeout: 30000 }, async t => {
-  const cwd = await tempDirectory(t);
+  const cwd = await realpath(await mkdtemp(path.join(tmpdir(), 'c4-ado-wiki-')));
   const client = new Client({ name: 'ado-wiki-test', version: '1.0.0' });
-  t.after(() => client.close());
+  t.after(async () => {
+    // Windows keeps the working directory locked until the MCP child exits.
+    await client.close();
+    await rm(cwd, { recursive: true, force: true });
+  });
   await client.connect(new StdioClientTransport({ command: process.execPath, args: [entrypoint], cwd }));
 
   const { stdout } = await run(process.execPath, [entrypoint, 'publish-ado-wiki', fixture, '--out', 'cli'], { cwd });
