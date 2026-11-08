@@ -206,7 +206,7 @@ jobs:
           node_id=$(jq -er '.nodes[] | select(.path == "cases/CaseWorkspace.tsx").id' "$head")
           node "$cli" render "$head" --node "$node_id" --direction incoming --depth 1 \
             --title 'ReplayCase PR #45 · CaseWorkspace incoming imports' --out "$artifact/CaseWorkspace-incoming.md"
-          rg -F 'App.tsx:85:31 (./cases/CaseWorkspace)' "$artifact/CaseWorkspace-incoming.md"
+          grep -F 'App.tsx:85:31 (./cases/CaseWorkspace)' "$artifact/CaseWorkspace-incoming.md"
 
       - name: Upload report and focused diagram
         id: artifact
