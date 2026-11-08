@@ -406,6 +406,12 @@ Use `--parent-id` to create a child page, or reuse the returned ID with `--page-
 
 The publisher creates a placeholder page so Confluence can accept attachments before the page body is saved. If a publish is interrupted, check the reported page and retry with its ID. The publisher reuses matching attachments and uses the current published page version to reject a conflicting update. Use a separate page for manual editing and collaborative drafts. [Confluence pages API](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-page/) · [Confluence attachments API](https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments/)
 
+#### Trail Notes Confluence preview
+
+The local preview shows Context, Container, Component, and Physical Deployment on one page. Select the screenshot to open it at full size. The preview command above generates the PNGs referenced by the XHTML. [Download page.storage.xhtml](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.9/page.storage.xhtml)
+
+[![Full Trail Notes Confluence preview showing all four diagrams](https://raw.githubusercontent.com/zrack/c4-architect-mcp/7891d5059309302cd746287b6de47eb747b74529/docs/reviews/confluence-publishing/Trail-Notes-Confluence-Full-Page.png)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/7891d5059309302cd746287b6de47eb747b74529/docs/reviews/confluence-publishing/Trail-Notes-Confluence-Full-Page.png)
+
 ### Focus a diagram on one node
 
 Both TakeNote diagrams use the same source snapshot. On the right, focusing on `NoteEditor.tsx` and its direct neighbors reduces the view from **108 nodes and 363 arrows** to **15 nodes and 19 arrows**. Follow `TakeNoteApp.tsx` → `NoteEditor.tsx` → `PreviewEditor.tsx` to see the difference.
