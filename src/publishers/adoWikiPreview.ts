@@ -1,37 +1,15 @@
-import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { z } from "zod";
-import { diagramSchema } from "../model/diagram.js";
-import { renderCompactC4 } from "../renderers/compactC4.js";
+import { htmlEntities, htmlText, renderWikiDiagrams, writeWikiAttachments, type WikiAttachment, type WikiDiagram } from "./wikiDiagrams.js";
 
-export const adoWikiDocumentSchema = z.object({
-  title: z.string().trim().min(1),
-  description: z.string().optional(),
-  diagrams: z.array(diagramSchema).min(1).max(7),
-});
+export { wikiDocumentSchema as adoWikiDocumentSchema } from "./wikiDiagrams.js";
 
 export interface AdoWikiPreview {
   markdown: string;
   html: string;
-  attachments: { name: string; data: Buffer }[];
+  attachments: WikiAttachment[];
 }
 
-interface WikiDiagram {
-  title: string;
-  caption: string;
-  name: string;
-  data: Buffer;
-  width: number;
-  height: number;
-}
-
-const htmlEntities: Record<string, string> = {
-  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-};
-
-const singleLine = (value: string) => value.replace(/[\s\u0000-\u001f\u007f]+/g, " ").trim();
-const htmlText = (value: string) => value.replace(/[&<>"']/g, character => htmlEntities[character]);
 const markdownText = (value: string) => value
   .replace(/[&<>]/g, character => htmlEntities[character])
   .replace(/[\\`*_{}\[\]()#+.\-!~@]/g, "\\$&");
@@ -129,22 +107,7 @@ p { margin: 0 0 12px; }
 }
 
 export async function buildAdoWikiPreview(input: unknown): Promise<AdoWikiPreview> {
-  const document = adoWikiDocumentSchema.parse(input);
-  const title = singleLine(document.title);
-  if (!title) throw new Error("Wiki page title must contain text");
-  const description = singleLine(document.description ?? "");
-  const diagrams: WikiDiagram[] = [];
-  for (const diagram of document.diagrams) {
-    const { png, layout } = await renderCompactC4(diagram);
-    const hash = createHash("sha256").update(png).digest("hex");
-    const index = diagrams.length + 1;
-    const slug = diagram.c4Level.slice(2).toLowerCase();
-    diagrams.push({
-      title: singleLine(diagram.title), caption: singleLine(diagram.caption ?? ""),
-      name: `c4-${index}-${slug}-${hash}.png`, data: png,
-      width: layout.width, height: layout.height,
-    });
-  }
+  const { title, description, diagrams } = await renderWikiDiagrams(input);
   return {
     markdown: renderMarkdown(title, description, diagrams),
     html: renderHtml(title, description, diagrams),
@@ -156,13 +119,7 @@ export async function writeAdoWikiPreview(preview: AdoWikiPreview, outputDir: st
   const root = path.resolve(outputDir);
   const markdown = path.join(root, "page.md");
   const html = path.join(root, "index.html");
-  const attachmentDir = path.join(root, ".attachments");
-  const attachments = preview.attachments.map(({ name }) => {
-    if (!/^c4-[1-7]-[a-z]+-[0-9a-f]{64}\.png$/.test(name)) throw new Error("Invalid wiki preview attachment name");
-    return path.join(attachmentDir, name);
-  });
-  await fs.mkdir(attachmentDir, { recursive: true });
-  await Promise.all(attachments.map((file, index) => fs.writeFile(file, preview.attachments[index].data)));
+  const attachments = await writeWikiAttachments(root, preview.attachments);
   await Promise.all([fs.writeFile(markdown, preview.markdown, "utf8"), fs.writeFile(html, preview.html, "utf8")]);
   return { markdown, html, attachments };
 }

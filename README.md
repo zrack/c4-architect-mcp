@@ -261,6 +261,7 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 | `render_c4_drawio` | Authored diagram fields and an optional `outputPath` ending in `.drawio` | Editable Draw.io XML, with a file when requested. |
 | `render_structurizr_dsl` | `input` with an authored diagram or workspace bundle and an optional `outputPath` ending in `.dsl` | Structurizr DSL with Context, Container, Component, or Deployment views. |
 | `publish_to_ado_wiki` | `input` with `title`, optional `description`, and `diagrams`, plus `outputDir`. For publishing, add `publish: true` and `target`. | Local Azure DevOps Wiki preview with PNG attachments, and optional publication. |
+| `publish_to_confluence` (unreleased) | The same diagram bundle and `outputDir`. For publishing, add `publish: true` and a Confluence Cloud `target`. | Local Confluence preview, storage XHTML, and PNG attachments, with optional publication. |
 
 Queries default to `direction: "both"`, `maxDepth: 1`, `maxNodes: 25`, `maxEdges: 50`, and `maxBytes: 16000`. Source evidence is opt-in. Start with a summary, then search for a component or request its incoming or outgoing dependencies. Smaller views are usually easier to review than a complete repository drawing.
 
@@ -385,6 +386,27 @@ The MCP tool uses `target: { organization, project, wiki, pagePath }` and `publi
 The local preview shows Context, Container, Component, and Physical Deployment on one page. Select the screenshot to open it at full size. [Download the generated Markdown](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.8/page.md)
 
 [![Full Trail Notes Azure DevOps Wiki preview showing all four diagrams](https://raw.githubusercontent.com/zrack/c4-architect-mcp/d38bdbc7ae49fcce37b0baee6d206f1b066a96f2/docs/reviews/ado-wiki-publishing/Trail-Notes-Wiki-Full-Page.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/d38bdbc7ae49fcce37b0baee6d206f1b066a96f2/docs/reviews/ado-wiki-publishing/Trail-Notes-Wiki-Full-Page.jpg)
+
+### Publish to Confluence Cloud
+
+From a built checkout, preview the same Trail Notes workspace as a single page. Open `trail-notes-confluence/index.html` and select a diagram to see its PNG at full size. The directory also contains `page.storage.xhtml`, the page body sent to Confluence, and four PNG attachments.
+
+```sh
+npm run build
+node dist/index.js publish-confluence examples/trail-notes/diagrams/structurizr-workspace.json \
+  --out trail-notes-confluence
+```
+
+To publish, set `CONFLUENCE_EMAIL` and `CONFLUENCE_API_TOKEN` in the CLI or MCP server environment. The Atlassian account needs permission to create or update the page and upload attachments. Supply your Cloud site origin and numeric space ID. Add `--cloud-id` for a scoped API token with `read:page:confluence`, `write:page:confluence`, `read:attachment:confluence`, `read:content-details:confluence`, and `write:attachment:confluence`. [Atlassian API tokens](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
+
+```sh
+node dist/index.js publish-confluence examples/trail-notes/diagrams/structurizr-workspace.json \
+  --out trail-notes-confluence --publish --site https://YOUR_SITE.atlassian.net --space-id 123456
+```
+
+Use `--parent-id` to create a child page, or reuse the returned ID with `--page-id` to update a dedicated page created by C4 Architect. For MCP, call `publish_to_confluence` with `target: { site, spaceId }` and `publish: true`. The target accepts the optional fields `parentId`, `pageId`, and `cloudId`.
+
+The publisher creates a placeholder page so Confluence can accept attachments before the page body is saved. If a publish is interrupted, check the reported page and retry with its ID. The publisher reuses matching attachments and uses the current published page version to reject a conflicting update. Use a separate page for manual editing and collaborative drafts. [Confluence pages API](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-page/) · [Confluence attachments API](https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments/)
 
 ### Focus a diagram on one node
 

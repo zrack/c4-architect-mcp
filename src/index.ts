@@ -13,6 +13,9 @@ import { structurizrDiagramSchema, structurizrWorkspaceSchema } from "./renderer
 import { runAdoWiki } from "./publishers/adoWiki.js";
 import { adoWikiDocumentSchema } from "./publishers/adoWikiPreview.js";
 import { adoWikiTargetSchema } from "./publishers/adoWikiTransport.js";
+import { runConfluence } from "./publishers/confluence.js";
+import { confluenceTargetSchema } from "./publishers/confluenceTransport.js";
+import { wikiDocumentSchema } from "./publishers/wikiDiagrams.js";
 import { runCli } from "./cli.js";
 import { version } from "./version.js";
 
@@ -88,6 +91,18 @@ server.tool("publish_to_ado_wiki",
     publish: z.boolean().optional().describe("Write to the supplied Azure DevOps Wiki target. Omit for an offline preview."),
   }, async ({ input, ...options }) => {
     const result = await runAdoWiki(input, options);
+    return { ...textResult(result), structuredContent: result };
+  });
+
+server.tool("publish_to_confluence",
+  "Build a local Confluence Cloud page preview with PNG attachments and storage XHTML. Set publish: true and an explicit target to publish. Credentials come from the environment.",
+  {
+    input: wikiDocumentSchema,
+    outputDir: z.string().min(1).describe("Directory for page.storage.xhtml, index.html, and PNG attachments"),
+    target: confluenceTargetSchema.optional().describe("Cloud site and space ID, plus an optional parent ID for a new page or page ID for an update"),
+    publish: z.boolean().optional().describe("Write to Confluence Cloud. Omit for an offline preview."),
+  }, async ({ input, ...options }) => {
+    const result = await runConfluence(input, options);
     return { ...textResult(result), structuredContent: result };
   });
 
