@@ -2,6 +2,12 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+### Added
+
+- Export authored diagrams and saved architecture graphs as editable Draw.io files, with nested deployment groups and native connector labels. Use `render-drawio`, `render_c4_drawio`, or the `drawio` format on `render_architecture_graph`.
+
 ## 0.2.0-alpha.5 — 2026-11-07
 
 ### Fixed

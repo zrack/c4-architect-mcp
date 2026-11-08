@@ -33,11 +33,11 @@ Make the graph useful throughout a project's life, rather than treating each dra
 
 Acceptance matters more than feature count: unresolved analysis must stay visible, repeated scans must retain declared identities, and bounded responses must report truncation.
 
-## 3. Editable formats and documentation delivery — planned
+## 3. Editable formats and documentation delivery
 
 Add outputs that reuse the same graph, hierarchy, identifiers, and evidence.
 
-- **Draw.io XML (`render_c4_drawio`):** editable diagrams with meaningful groups and preserved relationship labels.
+- **Draw.io XML (`render_c4_drawio`), implemented in source:** editable diagrams with nested deployment groups and native connector labels.
 - **Structurizr DSL (`render_structurizr_dsl`):** validated workspace output with explicit C4 hierarchy.
 - **Publishing:** choose one initial target, such as an Azure DevOps wiki, before expanding to Confluence or Notion.
 

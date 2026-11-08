@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { renderC4Mermaid, type C4Diagram } from "./c4Mermaid.js";
 import { renderCompactC4 } from "./compactC4.js";
+import { renderC4Drawio } from "./drawio.js";
 import { validateArchitectureGraph, type ArchitectureGraph } from "../model/graph.js";
 import { selectGraphNeighborhood, type GraphFocus } from "../model/neighborhood.js";
 
@@ -11,12 +12,12 @@ export function graphToDiagram(input: ArchitectureGraph, title?: string): C4Diag
 
 type Neighborhood = ReturnType<typeof selectGraphNeighborhood>;
 
-function diagramFromView(graph: ArchitectureGraph, title?: string, view?: Neighborhood): C4Diagram {
+function diagramFromView(graph: ArchitectureGraph, title?: string, view?: Neighborhood, includeEvidence = Boolean(view)): C4Diagram {
   const boundaries = new Map(graph.hierarchy.map(item => [item.id, item]));
   const { nodes, edges } = view ?? graph;
   const labelCounts = new Map<string, number>();
   const labelKey = (edge: ArchitectureGraph["edges"][number]) => JSON.stringify([edge.source, edge.target, edge.label]);
-  if (view) for (const edge of edges) {
+  if (includeEvidence) for (const edge of edges) {
     const key = labelKey(edge);
     labelCounts.set(key, (labelCounts.get(key) ?? 0) + 1);
   }
@@ -42,8 +43,8 @@ function diagramFromView(graph: ArchitectureGraph, title?: string, view?: Neighb
     relationships: edges.map(edge => {
       const specifier = (labelCounts.get(labelKey(edge)) ?? 0) > 1
         ? edge.evidence.find(item => item.specifier)?.specifier : undefined;
-      const evidence = view ? edge.evidence.slice(0, 3).map(item => `${item.path}:${item.line}:${item.column}${item.specifier ? ` (${item.specifier})` : ""}`) : [];
-      if (view && edge.evidence.length > evidence.length) evidence.push(`+${edge.evidence.length - evidence.length} more in the saved graph`);
+      const evidence = includeEvidence ? edge.evidence.slice(0, 3).map(item => `${item.path}:${item.line}:${item.column}${item.specifier ? ` (${item.specifier})` : ""}`) : [];
+      if (includeEvidence && edge.evidence.length > evidence.length) evidence.push(`+${edge.evidence.length - evidence.length} more in the saved graph`);
       return {
         from: edge.source,
         to: edge.target,
@@ -60,6 +61,31 @@ export async function renderArchitectureGraph(input: ArchitectureGraph, options:
   const view = options.focus ? selectGraphNeighborhood(graph, options.focus) : undefined;
   const result = await renderArtifacts(diagramFromView(graph, options.title, view), options.outputPath);
   return view ? { ...result, structuredContent: { ...result.structuredContent, focus: view.focus } } : result;
+}
+
+export async function renderDrawioGraph(input: unknown, options: { title?: string; outputPath?: string; focus?: GraphFocus } = {}) {
+  const graph = validateArchitectureGraph(input);
+  const view = options.focus ? selectGraphNeighborhood(graph, options.focus) : undefined;
+  const result = await renderDrawioArtifacts(diagramFromView(graph, options.title, view, true), options.outputPath);
+  return view ? { ...result, structuredContent: { ...result.structuredContent, focus: view.focus } } : result;
+}
+
+export async function renderDrawioArtifacts(diagram: C4Diagram, outputPath?: string) {
+  if (outputPath !== undefined && !/\.drawio$/i.test(outputPath)) throw new Error("outputPath must end in .drawio");
+  const xml = await renderC4Drawio(diagram);
+  const drawio = outputPath === undefined ? undefined : path.resolve(outputPath);
+  if (drawio) {
+    await fs.mkdir(path.dirname(drawio), { recursive: true });
+    await fs.writeFile(drawio, xml, "utf8");
+  }
+  return {
+    content: [{ type: "text" as const, text: xml }],
+    structuredContent: {
+      nodeCount: diagram.nodes.length,
+      relationshipCount: diagram.relationships.length,
+      ...(drawio ? { artifacts: { drawio } } : {}),
+    },
+  };
 }
 
 export async function renderArtifacts(diagram: C4Diagram, outputPath?: string) {

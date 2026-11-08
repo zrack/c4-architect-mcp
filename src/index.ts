@@ -8,7 +8,7 @@ import { analyzeDirectory } from "./parsers/astParser.js";
 import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph } from "./model/graph.js";
 import { graphFocusSchema } from "./model/neighborhood.js";
 import { diagramSchema } from "./model/diagram.js";
-import { renderArchitectureGraph, renderArtifacts } from "./renderers/artifacts.js";
+import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, renderDrawioGraph } from "./renderers/artifacts.js";
 import { runCli } from "./cli.js";
 import { version } from "./version.js";
 
@@ -45,10 +45,14 @@ server.tool("compare_architecture_graphs", "Compare two saved graphs at the same
   { beforePath: z.string(), afterPath: z.string(), limit: z.number().int().min(1).max(100).default(25), maxBytes: z.number().int().min(2048).max(64000).default(16000) },
   async ({ beforePath, afterPath, ...options }) => textResult(compareArchitectureGraphs(await readArchitectureGraph(beforePath), await readArchitectureGraph(afterPath), options)));
 
-server.tool("render_architecture_graph", "Render a saved graph or a focused node neighborhood as a compact C4 image, Mermaid source, and optional Markdown/SVG/PNG/interactive HTML files.",
+server.tool("render_architecture_graph", "Render a saved graph or a focused node neighborhood as a compact C4 image and Mermaid source, or as editable Draw.io XML with format drawio.",
   { graphPath: z.string(), title: z.string().optional(), outputPath: z.string().optional(),
+    format: z.enum(["compact", "drawio"]).optional().describe("Use .md for compact artifacts or .drawio for Draw.io"),
     focus: graphFocusSchema.optional().describe("Render only a node and its neighbors. Use query_architecture_graph to find the node ID.") },
-  async ({ graphPath, ...options }) => renderArchitectureGraph(await readArchitectureGraph(graphPath), options));
+  async ({ graphPath, format, ...options }) => {
+    const graph = await readArchitectureGraph(graphPath);
+    return format === "drawio" ? renderDrawioGraph(graph, options) : renderArchitectureGraph(graph, options);
+  });
 
 server.tool("render_c4_mermaid",
   "Render an authored Context, Container, Component, Deployment, Dynamic, System Landscape, or Code diagram. Returns a compact PNG and Mermaid source. With outputPath saves Markdown, SVG, PNG and interactive HTML.",
@@ -56,6 +60,13 @@ server.tool("render_c4_mermaid",
     ...diagramSchema.shape,
     outputPath: z.string().optional().describe("Markdown destination ending in .md"),
   }, async ({ outputPath, ...diagram }) => renderArtifacts(diagram, outputPath));
+
+server.tool("render_c4_drawio",
+  "Render an authored C4 diagram as editable Draw.io XML with native shapes, deployment groups, and connector labels.",
+  {
+    ...diagramSchema.shape,
+    outputPath: z.string().optional().describe("Draw.io destination ending in .drawio"),
+  }, async ({ outputPath, ...diagram }) => renderDrawioArtifacts(diagram, outputPath));
 
 async function main() {
   if (await runCli(process.argv.slice(2))) return;

@@ -30,7 +30,7 @@ The result is a starting point for application and solution architecture review.
 | Deployment, Dynamic, System Landscape, and Code diagrams | Render explicit nodes and relationships supplied by the caller. |
 | Compact PNG, SVG, and interactive HTML | Trace orthogonal connections, inspect relationship labels, and export a selected view. |
 
-Draw.io, Structurizr DSL, wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are **planned**, not implemented. See the [roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md).
+[Editable Draw.io export](#export-editable-drawio-diagrams) is available from a source checkout. Structurizr DSL, wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are planned. See the [roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md).
 
 ## C4 diagrams
 
@@ -250,8 +250,9 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 | `get_architecture_summary` | `graphPath` | A compact overview of a saved graph and its diagnostics. |
 | `query_architecture_graph` | `graphPath`; optional `nodeId`, `search`, `direction`, `maxDepth`, `maxNodes`, `maxEdges`, `maxBytes`, `includeEvidence` | A bounded neighborhood or search, with truncation reported. |
 | `compare_architecture_graphs` | `beforePath`, `afterPath`; optional `limit`, `maxBytes` | Change counts and bounded details for snapshots at the same C4 level. |
-| `render_architecture_graph` | `graphPath`; optional `title`, `outputPath`, `focus` | Render a saved graph or a focused neighborhood. |
+| `render_architecture_graph` | `graphPath`; optional `title`, `outputPath`, `focus`, `format` | Render a saved graph or a focused neighborhood. Use `format: "drawio"` for editable XML (source checkout). |
 | `render_c4_mermaid` | `title`, `c4Level`, `nodes`, `relationships`, optional `outputPath` | Mermaid source and a compact server-rendered PNG; saved SVG, PNG, HTML, and Markdown when requested. |
+| `render_c4_drawio` | Authored diagram fields; optional `outputPath` ending in `.drawio` | Editable Draw.io XML, with a file when requested (source checkout). |
 
 Queries default to `direction: "both"`, `maxDepth: 1`, `maxNodes: 25`, `maxEdges: 50`, and `maxBytes: 16000`. Source evidence is opt-in. Start with a summary, then search for a component or request its incoming or outgoing dependencies. Smaller views are usually easier to review than a complete repository drawing.
 
@@ -302,6 +303,19 @@ This deployment diagram places an API and its data store on the same host.
   "relationships": [{ "from": "api", "to": "db", "label": "Reads and writes orders" }]
 }
 ```
+
+### Export editable Draw.io diagrams
+
+From a source checkout with dependencies installed, build and export the [Trail Notes physical deployment](examples/trail-notes/diagrams/physical-deployment.json):
+
+```sh
+npm run build
+node dist/index.js render-drawio examples/trail-notes/diagrams/physical-deployment.json --out output/trail-notes.drawio
+```
+
+In [Draw.io](https://app.diagrams.net/), use **File → Open from → Device** to open the file. Drag a deployment group by its header to move its contents together. Double-click a group title or a relationship label to edit it. Connectors remain attached to their shapes as you move them.
+
+The same command also accepts a saved architecture graph. For MCP, send an authored diagram to `render_c4_drawio`, or set `format: "drawio"` on `render_architecture_graph` to export a saved graph or its focused neighborhood. Use a `.drawio` extension for the output path.
 
 ### Focus a diagram on one node
 
