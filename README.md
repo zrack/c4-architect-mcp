@@ -282,7 +282,9 @@ Partial scans list unresolved import locations and specifiers for both revisions
 
 #### Run the review in GitHub Actions
 
-Open **Actions → PR architecture review → Run workflow**, choose the default branch, and enter the pull request number. The manual workflow compares Component snapshots of `src` at the PR's base and head commits. It scans the checkouts without running their code or installing their dependencies, so unresolved imports can appear in the report.
+Open **Actions → PR architecture review → Run workflow**, choose the default branch, and enter the pull request number. The manual workflow compares Component snapshots of `src` at the PR's base and head commits without running their code.
+
+For each revision, the workflow stages dependencies from its manifest and v3 npm lockfile in a separate directory. It uses the public npm registry with integrity checks and disables scripts. If a lockfile is missing, uses workspaces or other unsupported dependency sources, or the install fails, the workflow scans that revision without staged dependencies and reports any unresolved imports.
 
 Download the `pr-<number>-architecture-review-<attempt>` artifact from the run and extract it before opening `PR-ARCHITECTURE.md`. Keep the focused diagram files beside the report so its links work. If there is no changed neighborhood to render, the artifact contains only the report.
 

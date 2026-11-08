@@ -82,6 +82,54 @@ jobs:
             exit 1
           fi
 
+          stage_dependencies() {
+            local snapshot="$1" stage="$2" label="$3"
+            if [[ -e "$snapshot/node_modules" || -L "$snapshot/node_modules" ]]; then
+              echo "::error::$label already contains node_modules. Refusing to overlay it."
+              return 1
+            fi
+
+            # Only copy the two JSON inputs. PR .npmrc files and other checkout content
+            # must stay out of npm's working directory.
+            local manifest="$snapshot/package.json" lock="$snapshot/package-lock.json"
+            if [[ ! -f "$manifest" || -L "$manifest" || ! -f "$lock" || -L "$lock" ]] ||
+              ! jq -e 'type == "object" and .workspaces == null' "$manifest" >/dev/null ||
+              ! jq -e --arg package '[A-Za-z0-9_~-][A-Za-z0-9_.~-]*' '
+                ("node_modules/(@" + $package + "/)?" + $package) as $module_path |
+                .lockfileVersion == 3 and (.packages[""] | type == "object" and .workspaces == null) and
+                all(.packages | to_entries[] | select(.key != "");
+                  (.key | test("^(" + $module_path + "/)*" + $module_path + "$")) and
+                  (.value.link == null or .value.link == false) and
+                  (.value.resolved | startswith("https://registry.npmjs.org/")) and
+                  (.value.integrity | test("^sha512-[A-Za-z0-9+/]{86}==$")))
+              ' "$lock" >/dev/null; then
+              echo "::warning::$label has no supported public npm lockfile. Scanning source without staged dependencies."
+              return
+            fi
+
+            mkdir "$stage"
+            cp -- "$manifest" "$lock" "$stage/"
+            # npm's registry-only flags block Git preparation and local/direct URL fetches.
+            if ! (cd "$stage" && npm ci --ignore-scripts --no-bin-links --workspaces=false \
+              --allow-git=none --allow-file=none --allow-directory=none --allow-remote=none \
+              --registry=https://registry.npmjs.org --no-audit --no-fund \
+              --userconfig="$stage/empty-user.npmrc" --globalconfig="$stage/empty-global.npmrc"); then
+              echo "::warning::$label dependencies could not be staged. Scanning source without them."
+              return
+            fi
+            if [[ -d "$stage/node_modules" ]]; then
+              ln -sT -- "$stage/node_modules" "$snapshot/node_modules"
+            fi
+          }
+
+          if [[ "$(npm config get allow-git allow-file allow-directory allow-remote)" != \
+            $'allow-git=all\nallow-file=all\nallow-directory=all\nallow-remote=all' ]]; then
+            echo '::error::Expected an npm version with registry-only dependency controls.'
+            exit 1
+          fi
+          stage_dependencies "$base" "$RUNNER_TEMP/c4-dependencies-base" Base
+          stage_dependencies "$head" "$RUNNER_TEMP/c4-dependencies-head" Head
+
           cli="$RUNNER_TEMP/c4-review-tool/node_modules/c4-architect-mcp/dist/index.js"
           graphs="$RUNNER_TEMP/c4-review-graphs"
           node "$cli" analyze "$base/src" --level Component --commit "$BASE_SHA" --out "$graphs/base.json" --summary
