@@ -28,7 +28,7 @@ export interface CompactLayout {
   relationships: CompactRelationship[];
 }
 
-const kinds: Record<DiagramNode["type"], string> = {
+export const nodeKinds: Record<DiagramNode["type"], string> = {
   Component: "Component", Container: "Container", ContainerDb: "Database",
   System: "Software system", System_Ext: "External system", ExternalSystem: "External system", Person: "Person",
   DeploymentNode: "Deployment node", CodeElement: "Code element", Class: "Class", Interface: "Interface",
@@ -77,7 +77,8 @@ function diagramCaption(diagram: C4Diagram): string {
     : `${nodes.length} nodes · ${relationships.length} relationships · R IDs identify individual arrows`);
 }
 
-async function layoutDiagram(diagram: C4Diagram): Promise<CompactLayout> {
+export async function layoutDiagram(diagram: C4Diagram): Promise<CompactLayout> {
+  diagramSchema.parse(diagram);
   const nodes: CompactNode[] = await Promise.all(diagram.nodes.map(async (node, index) => {
     const titleLines = wrap(node.label, 23);
     const technologyLines = wrap(node.technology ?? "", 28);
@@ -194,7 +195,7 @@ function drawSvg(diagram: C4Diagram, layout: CompactLayout): string {
     const titleY = box.y + 38;
     const technologyY = titleY + node.titleLines.length * 20 + 2;
     const fullText = [node.label, node.technology, node.description].filter(Boolean).join(" — ");
-    return `<title>${xml(fullText)}</title><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="${radius}"/>${svgText([kinds[node.type]], x, box.y + 17, 11, 14, "node-kind")}${svgText(node.titleLines, x, titleY, 16, 20, "node-title")}${svgText(node.technologyLines, x, technologyY, 12, 16, "node-technology")}`;
+    return `<title>${xml(fullText)}</title><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="${radius}"/>${svgText([nodeKinds[node.type]], x, box.y + 17, 11, 14, "node-kind")}${svgText(node.titleLines, x, titleY, 16, 20, "node-title")}${svgText(node.technologyLines, x, technologyY, 12, 16, "node-technology")}`;
   }
   // An enclosing group is wider than any nested group. Paint ancestors first.
   const boundaries = layout.nodes.filter(node => node.boundaryHeader).sort((a, b) => b.width - a.width)
@@ -242,7 +243,6 @@ ${diagramExportScript}
 }
 
 export async function renderCompactC4(diagram: C4Diagram): Promise<{ svg: string; png: Buffer; html: string; layout: CompactLayout }> {
-  diagramSchema.parse(diagram);
   const layout = await layoutDiagram(diagram);
   const svg = drawSvg(diagram, layout);
   const png = await sharp(Buffer.from(svg)).png().toBuffer();

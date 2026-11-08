@@ -1,0 +1,282 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mxfile host="app.diagrams.net"><diagram id="trail-context" name="Context">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="540" pageHeight="664" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="heading" value="&lt;b style=&quot;font-size:21px&quot;&gt;Trail Notes | Context&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;People and the catalog involved in recording and reviewing observations&lt;/span&gt;" vertex="1" parent="1" connectable="0" style="text;html=1;fontFamily=Arial;fontColor=#142842;align=center;verticalAlign=middle;">
+          <mxGeometry x="24" y="8" width="492" height="80" as="geometry" />
+        </mxCell>
+        <object id="n0" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Person&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Hiker&lt;/b&gt;" c4Id="hiker" c4Type="Person">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="320" y="104" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n1" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Person&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Trail steward&lt;/b&gt;" c4Id="steward" c4Type="Person">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="116" y="104" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n2" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Software system&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Trail Notes&lt;/b&gt;" c4Id="notes" c4Type="System">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="146" y="322" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n3" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;External system&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Regional trail catalog&lt;/b&gt;" c4Id="trail-data" c4Type="System_Ext">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#edf0f4;strokeColor=#7d8b9c;">
+            <mxGeometry x="146" y="540" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="R01" label="R01 Records trail&lt;br&gt;observations">
+          <mxCell edge="1" parent="1" source="n0" target="n2" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.6666666666666666;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="49" y="55" as="offset" />
+              <Array as="points"><mxPoint x="410" y="200" /><mxPoint x="266" y="200" /></Array>
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R02" label="R02 Reviews submitted&lt;br&gt;notes">
+          <mxCell edge="1" parent="1" source="n1" target="n2" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.3333333333333333;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-84" y="0" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R03" label="R03 Looks up trail&lt;br&gt;details" technology="HTTPS">
+          <mxCell edge="1" parent="1" source="n2" target="n3" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-67.5" y="0" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+      </root>
+    </mxGraphModel>
+  </diagram>
+<diagram id="trail-container" name="Container">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="550" pageHeight="882" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="heading" value="&lt;b style=&quot;font-size:21px&quot;&gt;Trail Notes | Container&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Inside Trail Notes: the web app, Notes API, and database&lt;/span&gt;" vertex="1" parent="1" connectable="0" style="text;html=1;fontFamily=Arial;fontColor=#142842;align=center;verticalAlign=middle;">
+          <mxGeometry x="24" y="8" width="502" height="80" as="geometry" />
+        </mxCell>
+        <object id="n0" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Person&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Hiker&lt;/b&gt;" c4Id="hiker" c4Type="Person">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="330" y="104" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n1" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Person&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Trail steward&lt;/b&gt;" c4Id="steward" c4Type="Person">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="126" y="104" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n2" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Container&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Trail Notes web app&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;TypeScript / React&lt;/span&gt;" c4Id="web" c4Type="Container" technology="TypeScript / React">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="156" y="322" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n3" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Container&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Notes API&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;TypeScript / Node.js&lt;/span&gt;" c4Id="api" c4Type="Container" technology="TypeScript / Node.js">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="156" y="540" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n4" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Database&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Notes database&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;PostgreSQL&lt;/span&gt;" c4Id="db" c4Type="ContainerDb" technology="PostgreSQL">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="126" y="758" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n5" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;External system&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Regional trail catalog&lt;/b&gt;" c4Id="trail-data" c4Type="System_Ext">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#edf0f4;strokeColor=#7d8b9c;">
+            <mxGeometry x="330" y="758" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="R01" label="R01 Submits trail&lt;br&gt;observations" technology="HTTPS">
+          <mxCell edge="1" parent="1" source="n0" target="n2" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.6666666666666666;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="48" y="55" as="offset" />
+              <Array as="points"><mxPoint x="420" y="200" /><mxPoint x="276" y="200" /></Array>
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R02" label="R02 Reviews submitted&lt;br&gt;notes" technology="HTTPS">
+          <mxCell edge="1" parent="1" source="n1" target="n2" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.3333333333333333;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-84" y="0" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R03" label="R03 Submits and reads&lt;br&gt;notes" technology="HTTPS / JSON">
+          <mxCell edge="1" parent="1" source="n2" target="n3" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-84.5" y="0" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R04" label="R04 Stores and retrieves&lt;br&gt;notes" technology="SQL over TLS">
+          <mxCell edge="1" parent="1" source="n3" target="n4" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.3333333333333333;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-89" y="0" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R05" label="R05 Looks up trail&lt;br&gt;details" technology="HTTPS">
+          <mxCell edge="1" parent="1" source="n3" target="n5" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.6666666666666666;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="30.5" y="-34" as="offset" />
+              <Array as="points"><mxPoint x="276" y="725" /><mxPoint x="420" y="725" /></Array>
+            </mxGeometry>
+          </mxCell>
+        </object>
+      </root>
+    </mxGraphModel>
+  </diagram>
+<diagram id="trail-component" name="Component">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="536" pageHeight="882" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="heading" value="&lt;b style=&quot;font-size:21px&quot;&gt;Trail Notes | Component&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Notes API · Who owns retry, validation, and duplicate prevention?&lt;/span&gt;" vertex="1" parent="1" connectable="0" style="text;html=1;fontFamily=Arial;fontColor=#142842;align=center;verticalAlign=middle;">
+          <mxGeometry x="24" y="8" width="488" height="80" as="geometry" />
+        </mxCell>
+        <object id="n0" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Container&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Trail Notes client&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;TypeScript&lt;/span&gt;" c4Id="client" c4Type="Container" technology="TypeScript">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="142" y="104" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n1" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Component&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Note submission handler&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;TypeScript&lt;/span&gt;" c4Id="handler" c4Type="Component" technology="TypeScript">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="128" y="322" width="207" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n2" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Component&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Note service&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;TypeScript&lt;/span&gt;" c4Id="service" c4Type="Component" technology="TypeScript">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="142" y="540" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n3" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Component&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Note validation&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;TypeScript&lt;/span&gt;" c4Id="validation" c4Type="Component" technology="TypeScript">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="112" y="758" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n4" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Component&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Note repository&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;In-memory adapter&lt;/span&gt;" c4Id="repository" c4Type="Component" technology="In-memory adapter">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="316" y="758" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="R01" label="R01 Retries with the&lt;br&gt;same request key" description="trail-client.ts:18 · trail-client.ts:21 · demo.ts:22">
+          <mxCell edge="1" parent="1" source="n0" target="n1" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5024154589371981;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-74" y="0" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R02" label="R02 Forwards author,&lt;br&gt;key, and draft" description="submit-note.ts:21 · submit-note.ts:22">
+          <mxCell edge="1" parent="1" source="n1" target="n2" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5024154589371981;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-78.5" y="0" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R03" label="R03 Validates the draft&lt;br&gt;before saving" description="note-service.ts:10 · note.ts:4">
+          <mxCell edge="1" parent="1" source="n2" target="n3" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.3333333333333333;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-82" y="0" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R04" label="R04 Delegates duplicate&lt;br&gt;prevention" description="note-service.ts:11 · note-repository.ts:24">
+          <mxCell edge="1" parent="1" source="n2" target="n4" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.6666666666666666;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="50.5" y="-34" as="offset" />
+              <Array as="points"><mxPoint x="262" y="725" /><mxPoint x="406" y="725" /></Array>
+            </mxGeometry>
+          </mxCell>
+        </object>
+      </root>
+    </mxGraphModel>
+  </diagram>
+<diagram id="trail-physical" name="Physical Deployment">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="746" pageHeight="1355" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="heading" value="&lt;b style=&quot;font-size:21px&quot;&gt;Trail Notes | Physical deployment&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Illustrative visitor center installation&lt;/span&gt;" vertex="1" parent="1" connectable="0" style="text;html=1;fontFamily=Arial;fontColor=#142842;align=center;verticalAlign=middle;">
+          <mxGeometry x="24" y="8" width="698" height="80" as="geometry" />
+        </mxCell>
+        <object id="n0" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Deployment node&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Field tablet&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Physical Android device&lt;/span&gt;" c4Id="tablet" c4Type="DeploymentNode" technology="Physical Android device">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;shape=swimlane;container=1;recursiveResize=0;startSize=84;align=left;spacingLeft=12;fillColor=#e9eff7;swimlaneFillColor=#f7f9fc;strokeColor=#7288a1;" connectable="0">
+            <mxGeometry x="296.25" y="104" width="384" height="184" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n1" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Container&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Trail Notes web app&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Browser&lt;/span&gt;" c4Id="browser" c4Type="Container" technology="Browser" description="A hiker uses the web app over a mobile data connection.">
+          <mxCell vertex="1" parent="n0" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="188" y="84" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n2" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Deployment node&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Visitor center&lt;br&gt;equipment room&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;On-site hardware&lt;/span&gt;" c4Id="visitor-center" c4Type="DeploymentNode" technology="On-site hardware">
+          <mxCell vertex="1" parent="1" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;shape=swimlane;container=1;recursiveResize=0;startSize=92;align=left;spacingLeft=12;fillColor=#e9eff7;swimlaneFillColor=#f7f9fc;strokeColor=#7288a1;" connectable="0">
+            <mxGeometry x="40.25" y="414" width="665.5" height="901" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n3" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Deployment node&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Edge firewall&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Physical appliance&lt;/span&gt;" c4Id="firewall" c4Type="DeploymentNode" technology="Physical appliance" description="The public ingress rule forwards only TCP 443 to the application server. The database has no public ingress rule.">
+          <mxCell vertex="1" parent="n2" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="444" y="92" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n4" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Deployment node&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Application server&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Bare-metal Linux&lt;/span&gt;" c4Id="application-server" c4Type="DeploymentNode" technology="Bare-metal Linux">
+          <mxCell vertex="1" parent="n2" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;shape=swimlane;container=1;recursiveResize=0;startSize=84;align=left;spacingLeft=12;fillColor=#e9eff7;swimlaneFillColor=#f7f9fc;strokeColor=#7288a1;" connectable="0">
+            <mxGeometry x="188" y="247" width="461.5" height="360" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n5" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Container&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Web server and reverse&lt;br&gt;proxy&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Caddy&lt;/span&gt;" c4Id="proxy" c4Type="Container" technology="Caddy" description="Terminates TLS, serves web assets, and forwards note API requests to the local API process.">
+          <mxCell vertex="1" parent="n4" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="246.5" y="84" width="199" height="92" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n6" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Container&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Notes API&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Node.js&lt;/span&gt;" c4Id="api" c4Type="Container" technology="Node.js" description="Binds to loopback on the application server. This illustrative deployment uses a database adapter.">
+          <mxCell vertex="1" parent="n4" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="256" y="260" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n7" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Deployment node&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Database server&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;Bare-metal Linux&lt;/span&gt;" c4Id="database-server" c4Type="DeploymentNode" technology="Bare-metal Linux">
+          <mxCell vertex="1" parent="n2" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;shape=swimlane;container=1;recursiveResize=0;startSize=84;align=left;spacingLeft=12;fillColor=#e9eff7;swimlaneFillColor=#f7f9fc;strokeColor=#7288a1;" connectable="0">
+            <mxGeometry x="256" y="701" width="384" height="184" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="n8" label="&lt;span style=&quot;font-size:11px;color:#475a71&quot;&gt;Database&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px&quot;&gt;Notes database&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475a71&quot;&gt;PostgreSQL&lt;/span&gt;" c4Id="database" c4Type="ContainerDb" technology="PostgreSQL" description="Accepts database traffic from the application server over the private network. The runnable retry fixture uses a separate in-memory store.">
+          <mxCell vertex="1" parent="n7" style="html=1;fontFamily=Arial;fontColor=#142842;whiteSpace=wrap;rounded=1;arcSize=8;fillColor=#e5eef9;strokeColor=#4878b2;">
+            <mxGeometry x="188" y="84" width="180" height="84" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="R01" label="R01 Public HTTPS · 443" technology="TCP 443 over the Internet" description="Loads the web UI and submits notes over the same HTTPS connection path.">
+          <mxCell edge="1" parent="1" source="n1" target="n3" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-87" y="-38" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R02" label="R02 Forwards TCP 443" technology="TCP 443" description="The hardware firewall forwards ingress to the reverse proxy. TLS terminates at the proxy.">
+          <mxCell edge="1" parent="n2" source="n3" target="n5" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-84.5" y="-44.5" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R03" label="R03 API on loopback ·&lt;br&gt;8080" technology="HTTP over TCP 8080" description="The proxy forwards API requests to 127.0.0.1 on the same physical server.">
+          <mxCell edge="1" parent="n4" source="n5" target="n6" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-80" y="0" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="R04" label="R04 Private SQL over TLS&lt;br&gt;· 5432" technology="PostgreSQL over TLS, TCP 5432" description="The API uses the private connection between the separate application and database hosts.">
+          <mxCell edge="1" parent="n2" source="n6" target="n8" style="html=1;fontFamily=Arial;fontColor=#142842;noEdgeStyle=1;orthogonalLoop=1;rounded=0;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#486078;fontSize=14;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="-93" y="-34" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
