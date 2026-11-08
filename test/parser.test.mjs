@@ -48,6 +48,28 @@ test('native Tree-sitter extracts TS/TSX module facts, named exports and type-on
   assert.ok(tsx.exports.includes('default'));
 });
 
+test('large TSX files preserve imports and source positions past the native input buffer', async t => {
+  const directory = await temporary(t);
+  const padding = [`// ${'x'.repeat(16 * 1024 - 4)}😀`, ...Array(2000).fill('// café 😀')];
+  const specifier = './cases/CaseWorkspace.js';
+  const dependency = `/* 😀 */ import { CaseWorkspace } from "${specifier}";`;
+  await write(directory, 'App.tsx', [...padding, dependency, 'export default () => <CaseWorkspace />;'].join('\n'));
+  await write(directory, 'cases/CaseWorkspace.tsx', 'export const CaseWorkspace = () => <div />;');
+
+  const graph = await analyzeDirectory(directory, 'Component');
+  assert.equal(graph.metadata.analysisStatus, 'complete', JSON.stringify(graph.diagnostics));
+  const app = byPath(graph, 'App.tsx');
+  const workspace = byPath(graph, 'cases/CaseWorkspace.tsx');
+  assert.equal(graph.edges.length, 1);
+  const [edge] = graph.edges;
+  assert.equal(edge.source, app.id);
+  assert.equal(edge.target, workspace.id);
+  assert.equal(edge.kind, 'import');
+  assert.deepEqual(edge.evidence.map(({ path, line, column, specifier }) => ({ path, line, column, specifier })), [{
+    path: 'App.tsx', line: padding.length + 1, column: dependency.indexOf('"') + 1, specifier
+  }]);
+});
+
 test('official TypeScript resolver handles aliases, indexes, extension substitutions and unsymlinked workspace exports', async t => {
   const directory = await copiedFixture(t);
   const graph = await analyzeDirectory(directory, 'Component');

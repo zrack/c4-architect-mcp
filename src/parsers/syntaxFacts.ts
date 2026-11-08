@@ -89,7 +89,13 @@ function bindingNames(node: Parser.SyntaxNode): string[] {
 export function extractSourceFacts(sourceCode: string, filePath: string, isTsx = false): SourceFacts {
   const parser = new Parser();
   parser.setLanguage(isTsx ? TypeScriptGrammar.tsx : TypeScriptGrammar.typescript);
-  const tree = parser.parse(sourceCode);
+  // Supply UTF-16 chunks that fit in the native input buffer, including its terminator.
+  const tree = parser.parse(offset => {
+    const end = offset + 16 * 1024;
+    const last = sourceCode.charCodeAt(end - 1);
+    // Keep surrogate pairs together at chunk boundaries.
+    return sourceCode.slice(offset, last >= 0xd800 && last <= 0xdbff ? end - 1 : end);
+  });
   const dependencies: DependencyFact[] = [], diagnostics: GraphDiagnostic[] = [];
   const exports = new Set<string>();
   const exportEvidence: SourceEvidence[] = [];
