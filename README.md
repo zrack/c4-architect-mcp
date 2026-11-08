@@ -288,6 +288,8 @@ For each revision, the workflow stages dependencies from its manifest and v3 npm
 
 Download the `pr-<number>-architecture-review-<attempt>` artifact from the run and extract it before opening `PR-ARCHITECTURE.md`. Keep the focused diagram files beside the report so its links work. If there is no changed neighborhood to render, the artifact contains only the report.
 
+Select **Post an architecture review summary to the pull request** when starting the workflow to share the dependency counts, scan status, and artifact link in a PR comment. The setting defaults to off. Readers with repository access can download the Markdown report and any focused diagram files after signing in to GitHub, while the artifact is available. Re-running the workflow updates that run's comment.
+
 ##### Example output from PR #4
 
 The workflow reviewed the PR that introduced the `review` command. Both scans were complete, and the report found three added dependencies. The focused view shows the immediate neighbors of `cli.ts`. Follow **R01** to trace the new import of `renderers/review.ts`.
