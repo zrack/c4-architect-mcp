@@ -224,7 +224,33 @@ const relationships = analysis.edges.map(edge => ({
 }));
 ```
 
-Analysis levels are `Context`, `Container`, and `Component`; renderer levels are `C4Context`, `C4Container`, and `C4Component`. Do not invent a protocol when the analysis has no evidence for it.
+Source analysis produces `Context`, `Container`, and `Component` graphs. The corresponding renderer levels are `C4Context`, `C4Container`, and `C4Component`. Do not invent a protocol when the analysis has no evidence for it.
+
+### Render authored architecture views
+
+The source checkout also renders four additional views from explicit nodes and relationships. Use `render_c4_mermaid` with the diagram fields and an optional `outputPath`, or save the same diagram as JSON and run `node dist/index.js render-diagram diagram.json --out DIAGRAM.md` after building. Both entry points produce Mermaid source, PNG, SVG, and interactive HTML alongside the Markdown when given an output path.
+
+| `c4Level` | What to supply |
+| --- | --- |
+| `C4Deployment` | `DeploymentNode` nodes for hosts or environments. Set `parentId` on the software instances or nested deployment nodes inside them. Relationships connect instances or deployment nodes that have no children. |
+| `C4Dynamic` | Participants as nodes and interactions in execution order in `relationships`. The renderer numbers the interactions in that order. |
+| `C4Landscape` | People and software systems across the scope, with relationships between them. |
+| `C4Code` | Code elements such as `Class`, `Interface`, `Function`, and `Type`, with relationships that describe calls, implementations, or dependencies. |
+
+This deployment diagram places an API and its data store on the same host.
+
+```json
+{
+  "title": "Orders on the application host",
+  "c4Level": "C4Deployment",
+  "nodes": [
+    { "id": "host", "label": "Application host", "type": "DeploymentNode" },
+    { "id": "api", "label": "Orders API", "type": "Container", "parentId": "host" },
+    { "id": "db", "label": "Orders database", "type": "ContainerDb", "parentId": "host" }
+  ],
+  "relationships": [{ "from": "api", "to": "db", "label": "Reads and writes orders" }]
+}
+```
 
 ### Focus a diagram on one node
 

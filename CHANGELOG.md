@@ -2,6 +2,12 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+### Added
+
+- Render authored Deployment, Dynamic, System Landscape, and Code diagrams through `render_c4_mermaid` or the `render-diagram` CLI command.
+
 ## 0.2.0-alpha.3 — 2026-11-07
 
 ### Added

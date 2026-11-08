@@ -7,6 +7,7 @@ import path from "node:path";
 import { analyzeDirectory } from "./parsers/astParser.js";
 import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph } from "./model/graph.js";
 import { graphFocusSchema } from "./model/neighborhood.js";
+import { diagramSchema } from "./model/diagram.js";
 import { renderArchitectureGraph, renderArtifacts } from "./renderers/artifacts.js";
 import { runCli } from "./cli.js";
 import { version } from "./version.js";
@@ -50,11 +51,9 @@ server.tool("render_architecture_graph", "Render a saved graph or a focused node
   async ({ graphPath, ...options }) => renderArchitectureGraph(await readArchitectureGraph(graphPath), options));
 
 server.tool("render_c4_mermaid",
-  "Renders a compact C4 PNG using server-side orthogonal layout, plus Mermaid source. With outputPath saves Markdown, SVG, PNG and interactive HTML with connection highlighting and full-diagram PNG/SVG exports.",
+  "Render an authored Context, Container, Component, Deployment, Dynamic, System Landscape, or Code diagram. Returns a compact PNG and Mermaid source. With outputPath saves Markdown, SVG, PNG and interactive HTML.",
   {
-    title: z.string(), c4Level: z.enum(["C4Context", "C4Container", "C4Component"]),
-    nodes: z.array(z.object({ id: z.string(), label: z.string(), type: z.enum(["Person", "System", "System_Ext", "ExternalSystem", "Container", "ContainerDb", "Component"]), technology: z.string().optional(), description: z.string().optional() })),
-    relationships: z.array(z.object({ from: z.string(), to: z.string(), label: z.string(), technology: z.string().optional() })),
+    ...diagramSchema.shape,
     outputPath: z.string().optional().describe("Markdown destination ending in .md"),
   }, async ({ outputPath, ...diagram }) => renderArtifacts(diagram, outputPath));
 
