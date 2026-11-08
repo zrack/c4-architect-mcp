@@ -288,6 +288,14 @@ For each revision, the workflow stages dependencies from its manifest and v3 npm
 
 Download the `pr-<number>-architecture-review-<attempt>` artifact from the run and extract it before opening `PR-ARCHITECTURE.md`. Keep the focused diagram files beside the report so its links work. If there is no changed neighborhood to render, the artifact contains only the report.
 
+##### Example output from PR #4
+
+The workflow reviewed the PR that introduced the `review` command. Both scans were complete, and the report found three added dependencies. The focused view shows the immediate neighbors of `cli.ts`. Follow **R01** to trace the new import of `renderers/review.ts`.
+
+[Read the Markdown report](https://github.com/zrack/c4-architect-mcp/blob/main/docs/reviews/pr-4/PR-ARCHITECTURE.md) · [Open the full-size PNG](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/reviews/pr-4/PR-ARCHITECTURE.focus-e758568899e88d5e.png) · [View the Actions run](https://github.com/zrack/c4-architect-mcp/actions/runs/42435820178)
+
+![Focused Component diagram from PR #4 showing cli.ts and seven relationships, including R01 to renderers/review.ts](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/reviews/pr-4/PR-ARCHITECTURE.focus-e758568899e88d5e.png)
+
 ## Read the diagram
 
 ![Five-component order-service diagram derived from the checked-in TypeScript example](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-example.png)
