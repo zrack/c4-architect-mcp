@@ -76,16 +76,18 @@ export async function renderArtifacts(diagram: C4Diagram, outputPath?: string) {
     const fileLink = (filename: string) => encodeURIComponent(path.basename(filename));
     const cell = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/[\\`*_{}\[\]|]/g, "\\$&").replace(/\s+/g, " ");
     const hasEvidence = diagram.relationships.some(r => r.description);
+    const dynamic = diagram.c4Level === "C4Dynamic";
     const labels = new Map(diagram.nodes.map(node => [node.id, node.label]));
     const key = diagram.relationships.map((r, i) => {
       const from = hasEvidence ? labels.get(r.from)! : r.from;
       const to = hasEvidence ? labels.get(r.to)! : r.to;
-      const row = `| R${String(i + 1).padStart(2, "0")} | ${cell(from)} | ${cell(to)} | ${cell(r.label)} | ${cell(r.technology ?? "")} |`;
+      const id = dynamic ? String(i + 1) : `R${String(i + 1).padStart(2, "0")}`;
+      const row = `| ${id} | ${cell(from)} | ${cell(to)} | ${cell(r.label)} | ${cell(r.technology ?? "")} |`;
       return hasEvidence ? `${row} ${cell(r.description ?? "")} |` : row;
     }).join("\n");
     const scope = diagram.caption ? `${cell(diagram.caption)}\n\n` : "";
     const heading = diagram.title.replace(/\s+/g, " ").trim().replace(/[\\`*_{}\[\]<>]/g, "\\$&");
-    await fs.writeFile(markdown, `# ${heading}\n\n${scope}![Compact C4 diagram](${fileLink(artifacts.png)})\n\n[Interactive view](${fileLink(artifacts.html)}) · [Scalable SVG](${fileLink(artifacts.svg)})\n\n<details>\n<summary>Mermaid source export</summary>\n\n${mermaidOutput}\n\n</details>\n\n## Relationships\n\n| ID | From | To | Action | Technology |${hasEvidence ? " Source evidence |" : ""}\n|---|---|---|---|---|${hasEvidence ? "---|" : ""}\n${key}\n`, "utf8");
+    await fs.writeFile(markdown, `# ${heading}\n\n${scope}![Compact C4 diagram](${fileLink(artifacts.png)})\n\n[Interactive view](${fileLink(artifacts.html)}) · [Scalable SVG](${fileLink(artifacts.svg)})\n\n<details>\n<summary>Mermaid source export</summary>\n\n${mermaidOutput}\n\n</details>\n\n## ${dynamic ? "Interactions" : "Relationships"}\n\n| ${dynamic ? "Step" : "ID"} | From | To | Action | Technology |${hasEvidence ? " Source evidence |" : ""}\n|---|---|---|---|---|${hasEvidence ? "---|" : ""}\n${key}\n`, "utf8");
   }
   return {
     content: [{ type: "text" as const, text: mermaidOutput }, { type: "image" as const, data: compact.png.toString("base64"), mimeType: "image/png" }],
