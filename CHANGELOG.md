@@ -2,6 +2,12 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+### Added
+
+- Preview and publish an authored diagram bundle to Azure DevOps Wiki with PNG attachments using `publish-ado-wiki` or `publish_to_ado_wiki`.
+
 ## 0.2.0-alpha.7 — 2026-11-07
 
 ### Added

@@ -6,6 +6,7 @@ import { graphFocusSchema } from "./model/neighborhood.js";
 import { diagramSchema } from "./model/diagram.js";
 import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, renderDrawioGraph, renderStructurizrArtifacts } from "./renderers/artifacts.js";
 import { writeArchitectureReview } from "./renderers/review.js";
+import { runAdoWiki } from "./publishers/adoWiki.js";
 import { version } from "./version.js";
 
 const help = `C4-Architect ${version}
@@ -17,6 +18,8 @@ No arguments: start the MCP server over stdio.
   render-diagram <diagram.json> --out DIAGRAM.md
   render-drawio <diagram-or-graph.json> --out DIAGRAM.drawio
   render-structurizr <diagram-or-workspace.json> --out WORKSPACE.dsl
+  publish-ado-wiki <document.json> --out PREVIEW_DIRECTORY
+    [--publish --organization ORG --project PROJECT --wiki WIKI --page /Architecture/Trail-Notes]
   summary <graph.json>
   query <graph.json> [--node ID | --search TEXT] [--direction both] [--depth 1] [--nodes 25] [--edges 50] [--bytes 16000] [--evidence]
   diff <before.json> <after.json> [--limit 25] [--bytes 16000]
@@ -27,6 +30,8 @@ Analysis levels: Context, Container, Component. Paths are relative to the curren
 Authored diagrams also support Deployment, Dynamic, System Landscape, and Code.
 Boundary configuration is loaded only with --config. Rendering writes Markdown,
 PNG, SVG, standalone interactive HTML, Draw.io XML, or Structurizr DSL. No repository code is executed.
+Wiki publishing defaults to a local preview. Publishing uses AZURE_DEVOPS_EXT_PAT
+or AZURE_DEVOPS_BEARER_TOKEN from the environment.
 `;
 const json = (value: unknown) => process.stdout.write(JSON.stringify(value));
 
@@ -40,6 +45,7 @@ export async function runCli(args: string[]): Promise<boolean> {
     "render-diagram": ["out"],
     "render-drawio": ["out"],
     "render-structurizr": ["out"],
+    "publish-ado-wiki": ["out", "publish", "organization", "project", "wiki", "page"],
     query: ["node", "search", "direction", "depth", "nodes", "edges", "bytes", "evidence"], diff: ["limit", "bytes"],
     review: ["out", "title", "github-repo", "source-root"],
   };
@@ -50,7 +56,7 @@ export async function runCli(args: string[]): Promise<boolean> {
     if (!arg.startsWith("--")) { positional.push(arg); continue; }
     const flag = arg.slice(2);
     if (!specs[command].includes(flag) || flags.has(flag)) throw new Error(`Unknown or duplicate option: ${arg}`);
-    if (["summary", "evidence"].includes(flag)) flags.set(flag, true);
+    if (["summary", "evidence", "publish"].includes(flag)) flags.set(flag, true);
     else {
       const value = rest[++i];
       if (!value || value.startsWith("--")) throw new Error(`Missing value for ${arg}`);
@@ -99,6 +105,18 @@ export async function runCli(args: string[]): Promise<boolean> {
     if (!outputPath) throw new Error("render-structurizr requires --out WORKSPACE.dsl");
     const input: unknown = JSON.parse(await fs.readFile(positional[0], "utf8"));
     json((await renderStructurizrArtifacts(input, outputPath)).structuredContent);
+  } else if (command === "publish-ado-wiki") {
+    const outputDir = str("out");
+    if (!outputDir) throw new Error("publish-ado-wiki requires --out PREVIEW_DIRECTORY");
+    const organization = str("organization"), project = str("project"), wiki = str("wiki"), pagePath = str("page");
+    const publish = flags.has("publish");
+    let target;
+    if (publish || organization || project || wiki || pagePath) {
+      if (!organization || !project || !wiki || !pagePath) throw new Error("Specify --organization, --project, --wiki, and --page together");
+      target = { organization, project, wiki, pagePath };
+    }
+    const input: unknown = JSON.parse(await fs.readFile(positional[0], "utf8"));
+    json(await runAdoWiki(input, { outputDir, target, publish }));
   } else if (command === "summary") json(summarizeArchitectureGraph(await readArchitectureGraph(positional[0])));
   else if (command === "query") json(queryArchitectureGraph(await readArchitectureGraph(positional[0]), {
     nodeId: str("node"), search: str("search"), direction: str("direction") as "both" | undefined,
