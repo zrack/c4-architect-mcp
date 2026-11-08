@@ -82,11 +82,23 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Install the published review tool
-        working-directory: ${{ runner.temp }}
+      - name: Check out the fixed C4 Architect source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: zrack/c4-architect-mcp
+          ref: 1984ba60fe61adf353ad0de7237ff18f8eeb54e6
+          path: c4-pilot-tool
+          persist-credentials: false
+
+      - name: Build the pinned pilot tool
+        working-directory: c4-pilot-tool
+        env:
+          C4_TOOL_SHA: 1984ba60fe61adf353ad0de7237ff18f8eeb54e6
         run: |
-          npm install --prefix "$RUNNER_TEMP/c4-review-tool" --omit=dev --ignore-scripts \
-            --no-audit --no-fund --registry=https://registry.npmjs.org c4-architect-mcp@0.2.0-alpha.3
+          test "$(git rev-parse HEAD)" = "$C4_TOOL_SHA"
+          printf 'C4 Architect source commit %s\n' "$C4_TOOL_SHA"
+          npm ci --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org
+          npm run build
 
       - name: Compare Component snapshots
         id: compare
@@ -166,7 +178,7 @@ jobs:
           stage_dependencies "$base" "$RUNNER_TEMP/c4-dependencies-base" Base
           stage_dependencies "$head" "$RUNNER_TEMP/c4-dependencies-head" Head
 
-          cli="$RUNNER_TEMP/c4-review-tool/node_modules/c4-architect-mcp/dist/index.js"
+          cli="$GITHUB_WORKSPACE/c4-pilot-tool/dist/index.js"
           graphs="$RUNNER_TEMP/c4-review-graphs"
           node "$cli" analyze "$base/$SOURCE_ROOT" --level Component --commit "$BASE_SHA" --out "$graphs/base.json" --summary
           node "$cli" analyze "$head/$SOURCE_ROOT" --level Component --commit "$HEAD_SHA" --out "$graphs/head.json" --summary
@@ -183,6 +195,18 @@ jobs:
               <<< "$diff")
             printf 'summary=%s\n' "$summary" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Render CaseWorkspace incoming imports
+        if: steps.pr.outputs.number == '45'
+        working-directory: ${{ runner.temp }}
+        run: |
+          cli="$GITHUB_WORKSPACE/c4-pilot-tool/dist/index.js"
+          head="$RUNNER_TEMP/c4-review-graphs/head.json"
+          artifact="$RUNNER_TEMP/c4-architecture-review"
+          node_id=$(jq -er '.nodes[] | select(.path == "cases/CaseWorkspace.tsx").id' "$head")
+          node "$cli" render "$head" --node "$node_id" --direction incoming --depth 1 \
+            --title 'ReplayCase PR #45 · CaseWorkspace incoming imports' --out "$artifact/CaseWorkspace-incoming.md"
+          rg -F 'App.tsx:85:31 (./cases/CaseWorkspace)' "$artifact/CaseWorkspace-incoming.md"
 
       - name: Upload report and focused diagram
         id: artifact
