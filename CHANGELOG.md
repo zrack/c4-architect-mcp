@@ -2,7 +2,7 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
-## Unreleased
+## 0.2.0-alpha.6 — 2026-11-07
 
 ### Added
 
