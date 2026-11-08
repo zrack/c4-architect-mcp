@@ -2,6 +2,12 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## 0.2.0-alpha.5 — 2026-11-07
+
+### Fixed
+
+- Parse large TypeScript and TSX files without losing imports beyond Tree-sitter's native input buffer. Source locations remain available for those imports.
+
 ## 0.2.0-alpha.4 — 2026-11-07
 
 ### Added
