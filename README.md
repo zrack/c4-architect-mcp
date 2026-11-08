@@ -380,6 +380,12 @@ npx -y c4-architect-mcp@0.2.0-alpha.8 publish-ado-wiki structurizr-workspace.jso
 
 The MCP tool uses `target: { organization, project, wiki, pagePath }` and `publish: true` for the same operation. The publisher creates a dedicated page or updates an intact page it previously generated. Updates use Azure DevOps page versions to guard against concurrent edits. The Wiki API writes attachments separately before saving the page, so an interrupted attempt can leave uploaded PNGs behind. [Wiki page API](https://learn.microsoft.com/en-us/rest/api/azure/devops/wiki/pages/create-or-update?view=azure-devops-rest-7.1) · [Wiki attachments API](https://learn.microsoft.com/en-us/rest/api/azure/devops/wiki/attachments/create?view=azure-devops-rest-7.1)
 
+#### Trail Notes wiki preview
+
+The local preview shows Context, Container, Component, and Physical Deployment on one page. Select the screenshot to open it at full size. [Download the generated Markdown](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.8/page.md)
+
+[![Full Trail Notes Azure DevOps Wiki preview showing all four diagrams](https://raw.githubusercontent.com/zrack/c4-architect-mcp/d38bdbc7ae49fcce37b0baee6d206f1b066a96f2/docs/reviews/ado-wiki-publishing/Trail-Notes-Wiki-Full-Page.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/d38bdbc7ae49fcce37b0baee6d206f1b066a96f2/docs/reviews/ado-wiki-publishing/Trail-Notes-Wiki-Full-Page.jpg)
+
 ### Focus a diagram on one node
 
 Both TakeNote diagrams use the same source snapshot. On the right, focusing on `NoteEditor.tsx` and its direct neighbors reduces the view from **108 nodes and 363 arrows** to **15 nodes and 19 arrows**. Follow `TakeNoteApp.tsx` → `NoteEditor.tsx` → `PreviewEditor.tsx` to see the difference.
