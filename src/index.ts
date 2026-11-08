@@ -10,6 +10,9 @@ import { graphFocusSchema } from "./model/neighborhood.js";
 import { diagramSchema } from "./model/diagram.js";
 import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, renderDrawioGraph, renderStructurizrArtifacts } from "./renderers/artifacts.js";
 import { structurizrDiagramSchema, structurizrWorkspaceSchema } from "./renderers/structurizr.js";
+import { runAdoWiki } from "./publishers/adoWiki.js";
+import { adoWikiDocumentSchema } from "./publishers/adoWikiPreview.js";
+import { adoWikiTargetSchema } from "./publishers/adoWikiTransport.js";
 import { runCli } from "./cli.js";
 import { version } from "./version.js";
 
@@ -75,6 +78,18 @@ server.tool("render_structurizr_dsl",
     input: z.union([structurizrDiagramSchema, structurizrWorkspaceSchema]).describe("One authored diagram or a workspace with up to four views"),
     outputPath: z.string().optional().describe("Workspace destination ending in .dsl"),
   }, async ({ input, outputPath }) => renderStructurizrArtifacts(input, outputPath));
+
+server.tool("publish_to_ado_wiki",
+  "Build a local Azure DevOps Wiki preview with PNG attachments. Publish only with publish: true and an explicit target. Credentials come from the environment.",
+  {
+    input: adoWikiDocumentSchema,
+    outputDir: z.string().min(1).describe("Directory for page.md, index.html, and PNG attachments"),
+    target: adoWikiTargetSchema.optional(),
+    publish: z.boolean().optional().describe("Write to the supplied Azure DevOps Wiki target. Omit for an offline preview."),
+  }, async ({ input, ...options }) => {
+    const result = await runAdoWiki(input, options);
+    return { ...textResult(result), structuredContent: result };
+  });
 
 async function main() {
   if (await runCli(process.argv.slice(2))) return;

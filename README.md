@@ -34,7 +34,9 @@ Export native shapes, nested deployment groups, and connector labels that you ca
 
 Export a Structurizr DSL workspace with up to four views of the same model. [Structurizr DSL export](#export-a-structurizr-dsl-workspace)
 
-Wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are planned. [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
+Azure DevOps Wiki publishing is available from a source checkout. [Preview and publish a wiki page](#publish-to-azure-devops-wiki)
+
+Cross-repository mapping, additional languages, and assisted threat modeling are planned. [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
 ## C4 diagrams
 
@@ -258,6 +260,7 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 | `render_c4_mermaid` | `title`, `c4Level`, `nodes`, `relationships`, optional `outputPath` | Mermaid source and a compact server-rendered PNG; saved SVG, PNG, HTML, and Markdown when requested. |
 | `render_c4_drawio` | Authored diagram fields and an optional `outputPath` ending in `.drawio` | Editable Draw.io XML, with a file when requested. |
 | `render_structurizr_dsl` | `input` with an authored diagram or workspace bundle and an optional `outputPath` ending in `.dsl` | Structurizr DSL with Context, Container, Component, or Deployment views. |
+| `publish_to_ado_wiki` | `input` with `title`, optional `description`, and `diagrams`, plus `outputDir`. For publishing, add `publish: true` and `target`. | Local Azure DevOps Wiki preview with PNG attachments, and optional publication. Available from source. |
 
 Queries default to `direction: "both"`, `maxDepth: 1`, `maxNodes: 25`, `maxEdges: 50`, and `maxBytes: 16000`. Source evidence is opt-in. Start with a summary, then search for a component or request its incoming or outgoing dependencies. Smaller views are usually easier to review than a complete repository drawing.
 
@@ -358,6 +361,25 @@ Open the editable workspace in Structurizr Local and use the diagram selector to
 | Component | Physical Deployment |
 | --- | --- |
 | [![Trail Notes Component open in Structurizr](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Component-in-Structurizr.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Component-in-Structurizr.jpg) | [![Trail Notes Physical Deployment open in Structurizr](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Physical-Deployment-in-Structurizr.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Physical-Deployment-in-Structurizr.jpg) |
+
+### Publish to Azure DevOps Wiki
+
+Build from a source checkout and use the Trail Notes workspace input to preview the Context, Container, Component, and Physical Deployment diagrams as a wiki page. The preview writes `index.html`, `page.md`, and the PNG attachments locally. Open `index.html` in a browser. [Trail Notes input](examples/trail-notes/diagrams/structurizr-workspace.json)
+
+```sh
+npm run build
+node dist/index.js publish-ado-wiki examples/trail-notes/diagrams/structurizr-workspace.json --out output/trail-notes-wiki
+```
+
+To publish, supply an existing Azure DevOps Services wiki and a page path. Set either `AZURE_DEVOPS_BEARER_TOKEN` to a Microsoft Entra access token for Azure DevOps or `AZURE_DEVOPS_EXT_PAT` to a PAT with **Wiki (Read & write)** access in the process environment. The preview command works without credentials. [Azure DevOps authentication](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops)
+
+```sh
+node dist/index.js publish-ado-wiki examples/trail-notes/diagrams/structurizr-workspace.json \
+  --out output/trail-notes-wiki --publish \
+  --organization YOUR_ORG --project YOUR_PROJECT --wiki YOUR_WIKI --page /Trail-Notes
+```
+
+The MCP tool uses `target: { organization, project, wiki, pagePath }` and `publish: true` for the same operation. The publisher creates a dedicated page or updates an intact page it previously generated. Updates use Azure DevOps page versions to guard against concurrent edits. The Wiki API writes attachments separately before saving the page, so an interrupted attempt can leave uploaded PNGs behind. [Wiki page API](https://learn.microsoft.com/en-us/rest/api/azure/devops/wiki/pages/create-or-update?view=azure-devops-rest-7.1) · [Wiki attachments API](https://learn.microsoft.com/en-us/rest/api/azure/devops/wiki/attachments/create?view=azure-devops-rest-7.1)
 
 ### Focus a diagram on one node
 
