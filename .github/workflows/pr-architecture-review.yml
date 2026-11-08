@@ -1,0 +1,98 @@
+name: PR architecture review
+run-name: 'Architecture review for PR #${{ inputs.pr_number }}'
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve PR revisions
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo '::error::Enter a positive pull request number.'
+            exit 1
+          fi
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
+          base_sha=$(jq -er '.base.sha' <<< "$pr")
+          head_sha=$(jq -er '.head.sha' <<< "$pr")
+          if [[ ! "$base_sha" =~ ^[0-9a-f]{40}$ || ! "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo '::error::GitHub did not return valid base and head commit SHAs.'
+            exit 1
+          fi
+          printf 'number=%s\nbase_sha=%s\nhead_sha=%s\n' "$PR_NUMBER" "$base_sha" "$head_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the PR base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.pr.outputs.base_sha }}
+          path: pr-base
+          persist-credentials: false
+
+      - name: Check out the PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The base repository hosts this ref for fork PRs as well.
+          ref: refs/pull/${{ steps.pr.outputs.number }}/head
+          path: pr-head
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install the published review tool
+        working-directory: ${{ runner.temp }}
+        run: |
+          npm install --prefix "$RUNNER_TEMP/c4-review-tool" --omit=dev --ignore-scripts \
+            --no-audit --no-fund --registry=https://registry.npmjs.org c4-architect-mcp@0.2.0-alpha.3
+
+      - name: Compare Component snapshots
+        working-directory: ${{ runner.temp }}
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+        run: |
+          base="$GITHUB_WORKSPACE/pr-base"
+          head="$GITHUB_WORKSPACE/pr-head"
+          if [[ "$(git -C "$base" rev-parse HEAD)" != "$BASE_SHA" || "$(git -C "$head" rev-parse HEAD)" != "$HEAD_SHA" ]]; then
+            echo '::error::The checked-out commits differ from the resolved PR revisions. Run the review again to capture the current revisions.'
+            exit 1
+          fi
+          if [[ ! -d "$base/src" || -L "$base/src" || ! -d "$head/src" || -L "$head/src" ]]; then
+            echo '::error::Both PR revisions must contain a src directory.'
+            exit 1
+          fi
+
+          cli="$RUNNER_TEMP/c4-review-tool/node_modules/c4-architect-mcp/dist/index.js"
+          graphs="$RUNNER_TEMP/c4-review-graphs"
+          node "$cli" analyze "$base/src" --level Component --commit "$BASE_SHA" --out "$graphs/base.json" --summary
+          node "$cli" analyze "$head/src" --level Component --commit "$HEAD_SHA" --out "$graphs/head.json" --summary
+          node "$cli" review "$graphs/base.json" "$graphs/head.json" \
+            --out "$RUNNER_TEMP/c4-architecture-review/PR-ARCHITECTURE.md" \
+            --github-repo "$GITHUB_REPOSITORY" --source-root src --title "PR #$PR_NUMBER architecture review"
+
+      - name: Upload report and focused diagram
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pr-${{ steps.pr.outputs.number }}-architecture-review-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/c4-architecture-review/
+          if-no-files-found: error
