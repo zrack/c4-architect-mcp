@@ -66,6 +66,14 @@ Use these views to show the wider landscape, a sequence of interactions, or wher
 | [![Trail Notes System Landscape diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.png) | [![Trail Notes Dynamic diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.png) | [![Trail Notes Deployment diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.png) |
 | [Download System Landscape JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.json) | [Download Dynamic JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.json) | [Download Deployment JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.json) |
 
+##### Deployment comparison
+
+The left view places the app and database on separate hosts. The right view shows the equipment at an illustrative visitor center and traces traffic from a field tablet through the firewall to the two servers.
+
+[![Side-by-side Trail Notes deployment comparison with the README view on the left and the physical visitor center example on the right](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aed76d5f7c48a1f6c6c36eeee01acd5fbc60601d/docs/images/trail-notes-deployment-comparison.png)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aed76d5f7c48a1f6c6c36eeee01acd5fbc60601d/docs/images/trail-notes-deployment-comparison.png)
+
+[README deployment JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.json) · [Physical deployment JSON](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aed76d5f7c48a1f6c6c36eeee01acd5fbc60601d/examples/trail-notes/diagrams/physical-deployment.json)
+
 Download any example JSON and run `render-diagram` from the folder where you saved it. This command renders the Context example.
 
 ```sh
