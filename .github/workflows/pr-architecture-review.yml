@@ -95,10 +95,10 @@ jobs:
             if [[ ! -f "$manifest" || -L "$manifest" || ! -f "$lock" || -L "$lock" ]] ||
               ! jq -e 'type == "object" and .workspaces == null' "$manifest" >/dev/null ||
               ! jq -e --arg package '[A-Za-z0-9_~-][A-Za-z0-9_.~-]*' '
-                ("node_modules/(@" + $package + "/)?" + $package) as $module |
+                ("node_modules/(@" + $package + "/)?" + $package) as $module_path |
                 .lockfileVersion == 3 and (.packages[""] | type == "object" and .workspaces == null) and
                 all(.packages | to_entries[] | select(.key != "");
-                  (.key | test("^(" + $module + "/)*" + $module + "$")) and
+                  (.key | test("^(" + $module_path + "/)*" + $module_path + "$")) and
                   (.value.link == null or .value.link == false) and
                   (.value.resolved | startswith("https://registry.npmjs.org/")) and
                   (.value.integrity | test("^sha512-[A-Za-z0-9+/]{86}==$")))
