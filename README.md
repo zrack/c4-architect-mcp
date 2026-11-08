@@ -282,13 +282,45 @@ Partial scans list unresolved import locations and specifiers for both revisions
 
 #### Run the review in GitHub Actions
 
-Open **Actions → PR architecture review → Run workflow**, choose the default branch, and enter the pull request number. The manual workflow compares Component snapshots of `src` at the PR's base and head commits without running their code.
+Open **Actions → PR architecture review → Run workflow**, choose the default branch, and enter the pull request number. The manual workflow compares Component snapshots at the PR's base and head commits without running their code. The source directory defaults to `src`.
 
 For each revision, the workflow stages dependencies from its manifest and v3 npm lockfile in a separate directory. It uses the public npm registry with integrity checks and disables scripts. If a lockfile is missing, uses workspaces or other unsupported dependency sources, or the install fails, the workflow scans that revision without staged dependencies and reports any unresolved imports.
 
 Download the `pr-<number>-architecture-review-<attempt>` artifact from the run and extract it before opening `PR-ARCHITECTURE.md`. Keep the focused diagram files beside the report so its links work. If there is no changed neighborhood to render, the artifact contains only the report.
 
 Select **Post an architecture review summary to the pull request** when starting the workflow to share the dependency counts, scan status, and artifact link in a PR comment. The setting defaults to off. Readers with repository access can download the Markdown report and any focused diagram files after signing in to GitHub, while the artifact is available. Re-running the workflow updates that run's comment.
+
+##### Use the workflow in another repository
+
+Save this caller as `.github/workflows/architecture-review.yml` on your repository's default branch. Open **Actions → Architecture review → Run workflow** in that repository. Enter the PR number and a directory tracked in both revisions, or use `.` to scan the repository root. The report and any focused diagram appear in the calling repository's run artifacts.
+
+```yaml
+name: Architecture review
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number
+        type: string
+        required: true
+      source_root:
+        description: Repository-relative source directory
+        type: string
+        default: src
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  review:
+    uses: zrack/c4-architect-mcp/.github/workflows/pr-architecture-review-report.yml@bbac6eea276202a284af02267eca5075c7293cda
+    with:
+      pr_number: ${{ inputs.pr_number }}
+      source_root: ${{ inputs.source_root }}
+```
+
+If your repository restricts reusable workflows, allow the pinned `uses` reference in its Actions settings. To offer opt-in comments, call `pr-architecture-review.yml` at the same commit instead, grant the calling job `pull-requests: write`, and pass a Boolean `post_comment` input. Its default is `false`, and the scan job still uses read-only permissions.
 
 ##### Example output from PR #4
 

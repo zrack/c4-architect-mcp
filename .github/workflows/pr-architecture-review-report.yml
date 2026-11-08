@@ -1,0 +1,193 @@
+name: PR architecture review report
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        description: Pull request number
+        required: true
+        type: string
+      source_root:
+        description: Repository-relative source directory in both PR revisions
+        type: string
+        default: src
+      include_comment_summary:
+        description: Return summary metadata for a caller that posts comments
+        type: boolean
+        default: false
+    outputs:
+      pr_number:
+        value: ${{ jobs.review.outputs.pr_number }}
+      base_sha:
+        value: ${{ jobs.review.outputs.base_sha }}
+      head_sha:
+        value: ${{ jobs.review.outputs.head_sha }}
+      summary:
+        value: ${{ jobs.review.outputs.summary }}
+      artifact_id:
+        value: ${{ jobs.review.outputs.artifact_id }}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      pr_number: ${{ steps.pr.outputs.number }}
+      base_sha: ${{ steps.pr.outputs.base_sha }}
+      head_sha: ${{ steps.pr.outputs.head_sha }}
+      summary: ${{ steps.compare.outputs.summary }}
+      artifact_id: ${{ steps.artifact.outputs.artifact-id }}
+    steps:
+      - name: Resolve PR revisions
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo '::error::Enter a positive pull request number.'
+            exit 1
+          fi
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
+          base_sha=$(jq -er '.base.sha' <<< "$pr")
+          head_sha=$(jq -er '.head.sha' <<< "$pr")
+          if [[ ! "$base_sha" =~ ^[0-9a-f]{40}$ || ! "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo '::error::GitHub did not return valid base and head commit SHAs.'
+            exit 1
+          fi
+          printf 'number=%s\nbase_sha=%s\nhead_sha=%s\n' "$PR_NUMBER" "$base_sha" "$head_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the PR base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.pr.outputs.base_sha }}
+          path: pr-base
+          persist-credentials: false
+
+      - name: Check out the PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The base repository hosts this ref for fork PRs as well.
+          ref: refs/pull/${{ steps.pr.outputs.number }}/head
+          path: pr-head
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install the published review tool
+        working-directory: ${{ runner.temp }}
+        run: |
+          npm install --prefix "$RUNNER_TEMP/c4-review-tool" --omit=dev --ignore-scripts \
+            --no-audit --no-fund --registry=https://registry.npmjs.org c4-architect-mcp@0.2.0-alpha.3
+
+      - name: Compare Component snapshots
+        id: compare
+        working-directory: ${{ runner.temp }}
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          SOURCE_ROOT: ${{ inputs.source_root }}
+          INCLUDE_COMMENT_SUMMARY: ${{ inputs.include_comment_summary }}
+        run: |
+          base="$GITHUB_WORKSPACE/pr-base"
+          head="$GITHUB_WORKSPACE/pr-head"
+          if [[ "$(git -C "$base" rev-parse HEAD)" != "$BASE_SHA" || "$(git -C "$head" rev-parse HEAD)" != "$HEAD_SHA" ]]; then
+            echo '::error::The checked-out commits differ from the resolved PR revisions. Run the review again to capture the current revisions.'
+            exit 1
+          fi
+          if [[ ! "$SOURCE_ROOT" =~ [^[:space:]] || "$SOURCE_ROOT" == /* || "$SOURCE_ROOT" =~ ^[a-zA-Z]: ||
+                "$SOURCE_ROOT" == *\\* || "$SOURCE_ROOT" =~ [[:cntrl:]] || "/$SOURCE_ROOT/" == */../* ]]; then
+            echo '::error::Source root must be a repository-relative directory without parent traversal.'
+            exit 1
+          fi
+          SOURCE_ROOT=$(realpath -ms --relative-to="$base" -- "$base/$SOURCE_ROOT")
+          for snapshot in "$base" "$head"; do
+            if [[ ! -d "$snapshot/$SOURCE_ROOT" ||
+                  ( "$SOURCE_ROOT" != . && "$(git -C "$snapshot" cat-file -t "HEAD:$SOURCE_ROOT" 2>/dev/null)" != tree ) ]]; then
+              echo '::error::Source root must be a tracked directory in both revisions.'
+              exit 1
+            fi
+          done
+
+          stage_dependencies() {
+            local snapshot="$1" stage="$2" label="$3"
+            if [[ -e "$snapshot/node_modules" || -L "$snapshot/node_modules" ]]; then
+              echo "::error::$label already contains node_modules. Refusing to overlay it."
+              return 1
+            fi
+
+            # Only copy the two JSON inputs. PR .npmrc files and other checkout content
+            # must stay out of npm's working directory.
+            local manifest="$snapshot/package.json" lock="$snapshot/package-lock.json"
+            if [[ ! -f "$manifest" || -L "$manifest" || ! -f "$lock" || -L "$lock" ]] ||
+              ! jq -e 'type == "object" and .workspaces == null' "$manifest" >/dev/null ||
+              ! jq -e --arg package '[A-Za-z0-9_~-][A-Za-z0-9_.~-]*' '
+                ("node_modules/(@" + $package + "/)?" + $package) as $module_path |
+                .lockfileVersion == 3 and (.packages[""] | type == "object" and .workspaces == null) and
+                all(.packages | to_entries[] | select(.key != "");
+                  (.key | test("^(" + $module_path + "/)*" + $module_path + "$")) and
+                  (.value.link == null or .value.link == false) and
+                  (.value.resolved | startswith("https://registry.npmjs.org/")) and
+                  (.value.integrity | test("^sha512-[A-Za-z0-9+/]{86}==$")))
+              ' "$lock" >/dev/null; then
+              echo "::warning::$label has no supported public npm lockfile. Scanning source without staged dependencies."
+              return
+            fi
+
+            mkdir "$stage"
+            cp -- "$manifest" "$lock" "$stage/"
+            # npm's registry-only flags block Git preparation and local/direct URL fetches.
+            if ! (cd "$stage" && npm ci --ignore-scripts --no-bin-links --workspaces=false \
+              --allow-git=none --allow-file=none --allow-directory=none --allow-remote=none \
+              --registry=https://registry.npmjs.org --no-audit --no-fund \
+              --userconfig="$stage/empty-user.npmrc" --globalconfig="$stage/empty-global.npmrc"); then
+              echo "::warning::$label dependencies could not be staged. Scanning source without them."
+              return
+            fi
+            if [[ -d "$stage/node_modules" ]]; then
+              ln -sT -- "$stage/node_modules" "$snapshot/node_modules"
+            fi
+          }
+
+          if [[ "$(npm config get allow-git allow-file allow-directory allow-remote)" != \
+            $'allow-git=all\nallow-file=all\nallow-directory=all\nallow-remote=all' ]]; then
+            echo '::error::Expected an npm version with registry-only dependency controls.'
+            exit 1
+          fi
+          stage_dependencies "$base" "$RUNNER_TEMP/c4-dependencies-base" Base
+          stage_dependencies "$head" "$RUNNER_TEMP/c4-dependencies-head" Head
+
+          cli="$RUNNER_TEMP/c4-review-tool/node_modules/c4-architect-mcp/dist/index.js"
+          graphs="$RUNNER_TEMP/c4-review-graphs"
+          node "$cli" analyze "$base/$SOURCE_ROOT" --level Component --commit "$BASE_SHA" --out "$graphs/base.json" --summary
+          node "$cli" analyze "$head/$SOURCE_ROOT" --level Component --commit "$HEAD_SHA" --out "$graphs/head.json" --summary
+          review=$(node "$cli" review "$graphs/base.json" "$graphs/head.json" \
+            --out "$RUNNER_TEMP/c4-architecture-review/PR-ARCHITECTURE.md" \
+            --github-repo "$GITHUB_REPOSITORY" --source-root "./$SOURCE_ROOT" --title "PR #$PR_NUMBER architecture review")
+          printf '%s\n' "$review"
+
+          if [[ "$INCLUDE_COMMENT_SUMMARY" == true ]]; then
+            diff=$(node "$cli" diff "$graphs/base.json" "$graphs/head.json" --limit 1)
+            summary=$(jq -ce --slurpfile base "$graphs/base.json" --slurpfile head "$graphs/head.json" \
+              --argjson has_diagram "$(jq -c 'has("diagram")' <<< "$review")" \
+              '{counts: .edges.counts, base: $base[0].metadata.analysisStatus, head: $head[0].metadata.analysisStatus, has_diagram: $has_diagram}' \
+              <<< "$diff")
+            printf 'summary=%s\n' "$summary" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload report and focused diagram
+        id: artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pr-${{ steps.pr.outputs.number }}-architecture-review-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/c4-architecture-review/
+          if-no-files-found: error
