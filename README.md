@@ -347,6 +347,18 @@ Point Structurizr Local at the output directory and use its diagram selector to 
 
 The CLI and MCP tool accept an authored diagram or a workspace bundle with one diagram per level. A bundle uses shared node IDs, `systemId` for the software system, and `componentContainerId` for the Component view's container. Use `deploymentInstanceOf` to map deployment nodes that represent software instances to their logical IDs. The Trail Notes bundle maps `browser` to `web` and `database` to `db`.
 
+#### Trail Notes in Structurizr
+
+Open the editable workspace in Structurizr Local and use the diagram selector to switch views. Select any screenshot to open it at full size. [Download the editable workspace.dsl](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.7/workspace.dsl)
+
+| Context | Container |
+| --- | --- |
+| [![Trail Notes Context open in Structurizr](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Context-in-Structurizr.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Context-in-Structurizr.jpg) | [![Trail Notes Container open in Structurizr](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Container-in-Structurizr.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Container-in-Structurizr.jpg) |
+
+| Component | Physical Deployment |
+| --- | --- |
+| [![Trail Notes Component open in Structurizr](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Component-in-Structurizr.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Component-in-Structurizr.jpg) | [![Trail Notes Physical Deployment open in Structurizr](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Physical-Deployment-in-Structurizr.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/docs/reviews/structurizr-export/Trail-Notes-Physical-Deployment-in-Structurizr.jpg) |
+
 ### Focus a diagram on one node
 
 Both TakeNote diagrams use the same source snapshot. On the right, focusing on `NoteEditor.tsx` and its direct neighbors reduces the view from **108 nodes and 363 arrows** to **15 nodes and 19 arrows**. Follow `TakeNoteApp.tsx` → `NoteEditor.tsx` → `PreviewEditor.tsx` to see the difference.
