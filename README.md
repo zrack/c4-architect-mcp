@@ -292,7 +292,17 @@ Select **Post an architecture review summary to the pull request** when starting
 
 ##### Example output from PR #4
 
-The workflow reviewed the PR that introduced the `review` command. Both scans were complete, and the report found three added dependencies. The focused view shows the immediate neighbors of `cli.ts`. Follow **R01** to trace the new import of `renderers/review.ts`.
+With commenting enabled, the workflow posted this summary on the PR that introduced the `review` command. [View the original comment on PR #4](https://github.com/zrack/c4-architect-mcp/pull/4#issuecomment-6716125585)
+
+> **Component architecture review**
+>
+> `55419ce` → `4b39e25` · Base scan **complete** · Head scan **complete**
+>
+> Dependencies · **3 added**, **0 removed**, **0 changed**.
+>
+> [Download the Markdown report and focused diagram](https://github.com/zrack/c4-architect-mcp/actions/runs/42438222217/artifacts/13600353024)
+
+The focused view shows the immediate neighbors of `cli.ts`. Follow **R01** to trace the new import of `renderers/review.ts`.
 
 [Read the Markdown report](https://github.com/zrack/c4-architect-mcp/blob/main/docs/reviews/pr-4/PR-ARCHITECTURE.md) · [Open the full-size PNG](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/reviews/pr-4/PR-ARCHITECTURE.focus-e758568899e88d5e.png) · [View the Actions run](https://github.com/zrack/c4-architect-mcp/actions/runs/42435820178)
 
