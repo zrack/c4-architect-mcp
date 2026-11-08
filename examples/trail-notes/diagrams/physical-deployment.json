@@ -1,0 +1,103 @@
+{
+  "title": "Trail Notes | Physical deployment",
+  "caption": "Illustrative visitor center installation",
+  "c4Level": "C4Deployment",
+  "nodes": [
+    {
+      "id": "tablet",
+      "label": "Field tablet",
+      "type": "DeploymentNode",
+      "technology": "Physical Android device"
+    },
+    {
+      "id": "browser",
+      "label": "Trail Notes web app",
+      "type": "Container",
+      "parentId": "tablet",
+      "technology": "Browser",
+      "description": "A hiker uses the web app over a mobile data connection."
+    },
+    {
+      "id": "visitor-center",
+      "label": "Visitor center equipment room",
+      "type": "DeploymentNode",
+      "technology": "On-site hardware"
+    },
+    {
+      "id": "firewall",
+      "label": "Edge firewall",
+      "type": "DeploymentNode",
+      "parentId": "visitor-center",
+      "technology": "Physical appliance",
+      "description": "The public ingress rule forwards only TCP 443 to the application server. The database has no public ingress rule."
+    },
+    {
+      "id": "application-server",
+      "label": "Application server",
+      "type": "DeploymentNode",
+      "parentId": "visitor-center",
+      "technology": "Bare-metal Linux"
+    },
+    {
+      "id": "proxy",
+      "label": "Web server and reverse proxy",
+      "type": "Container",
+      "parentId": "application-server",
+      "technology": "Caddy",
+      "description": "Terminates TLS, serves web assets, and forwards note API requests to the local API process."
+    },
+    {
+      "id": "api",
+      "label": "Notes API",
+      "type": "Container",
+      "parentId": "application-server",
+      "technology": "Node.js",
+      "description": "Binds to loopback on the application server. This illustrative deployment uses a database adapter."
+    },
+    {
+      "id": "database-server",
+      "label": "Database server",
+      "type": "DeploymentNode",
+      "parentId": "visitor-center",
+      "technology": "Bare-metal Linux"
+    },
+    {
+      "id": "database",
+      "label": "Notes database",
+      "type": "ContainerDb",
+      "parentId": "database-server",
+      "technology": "PostgreSQL",
+      "description": "Accepts database traffic from the application server over the private network. The runnable retry fixture uses a separate in-memory store."
+    }
+  ],
+  "relationships": [
+    {
+      "from": "browser",
+      "to": "firewall",
+      "label": "Public HTTPS · 443",
+      "technology": "TCP 443 over the Internet",
+      "description": "Loads the web UI and submits notes over the same HTTPS connection path."
+    },
+    {
+      "from": "firewall",
+      "to": "proxy",
+      "label": "Forwards TCP 443",
+      "technology": "TCP 443",
+      "description": "The hardware firewall forwards ingress to the reverse proxy. TLS terminates at the proxy."
+    },
+    {
+      "from": "proxy",
+      "to": "api",
+      "label": "API on loopback · 8080",
+      "technology": "HTTP over TCP 8080",
+      "description": "The proxy forwards API requests to 127.0.0.1 on the same physical server."
+    },
+    {
+      "from": "api",
+      "to": "database",
+      "label": "Private SQL over TLS · 5432",
+      "technology": "PostgreSQL over TLS, TCP 5432",
+      "description": "The API uses the private connection between the separate application and database hosts."
+    }
+  ]
+}
