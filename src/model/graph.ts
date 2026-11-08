@@ -51,6 +51,7 @@ export interface ArchitectureNode {
   label: string;
   type: ArchitectureNodeType;
   technology: string;
+  technologyBasis?: "declared" | "inferred";
   path: string;
   exports?: string[];
   parentId?: string;
@@ -108,7 +109,8 @@ export const architectureGraphSchema = z.object({
   }).passthrough(),
   nodes: z.array(z.object({
     id: identifier, label: nonempty, type: z.enum(["System", "ExternalSystem", "Container", "ContainerDb", "Component"]),
-    technology: nonempty, path: nonempty, exports: z.array(z.string()).optional(), parentId: identifier.optional(),
+    technology: nonempty, technologyBasis: z.enum(["declared", "inferred"]).optional(),
+    path: nonempty, exports: z.array(z.string()).optional(), parentId: identifier.optional(),
     description: z.string().optional(), classification: classificationSchema, evidence: z.array(evidenceSchema),
   }).passthrough()),
   edges: z.array(z.object({
@@ -340,12 +342,16 @@ const nodeSemantics = (node: ArchitectureNode, scanDirectory: string) => ({ id: 
 const edgeSemantics = (edge: ArchitectureEdge) => ({ source: edge.source, target: edge.target,
   label: edge.label, protocol: edge.protocol, kind: edge.kind });
 
-function reconcileUnmatchedEdges(before: ArchitectureEdge[], after: ArchitectureEdge[]): ArchitectureEdge[] {
-  const beforeIds = new Set(before.map(edge => edge.id));
-  const afterIds = new Set(after.map(edge => edge.id));
+function reconcileUnmatchedEdges(before: ArchitectureGraph, after: ArchitectureGraph): ArchitectureEdge[] {
+  const beforeIds = new Set(before.edges.map(edge => edge.id));
+  const afterIds = new Set(after.edges.map(edge => edge.id));
+  const externalIds = new Set([...before.nodes, ...after.nodes]
+    .filter(node => node.type === "ExternalSystem" || (node.type === "ContainerDb" && node.path.startsWith("package:")))
+    .map(node => node.id));
   const unmatchedByDependency = new Map<string, string[]>();
-  for (const edge of before) {
-    if (afterIds.has(edge.id)) continue;
+  for (const edge of before.edges) {
+    // A package node can represent distinct entry points such as zod/v3 and zod/v4.
+    if (afterIds.has(edge.id) || externalIds.has(edge.source) || externalIds.has(edge.target)) continue;
     const key = JSON.stringify(edgeSemantics(edge));
     const ids = unmatchedByDependency.get(key) ?? [];
     ids.push(edge.id);
@@ -355,7 +361,7 @@ function reconcileUnmatchedEdges(before: ArchitectureEdge[], after: Architecture
 
   // Existing IDs take precedence. Pair leftover equivalent dependencies once
   // each so a specifier spelling change does not hide a parallel edge change.
-  return [...after].sort((left, right) => left.id.localeCompare(right.id)).map(edge => {
+  return [...after.edges].sort((left, right) => left.id.localeCompare(right.id)).map(edge => {
     if (beforeIds.has(edge.id)) return edge;
     const previousId = unmatchedByDependency.get(JSON.stringify(edgeSemantics(edge)))?.pop();
     return previousId === undefined ? edge : { ...edge, id: previousId };
@@ -380,7 +386,7 @@ function computeArchitectureDiff(before: ArchitectureGraph, after: ArchitectureG
   return {
     graphVersion: before.schemaVersion, abstractionLevel: before.metadata.abstractionLevel,
     nodes: compare(before.nodes, after.nodes, node => node.id, nodeSemantics),
-    edges: compare(before.edges, reconcileUnmatchedEdges(before.edges, after.edges), edge => edge.id, edgeSemantics),
+    edges: compare(before.edges, reconcileUnmatchedEdges(before, after), edge => edge.id, edgeSemantics),
     hierarchy: compare(before.hierarchy, after.hierarchy, boundary => boundary.id,
       (boundary, scanDirectory) => ({ ...boundary, label: labelForComparison(boundary, scanDirectory) })),
     sources: compare(before.sources, after.sources, source => source.path, source => source),

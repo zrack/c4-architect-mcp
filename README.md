@@ -271,6 +271,15 @@ node dist/index.js review base.graph.json head.graph.json --out PR-ARCHITECTURE.
 
 The report separates dependency changes, declared boundaries, and file reassignments from ordinary source edits. It lists source locations and flags partial scans. The focused diagram uses the head snapshot for an added or changed dependency and the base snapshot when dependencies were only removed. Keep the diagram files beside the Markdown when sharing the report.
 
+For links to exact GitHub source lines, pass each checkout's full commit SHA to `analyze --commit` when saving its graph. Then specify the repository and scan root for the report. Both snapshots must use the same repository-relative source root. The root defaults to `.` for a scan of the entire repository.
+
+```sh
+node dist/index.js review base.graph.json head.graph.json --out PR-ARCHITECTURE.md \
+  --github-repo OWNER/REPO --source-root src
+```
+
+Partial scans list unresolved import locations and specifiers for both revisions. The report shows up to 25 locations per snapshot, with changes to the unresolved imports listed first.
+
 ## Read the diagram
 
 ![Five-component order-service diagram derived from the checked-in TypeScript example](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-example.png)

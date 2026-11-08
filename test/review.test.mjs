@@ -15,9 +15,9 @@ const location = 'orders/submit.ts:2:25';
 const classification = { basis: 'declared', rule: 'explicit-boundary-configuration' };
 const hash = text => createHash('sha256').update(text).digest('hex');
 
-function snapshot({ withLedger = false, service = 'Order service' } = {}) {
+function snapshot({ withLedger = false, service = 'Order service', sourcePath = 'orders/submit.ts' } = {}) {
   const sources = [
-    { id: 'submit', label: 'Order submission', file: 'orders/submit.ts',
+    { id: 'submit', label: 'Order submission', file: sourcePath,
       text: withLedger
         ? `// Entry point\nimport { persist } from "${specifier}";\nexport const submit = () => persist('order');\n`
         : "export const submit = () => 'order';\n" },
@@ -45,7 +45,7 @@ function snapshot({ withLedger = false, service = 'Order service' } = {}) {
     edges: withLedger ? [{
       id: 'relationship:submit-ledger', source: 'component:submit', target: 'component:ledger',
       label: 'Imports module', protocol: 'unknown', kind: 'import',
-      evidence: [{ path: 'orders/submit.ts', line: 2, column: 25, kind: 'import', specifier, typeOnly: false }],
+      evidence: [{ path: sourcePath, line: 2, column: 25, kind: 'import', specifier, typeOnly: false }],
     }] : [],
     sources: sources.map(({ file, text }) => ({ path: file, contentHash: hash(text), parseStatus: 'complete' })),
     diagnostics: [],
@@ -62,16 +62,20 @@ async function saveSnapshots(t, before, after, beforeName = 'before.json') {
   return fs.realpath(directory);
 }
 
-function runReview(directory, output, beforeName = 'before.json') {
-  return exec(process.execPath, [entry, 'review', beforeName, 'after.json', '--out', output], { cwd: directory });
+function runReview(directory, output, beforeName = 'before.json', args = []) {
+  return exec(process.execPath, [entry, 'review', beforeName, 'after.json', '--out', output, ...args], { cwd: directory });
 }
 
-async function readReport(directory, output = 'review.md') {
-  const { stdout } = await runReview(directory, output);
+async function readReport(directory, output = 'review.md', args = []) {
+  const { stdout } = await runReview(directory, output, 'before.json', args);
   const result = JSON.parse(stdout);
   assert.ok(path.isAbsolute(result.reportPath));
   assert.equal(await fs.realpath(result.reportPath), await fs.realpath(path.join(directory, output)));
   return { result, markdown: await fs.readFile(result.reportPath, 'utf8') };
+}
+
+function markdownLinks(markdown) {
+  return [...markdown.matchAll(/\]\(<?([^\n)>]+)>?\)/g)].map(([, destination]) => destination);
 }
 
 async function checkFocusedArtifacts(result, markdown, snapshotLabel) {
@@ -85,8 +89,7 @@ async function checkFocusedArtifacts(result, markdown, snapshotLabel) {
     assert.ok(stats.isFile() && stats.size > 0, `Expected a nonempty ${format} artifact`);
   }
 
-  const links = [...markdown.matchAll(/\]\(<?([^\n)>]+)>?\)/g)].map(([, destination]) =>
-    path.resolve(reportDirectory, decodeURIComponent(destination)));
+  const links = markdownLinks(markdown).map(destination => path.resolve(reportDirectory, decodeURIComponent(destination)));
   for (const [format, filename] of Object.entries(artifacts)) {
     assert.ok(links.includes(filename), `Review should link to its ${format} artifact`);
   }
@@ -173,6 +176,98 @@ test('review renders removed dependencies from the before snapshot', { timeout: 
 
   checkDependencyEvidence(markdown, 'Removed');
   await checkFocusedArtifacts(result, markdown, 'Base');
+});
+
+test('review links added and removed dependency evidence to their own commit and encodes the path', { timeout: 30000 }, async t => {
+  const sourcePath = 'orders/submit [draft] #2 (review).ts';
+  const before = snapshot({ withLedger: true, sourcePath });
+  before.metadata.commit = 'a'.repeat(40);
+  const after = structuredClone(before);
+  after.metadata.commit = 'b'.repeat(40);
+  after.edges[0].id = 'relationship:submit-health';
+  after.edges[0].target = 'component:health';
+  after.edges[0].evidence[0].line = 4;
+  after.edges[0].evidence[0].specifier = '../health.js';
+  after.sources[0].contentHash = hash('Updated dependency in order submission');
+  const directory = await saveSnapshots(t, before, after);
+  const { markdown } = await readReport(directory, 'review.md', ['--github-repo', 'example/c4-review', '--source-root', 'packages/Shop UI/src']);
+
+  const encodedPath = 'packages/Shop%20UI/src/orders/submit%20%5Bdraft%5D%20%232%20%28review%29.ts';
+  const cases = [
+    ['Removed', before.metadata.commit, 2, specifier],
+    ['Added', after.metadata.commit, 4, '../health.js'],
+  ];
+  for (const [change, revision, line, importSpecifier] of cases) {
+    const expected = `https://github.com/example/c4-review/blob/${revision}/${encodedPath}#L${line}`;
+    const row = markdown.split('\n').find(value => markdownLinks(value).includes(expected));
+    assert.ok(row, `Expected a clickable ${change.toLowerCase()} dependency location`);
+    assert.ok(row.includes(change));
+    assert.ok(row.includes(`orders/submit \\[draft\\] #2 (review).ts:${line}:25`));
+    assert.ok(row.includes(importSpecifier));
+  }
+});
+
+test('review shows changed unresolved import locations despite equal warning counts and common diagnostics', { timeout: 30000 }, async t => {
+  const before = snapshot();
+  before.metadata.analysisStatus = 'partial';
+  before.metadata.commit = 'c'.repeat(40);
+  const unresolved = (code, specifier, line) => ({ code, specifier, line, column: 8, path: 'orders/submit.ts',
+    severity: 'warning', message: 'Module reference could not be resolved' });
+  const common = Array.from({ length: 30 }, (_, index) => unresolved('UNRESOLVED_PACKAGE', `common-package-${index}`, index + 1));
+  before.diagnostics = [...common, unresolved('UNRESOLVED_IMPORT', './old-local.js', 31),
+    unresolved('UNRESOLVED_PACKAGE', 'old-package', 32)];
+  const after = structuredClone(before);
+  after.metadata.commit = 'd'.repeat(40);
+  after.diagnostics = [...common, unresolved('UNRESOLVED_IMPORT', './new-local.js', 33),
+    unresolved('UNRESOLVED_PACKAGE', 'new-package', 34)];
+  const directory = await saveSnapshots(t, before, after);
+  const { result, markdown } = await readReport(directory, 'review.md', ['--github-repo', 'example/c4-review']);
+
+  assert.match(markdown.replaceAll('\\_', '_'), /^\|\s*UNRESOLVED_IMPORT\s*\|\s*1\s*\|\s*1\s*\|$/m);
+  const cases = [
+    ['Base', before.metadata.commit, 31, './old-local.js'], ['Base', before.metadata.commit, 32, 'old-package'],
+    ['Head', after.metadata.commit, 33, './new-local.js'], ['Head', after.metadata.commit, 34, 'new-package'],
+  ];
+  for (const [snapshot, revision, line, importSpecifier] of cases) {
+    const row = markdown.split('\n').find(value => value.includes(importSpecifier));
+    assert.ok(row, `Expected ${snapshot} to show ${importSpecifier}`);
+    assert.ok(row.includes(snapshot));
+    assert.ok(row.includes(`orders/submit.ts:${line}:8`));
+    assert.ok(markdownLinks(row).includes(`https://github.com/example/c4-review/blob/${revision}/orders/submit.ts#L${line}`));
+  }
+  assert.ok((markdown.match(/common-package-/g) ?? []).length < common.length * 2);
+  assert.ok(result.diagram == null);
+});
+
+test('review preserves changed legacy technology labels and ignores provenance alone', { timeout: 30000 }, async t => {
+  const before = snapshot();
+  for (const node of before.nodes) node.path = '.';
+  const after = structuredClone(before);
+  for (const node of after.nodes) node.technologyBasis = 'inferred';
+  after.nodes[1].technology = 'TypeScript / TSX';
+  const directory = await saveSnapshots(t, before, after);
+  const { markdown } = await readReport(directory);
+
+  assert.match(markdown, /^\|\s*Declared boundaries\s*\|\s*0\s*\|\s*0\s*\|\s*1\s*\|$/im);
+  const row = markdown.split('\n').find(value => value.includes('component:health'));
+  assert.match(row, /TypeScript[^|]*\|[^|]*TypeScript \/ TSX/);
+  assert.match(markdown, /provenance unavailable/i);
+});
+
+test('review validates GitHub source link options before writing', { timeout: 30000 }, async t => {
+  const before = snapshot();
+  before.metadata.commit = 'e'.repeat(40);
+  const after = structuredClone(before);
+  after.metadata.commit = 'f'.repeat(40);
+  const directory = await saveSnapshots(t, before, after);
+
+  await assert.rejects(runReview(directory, 'review.md', 'before.json', ['--github-repo', 'example/../other']), /OWNER\/REPO/);
+  await assert.rejects(runReview(directory, 'review.md', 'before.json',
+    ['--github-repo', 'example/c4-review', '--source-root', 'src/../other']), /repository-relative path/);
+  after.metadata.commit = '1234567';
+  await fs.writeFile(path.join(directory, 'after.json'), JSON.stringify(after));
+  await assert.rejects(runReview(directory, 'review.md', 'before.json', ['--github-repo', 'example/c4-review']), /40-hex commit/);
+  await assert.rejects(fs.stat(path.join(directory, 'review.md')), { code: 'ENOENT' });
 });
 
 test('review rejects an output path that would overwrite a saved input', { timeout: 30000 }, async t => {

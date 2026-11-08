@@ -73,13 +73,18 @@ async function discover(root: string, diagnostics: GraphDiagnostic[]): Promise<{
 }
 
 function nodeForFile(relativePath: string, assignment: BoundaryAssignment, level: AbstractionLevel): ArchitectureNode {
-  const selected = level === "Context" ? assignment.system : level === "Container" ? assignment.container : assignment.component;
+  const component = level === "Component" ? assignment.component : undefined;
+  const selected = level === "Context" ? assignment.system : level === "Container" ? assignment.container : component;
+  const technologyBasis: ArchitectureNode["technologyBasis"] = component
+    ? component.technology !== undefined ? "declared" : "inferred"
+    : undefined;
   return {
     id: selected?.id ?? stableId("component", relativePath),
     label: selected?.label ?? relativePath,
     type: level === "Context" ? "System" : level === "Container" ? "Container" : "Component",
     technology: selected?.technology ?? (relativePath.endsWith(".tsx") ? "TypeScript / TSX" : "TypeScript"),
-    path: level === "Component" && !assignment.component ? relativePath : ".",
+    ...(technologyBasis === undefined ? {} : { technologyBasis }),
+    path: level === "Component" && !component ? relativePath : ".",
     ...(level === "Context" ? {} : { parentId: level === "Container" ? assignment.system.id : assignment.container.id }),
     ...(selected?.description ? { description: selected.description } : {}),
     classification: selected?.classification ?? { basis: "inferred", confidence: "low", rule: "source-file-as-component" },

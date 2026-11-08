@@ -217,6 +217,24 @@ test('specifier-only edge ID changes are paired without hiding parallel dependen
   assert.deepEqual(removedParallel.edges.removed, ['edge:a-b-parallel']);
 });
 
+test('package entry point changes stay visible alongside equivalent internal import spellings', () => {
+  const before = sampleGraph();
+  before.edges[0].evidence[0].specifier = './b';
+  before.nodes.push({ id: 'package:zod', label: 'Package: zod', type: 'ExternalSystem', path: 'package:zod',
+    technology: 'Package dependency', classification: inferred, evidence: [evidence('a.ts')] });
+  before.edges.push({ id: 'edge:zod-v3', source: 'component:a', target: 'package:zod', label: 'Imports package',
+    protocol: 'unknown', kind: 'import', evidence: [{ ...evidence('a.ts'), specifier: 'zod/v3' }] });
+  const after = structuredClone(before);
+  after.edges[0].id = 'edge:a-b-explicit';
+  after.edges[0].evidence[0].specifier = './b.ts';
+  after.edges[3].id = 'edge:zod-v4';
+  after.edges[3].evidence[0].specifier = 'zod/v4';
+  const diff = compareArchitectureGraphs(before, after);
+  assert.deepEqual(diff.edges.counts, { added: 1, removed: 1, changed: 0 });
+  assert.deepEqual(diff.edges.added, ['edge:zod-v4']);
+  assert.deepEqual(diff.edges.removed, ['edge:zod-v3']);
+});
+
 test('matching edge IDs take priority over pairing unmatched dependencies', () => {
   const before = sampleGraph();
   before.edges.push({ ...before.edges[0], id: 'edge:a-b-types', kind: 'type-import' });
