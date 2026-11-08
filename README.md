@@ -262,6 +262,7 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 | `render_structurizr_dsl` | `input` with an authored diagram or workspace bundle and an optional `outputPath` ending in `.dsl` | Structurizr DSL with Context, Container, Component, or Deployment views. |
 | `publish_to_ado_wiki` | `input` with `title`, optional `description`, and `diagrams`, plus `outputDir`. For publishing, add `publish: true` and `target`. | Local Azure DevOps Wiki preview with PNG attachments, and optional publication. |
 | `publish_to_confluence` | The same diagram bundle and `outputDir`. For publishing, add `publish: true` and a Confluence Cloud `target`. | Local Confluence preview, storage XHTML, and PNG attachments, with optional publication. |
+| `publish_to_notion` (unreleased) | The same diagram bundle and `outputDir`. For publishing, add `publish: true` and `target: { parentPageId }`. | Local Notion preview, page manifest, and PNGs. Publishing creates a child page with native image blocks. |
 
 Queries default to `direction: "both"`, `maxDepth: 1`, `maxNodes: 25`, `maxEdges: 50`, and `maxBytes: 16000`. Source evidence is opt-in. Start with a summary, then search for a component or request its incoming or outgoing dependencies. Smaller views are usually easier to review than a complete repository drawing.
 
@@ -411,6 +412,25 @@ The publisher creates a placeholder page so Confluence can accept attachments be
 The local preview shows Context, Container, Component, and Physical Deployment on one page. Select the screenshot to open it at full size. The preview command above generates the PNGs referenced by the XHTML. [Download page.storage.xhtml](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.9/page.storage.xhtml)
 
 [![Full Trail Notes Confluence preview showing all four diagrams](https://raw.githubusercontent.com/zrack/c4-architect-mcp/7891d5059309302cd746287b6de47eb747b74529/docs/reviews/confluence-publishing/Trail-Notes-Confluence-Full-Page.png)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/7891d5059309302cd746287b6de47eb747b74529/docs/reviews/confluence-publishing/Trail-Notes-Confluence-Full-Page.png)
+
+### Publish to Notion
+
+From a built checkout, preview the Trail Notes bundle as one Notion page. Open `trail-notes-notion/index.html` and select a diagram to see its PNG at full size. The output also contains a `page.json` manifest and the four PNGs.
+
+```sh
+npm run build
+node dist/index.js publish-notion examples/trail-notes/diagrams/structurizr-workspace.json \
+  --out trail-notes-notion
+```
+
+To publish, share the parent page with a Notion connection that has **Insert content** access. Set `NOTION_API_TOKEN` in the CLI or MCP server environment. Supply the parent page ID as a UUID with or without hyphens. [Notion authorization and page access](https://developers.notion.com/guides/authorization/overview)
+
+```sh
+node dist/index.js publish-notion examples/trail-notes/diagrams/structurizr-workspace.json \
+  --out trail-notes-notion --publish --parent-page-id YOUR_PARENT_PAGE_ID
+```
+
+For MCP, use `publish_to_notion` with `target: { parentPageId }` and `publish: true`. Each publish creates a new child page in the workspace after all PNGs upload. The publisher uses direct uploads up to 20 MiB per PNG, subject to the workspace's own limit. If Notion cannot confirm page creation, check the parent page before retrying. [Notion file limits](https://developers.notion.com/guides/data-apis/working-with-files-and-media) · [Notion guidance for timed-out writes](https://developers.notion.com/reference/request-limits#retry-a-write-that-returns-503)
 
 ### Focus a diagram on one node
 

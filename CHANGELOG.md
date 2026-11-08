@@ -2,6 +2,12 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+### Added
+
+- Preview an authored diagram bundle and publish it as a Notion child page with native image blocks using `publish-notion` or `publish_to_notion`.
+
 ## 0.2.0-alpha.9 — 2026-11-08
 
 ### Added

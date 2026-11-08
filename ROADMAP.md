@@ -41,7 +41,7 @@ Add outputs that reuse the same graph, hierarchy, identifiers, and evidence.
 - **Structurizr DSL (`render_structurizr_dsl`), available in alpha.7:** export authored Context, Container, Component, and Deployment diagrams to a workspace with explicit C4 hierarchy.
 - **Azure DevOps Wiki (`publish_to_ado_wiki`), available in alpha.8:** preview a page locally and publish its PNG diagrams and Markdown through the Wiki API.
 - **Confluence Cloud (`publish_to_confluence`), available in alpha.9:** preview the same diagram bundle and publish a page with native PNG attachments.
-- **Notion publishing**, planned.
+- **Notion (`publish_to_notion`), unreleased:** preview the same diagram bundle and create a child page with native image blocks.
 
 Publishing uses a dedicated generated page, a local preview, and credentials supplied through the environment.
 
