@@ -1,0 +1,86 @@
+{
+  "title": "Trail Notes",
+  "description": "From the people who use Trail Notes to its illustrative visitor center deployment.",
+  "systemId": "notes",
+  "componentContainerId": "api",
+  "deploymentEnvironment": "Visitor center",
+  "deploymentInstanceOf": {"browser": "web", "api": "api", "database": "db"},
+  "diagrams": [
+    {
+      "title": "Trail Notes | Context",
+      "caption": "People and the catalog involved in recording and reviewing observations",
+      "c4Level": "C4Context",
+      "nodes": [
+        {"id": "hiker", "type": "Person", "label": "Hiker"},
+        {"id": "steward", "type": "Person", "label": "Trail steward"},
+        {"id": "notes", "type": "System", "label": "Trail Notes"},
+        {"id": "trail-data", "type": "System_Ext", "label": "Regional trail catalog"}
+      ],
+      "relationships": [
+        {"from": "hiker", "to": "notes", "label": "Records trail observations"},
+        {"from": "steward", "to": "notes", "label": "Reviews submitted notes"},
+        {"from": "notes", "to": "trail-data", "label": "Looks up trail details", "technology": "HTTPS"}
+      ]
+    },
+    {
+      "title": "Trail Notes | Container",
+      "caption": "Inside Trail Notes: the web app, Notes API, and database",
+      "c4Level": "C4Container",
+      "nodes": [
+        {"id": "hiker", "type": "Person", "label": "Hiker"},
+        {"id": "steward", "type": "Person", "label": "Trail steward"},
+        {"id": "web", "type": "Container", "label": "Trail Notes web app", "technology": "TypeScript / React"},
+        {"id": "api", "type": "Container", "label": "Notes API", "technology": "TypeScript / Node.js"},
+        {"id": "db", "type": "ContainerDb", "label": "Notes database", "technology": "PostgreSQL"},
+        {"id": "trail-data", "type": "System_Ext", "label": "Regional trail catalog"}
+      ],
+      "relationships": [
+        {"from": "hiker", "to": "web", "label": "Submits trail observations", "technology": "HTTPS"},
+        {"from": "steward", "to": "web", "label": "Reviews submitted notes", "technology": "HTTPS"},
+        {"from": "web", "to": "api", "label": "Submits and reads notes", "technology": "HTTPS / JSON"},
+        {"from": "api", "to": "db", "label": "Stores and retrieves notes", "technology": "SQL over TLS"},
+        {"from": "api", "to": "trail-data", "label": "Looks up trail details", "technology": "HTTPS"}
+      ]
+    },
+    {
+      "title": "Trail Notes | Component",
+      "caption": "Notes API · Who owns retry, validation, and duplicate prevention?",
+      "c4Level": "C4Component",
+      "nodes": [
+        {"id": "client", "label": "Trail Notes client", "type": "Container", "technology": "TypeScript"},
+        {"id": "handler", "label": "Note submission handler", "type": "Component", "technology": "TypeScript"},
+        {"id": "service", "label": "Note service", "type": "Component", "technology": "TypeScript"},
+        {"id": "validation", "label": "Note validation", "type": "Component", "technology": "TypeScript"},
+        {"id": "repository", "label": "Note repository", "type": "Component", "technology": "In-memory adapter"}
+      ],
+      "relationships": [
+        {"from": "client", "to": "handler", "label": "Retries with the same request key", "description": "trail-client.ts:18 · trail-client.ts:21 · demo.ts:22"},
+        {"from": "handler", "to": "service", "label": "Forwards author, key, and draft", "description": "submit-note.ts:21 · submit-note.ts:22"},
+        {"from": "service", "to": "validation", "label": "Validates the draft before saving", "description": "note-service.ts:10 · note.ts:4"},
+        {"from": "service", "to": "repository", "label": "Delegates duplicate prevention", "description": "note-service.ts:11 · note-repository.ts:24"}
+      ]
+    },
+    {
+      "title": "Trail Notes | Physical deployment",
+      "caption": "Illustrative visitor center installation",
+      "c4Level": "C4Deployment",
+      "nodes": [
+        {"id": "tablet", "label": "Field tablet", "type": "DeploymentNode", "technology": "Physical Android device"},
+        {"id": "browser", "label": "Trail Notes web app", "type": "Container", "parentId": "tablet", "technology": "Browser", "description": "A hiker uses the web app over a mobile data connection."},
+        {"id": "visitor-center", "label": "Visitor center equipment room", "type": "DeploymentNode", "technology": "On-site hardware"},
+        {"id": "firewall", "label": "Edge firewall", "type": "DeploymentNode", "parentId": "visitor-center", "technology": "Physical appliance", "description": "The public ingress rule forwards only TCP 443 to the application server. The database has no public ingress rule."},
+        {"id": "application-server", "label": "Application server", "type": "DeploymentNode", "parentId": "visitor-center", "technology": "Bare-metal Linux"},
+        {"id": "proxy", "label": "Web server and reverse proxy", "type": "Container", "parentId": "application-server", "technology": "Caddy", "description": "Terminates TLS, serves web assets, and forwards note API requests to the local API process."},
+        {"id": "api", "label": "Notes API", "type": "Container", "parentId": "application-server", "technology": "Node.js", "description": "Binds to loopback on the application server. This illustrative deployment uses a database adapter."},
+        {"id": "database-server", "label": "Database server", "type": "DeploymentNode", "parentId": "visitor-center", "technology": "Bare-metal Linux"},
+        {"id": "database", "label": "Notes database", "type": "ContainerDb", "parentId": "database-server", "technology": "PostgreSQL", "description": "Accepts database traffic from the application server over the private network. The runnable retry fixture uses a separate in-memory store."}
+      ],
+      "relationships": [
+        {"from": "browser", "to": "firewall", "label": "Public HTTPS · 443", "technology": "TCP 443 over the Internet", "description": "Loads the web UI and submits notes over the same HTTPS connection path."},
+        {"from": "firewall", "to": "proxy", "label": "Forwards TCP 443", "technology": "TCP 443", "description": "The hardware firewall forwards ingress to the reverse proxy. TLS terminates at the proxy."},
+        {"from": "proxy", "to": "api", "label": "API on loopback · 8080", "technology": "HTTP over TCP 8080", "description": "The proxy forwards API requests to 127.0.0.1 on the same physical server."},
+        {"from": "api", "to": "database", "label": "Private SQL over TLS · 5432", "technology": "PostgreSQL over TLS, TCP 5432", "description": "The API uses the private connection between the separate application and database hosts."}
+      ]
+    }
+  ]
+}

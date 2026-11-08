@@ -8,7 +8,8 @@ import { analyzeDirectory } from "./parsers/astParser.js";
 import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph } from "./model/graph.js";
 import { graphFocusSchema } from "./model/neighborhood.js";
 import { diagramSchema } from "./model/diagram.js";
-import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, renderDrawioGraph } from "./renderers/artifacts.js";
+import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, renderDrawioGraph, renderStructurizrArtifacts } from "./renderers/artifacts.js";
+import { structurizrDiagramSchema, structurizrWorkspaceSchema } from "./renderers/structurizr.js";
 import { runCli } from "./cli.js";
 import { version } from "./version.js";
 
@@ -67,6 +68,13 @@ server.tool("render_c4_drawio",
     ...diagramSchema.shape,
     outputPath: z.string().optional().describe("Draw.io destination ending in .drawio"),
   }, async ({ outputPath, ...diagram }) => renderDrawioArtifacts(diagram, outputPath));
+
+server.tool("render_structurizr_dsl",
+  "Render authored Context, Container, Component, or Deployment diagrams as an editable Structurizr DSL workspace.",
+  {
+    input: z.union([structurizrDiagramSchema, structurizrWorkspaceSchema]).describe("One authored diagram or a workspace with up to four views"),
+    outputPath: z.string().optional().describe("Workspace destination ending in .dsl"),
+  }, async ({ input, outputPath }) => renderStructurizrArtifacts(input, outputPath));
 
 async function main() {
   if (await runCli(process.argv.slice(2))) return;

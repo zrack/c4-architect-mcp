@@ -38,7 +38,7 @@ Acceptance matters more than feature count: unresolved analysis must stay visibl
 Add outputs that reuse the same graph, hierarchy, identifiers, and evidence.
 
 - **Draw.io XML (`render_c4_drawio`), available in alpha.6:** editable diagrams with nested deployment groups and native connector labels.
-- **Structurizr DSL (`render_structurizr_dsl`):** validated workspace output with explicit C4 hierarchy.
+- **Structurizr DSL (`render_structurizr_dsl`), available from source:** export authored Context, Container, Component, and Deployment diagrams to a workspace with explicit C4 hierarchy.
 - **Publishing:** choose one initial target, such as an Azure DevOps wiki, before expanding to Confluence or Notion.
 
 Publishing needs a previewable change, predictable ownership of generated content, and credentials supplied outside the graph. Git-backed wiki delivery and API publishing are alternatives to evaluate, not promises of two simultaneous implementations.
