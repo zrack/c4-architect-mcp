@@ -15,6 +15,8 @@ import { adoWikiDocumentSchema } from "./publishers/adoWikiPreview.js";
 import { adoWikiTargetSchema } from "./publishers/adoWikiTransport.js";
 import { runConfluence } from "./publishers/confluence.js";
 import { confluenceTargetSchema } from "./publishers/confluenceTransport.js";
+import { runNotion } from "./publishers/notion.js";
+import { notionTargetSchema } from "./publishers/notionTransport.js";
 import { wikiDocumentSchema } from "./publishers/wikiDiagrams.js";
 import { runCli } from "./cli.js";
 import { version } from "./version.js";
@@ -103,6 +105,18 @@ server.tool("publish_to_confluence",
     publish: z.boolean().optional().describe("Write to Confluence Cloud. Omit for an offline preview."),
   }, async ({ input, ...options }) => {
     const result = await runConfluence(input, options);
+    return { ...textResult(result), structuredContent: result };
+  });
+
+server.tool("publish_to_notion",
+  "Build a local Notion page preview with PNGs and a page manifest. Set publish: true and a parent page ID to create a child page with native images. Credentials come from the environment.",
+  {
+    input: wikiDocumentSchema,
+    outputDir: z.string().min(1).describe("Directory for index.html, page.json, and PNGs"),
+    target: notionTargetSchema.optional().describe("Notion parent page ID for the new child page"),
+    publish: z.boolean().optional().describe("Create a child page in Notion. Omit for an offline preview."),
+  }, async ({ input, ...options }) => {
+    const result = await runNotion(input, options);
     return { ...textResult(result), structuredContent: result };
   });
 

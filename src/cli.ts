@@ -8,6 +8,7 @@ import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, render
 import { writeArchitectureReview } from "./renderers/review.js";
 import { runAdoWiki } from "./publishers/adoWiki.js";
 import { runConfluence } from "./publishers/confluence.js";
+import { runNotion } from "./publishers/notion.js";
 import { version } from "./version.js";
 
 const help = `C4-Architect ${version}
@@ -23,6 +24,7 @@ No arguments: start the MCP server over stdio.
     [--publish --organization ORG --project PROJECT --wiki WIKI --page /Architecture/Trail-Notes]
   publish-confluence <document.json> --out PREVIEW_DIRECTORY
     [--publish --site https://SITE.atlassian.net --space-id ID [--parent-id ID | --page-id ID] [--cloud-id UUID]]
+  publish-notion <document.json> --out PREVIEW_DIRECTORY [--publish --parent-page-id ID]
   summary <graph.json>
   query <graph.json> [--node ID | --search TEXT] [--direction both] [--depth 1] [--nodes 25] [--edges 50] [--bytes 16000] [--evidence]
   diff <before.json> <after.json> [--limit 25] [--bytes 16000]
@@ -35,6 +37,7 @@ Boundary configuration is loaded only with --config. Rendering writes Markdown,
 PNG, SVG, standalone interactive HTML, Draw.io XML, or Structurizr DSL. No repository code is executed.
 Publishing defaults to a local preview. Azure DevOps uses AZURE_DEVOPS_EXT_PAT
 or AZURE_DEVOPS_BEARER_TOKEN. Confluence uses CONFLUENCE_EMAIL and CONFLUENCE_API_TOKEN.
+Notion uses NOTION_API_TOKEN.
 `;
 const json = (value: unknown) => process.stdout.write(JSON.stringify(value));
 
@@ -50,6 +53,7 @@ export async function runCli(args: string[]): Promise<boolean> {
     "render-structurizr": ["out"],
     "publish-ado-wiki": ["out", "publish", "organization", "project", "wiki", "page"],
     "publish-confluence": ["out", "publish", "site", "space-id", "parent-id", "page-id", "cloud-id"],
+    "publish-notion": ["out", "publish", "parent-page-id"],
     query: ["node", "search", "direction", "depth", "nodes", "edges", "bytes", "evidence"], diff: ["limit", "bytes"],
     review: ["out", "title", "github-repo", "source-root"],
   };
@@ -134,6 +138,13 @@ export async function runCli(args: string[]): Promise<boolean> {
     }
     const input: unknown = JSON.parse(await fs.readFile(positional[0], "utf8"));
     json(await runConfluence(input, { outputDir, target, publish }));
+  } else if (command === "publish-notion") {
+    const outputDir = str("out");
+    if (!outputDir) throw new Error("publish-notion requires --out PREVIEW_DIRECTORY");
+    const parentPageId = str("parent-page-id");
+    const target = parentPageId ? { parentPageId } : undefined;
+    const input: unknown = JSON.parse(await fs.readFile(positional[0], "utf8"));
+    json(await runNotion(input, { outputDir, target, publish: flags.has("publish") }));
   } else if (command === "summary") json(summarizeArchitectureGraph(await readArchitectureGraph(positional[0])));
   else if (command === "query") json(queryArchitectureGraph(await readArchitectureGraph(positional[0]), {
     nodeId: str("node"), search: str("search"), direction: str("direction") as "both" | undefined,
