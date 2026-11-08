@@ -6,7 +6,7 @@
 
 C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io/) server that turns source imports into a versioned dependency graph, lets you review and name its architectural boundaries, and produces compact C4 diagrams. Use it from Codex, Claude Code, Claude Desktop, or another client that supports local MCP servers over `stdio`.
 
-**0.2.0-alpha.6 · TypeScript / TSX · Local parsing · MIT licensed**
+**0.2.0-alpha.7 · TypeScript / TSX · Local parsing · MIT licensed**
 
 [Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#c4-diagrams) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
@@ -32,7 +32,9 @@ The result is a starting point for application and solution architecture review.
 
 Export native shapes, nested deployment groups, and connector labels that you can edit in Draw.io. [Editable Draw.io export](#export-editable-drawio-diagrams)
 
-Structurizr DSL export is available from a source checkout. Wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are planned. [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
+Export a Structurizr DSL workspace with up to four views of the same model. [Structurizr DSL export](#export-a-structurizr-dsl-workspace)
+
+Wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are planned. [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
 ## C4 diagrams
 
@@ -79,7 +81,7 @@ The left view places the app and database on separate hosts. The right view show
 Download any example JSON and run `render-diagram` from the folder where you saved it. This command renders the Context example.
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.6 render-diagram trail-notes-context.json --out TRAIL-NOTES.md
+npx -y c4-architect-mcp@0.2.0-alpha.7 render-diagram trail-notes-context.json --out TRAIL-NOTES.md
 ```
 
 Open `TRAIL-NOTES.html` to explore the diagram.
@@ -89,10 +91,10 @@ Open `TRAIL-NOTES.html` to explore the diagram.
 Use Node.js 22 or 24 and npm. Run the pinned alpha without a checkout:
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.6 --help
+npx -y c4-architect-mcp@0.2.0-alpha.7 --help
 ```
 
-The examples pin `0.2.0-alpha.6` for a repeatable setup. `c4-architect-mcp@alpha` follows the prerelease channel and currently selects `0.2.0-alpha.6`. npm's `latest` tag remains on `0.2.0-alpha.1`, the initial prerelease. There is no stable release yet.
+The examples pin `0.2.0-alpha.7` for a repeatable setup. `c4-architect-mcp@alpha` follows the prerelease channel and currently selects `0.2.0-alpha.7`. npm's `latest` tag remains on `0.2.0-alpha.1`, the initial prerelease. There is no stable release yet.
 
 The server communicates over `stdio`; starting it without a subcommand waits for an MCP client rather than opening a browser page or an HTTP port. The following configurations let your client start it through `npx`.
 
@@ -104,13 +106,13 @@ Add this to `~/.codex/config.toml`, or use the MCP server settings in the Codex 
 ```toml
 [mcp_servers.c4-architect]
 command = "npx"
-args = ["-y", "c4-architect-mcp@0.2.0-alpha.6"]
+args = ["-y", "c4-architect-mcp@0.2.0-alpha.7"]
 ```
 
 You can also register it from the Codex CLI:
 
 ```sh
-codex mcp add c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.6
+codex mcp add c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.7
 ```
 
 Reconnect the server after configuration changes. See the [official Codex MCP setup guide](https://learn.chatgpt.com/docs/extend/mcp).
@@ -121,7 +123,7 @@ Reconnect the server after configuration changes. See the [official Codex MCP se
 <summary><strong>Claude Code</strong></summary>
 
 ```sh
-claude mcp add --transport stdio c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.6
+claude mcp add --transport stdio c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.7
 ```
 
 Use `/mcp` to inspect the connection. See the [official Claude Code MCP documentation](https://code.claude.com/docs/en/mcp).
@@ -138,7 +140,7 @@ Open **Settings → Developer → Edit Config** and merge this entry with your e
   "mcpServers": {
     "c4-architect": {
       "command": "npx",
-      "args": ["-y", "c4-architect-mcp@0.2.0-alpha.6"]
+      "args": ["-y", "c4-architect-mcp@0.2.0-alpha.7"]
     }
   }
 }
@@ -148,12 +150,12 @@ Completely restart Claude Desktop after saving. For Windows JSON paths, use forw
 
 </details>
 
-These are local `stdio` configurations. Verify the connection in your chosen client. If a desktop app cannot find `npx`, use the executable's absolute path. On Windows, a client that cannot launch `npx` directly can use `command: "cmd"` with `args: ["/c", "npx", "-y", "c4-architect-mcp@0.2.0-alpha.6"]`.
+These are local `stdio` configurations. Verify the connection in your chosen client. If a desktop app cannot find `npx`, use the executable's absolute path. On Windows, a client that cannot launch `npx` directly can use `command: "cmd"` with `args: ["/c", "npx", "-y", "c4-architect-mcp@0.2.0-alpha.7"]`.
 
 ### Optional global installation
 
 ```sh
-npm install -g c4-architect-mcp@0.2.0-alpha.6
+npm install -g c4-architect-mcp@0.2.0-alpha.7
 c4-architect-mcp --help
 ```
 
@@ -164,9 +166,9 @@ With a global installation, use `c4-architect-mcp` as the MCP command with no ar
 You can analyze and render without an MCP client:
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.6 analyze /absolute/path/to/project/src --level Component --out /absolute/path/to/project/architecture.graph.json --summary
-npx -y c4-architect-mcp@0.2.0-alpha.6 summary /absolute/path/to/project/architecture.graph.json
-npx -y c4-architect-mcp@0.2.0-alpha.6 render /absolute/path/to/project/architecture.graph.json --out /absolute/path/to/project/ARCHITECTURE.md
+npx -y c4-architect-mcp@0.2.0-alpha.7 analyze /absolute/path/to/project/src --level Component --out /absolute/path/to/project/architecture.graph.json --summary
+npx -y c4-architect-mcp@0.2.0-alpha.7 summary /absolute/path/to/project/architecture.graph.json
+npx -y c4-architect-mcp@0.2.0-alpha.7 render /absolute/path/to/project/architecture.graph.json --out /absolute/path/to/project/ARCHITECTURE.md
 ```
 
 Replace `/absolute/path/to/project` with your project's location. Open the generated `ARCHITECTURE.html` beside the Markdown to explore the diagram.
@@ -255,7 +257,7 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 | `render_architecture_graph` | `graphPath`; optional `title`, `outputPath`, `focus`, `format` | Render a saved graph or a focused neighborhood. Use `format: "drawio"` for editable XML. |
 | `render_c4_mermaid` | `title`, `c4Level`, `nodes`, `relationships`, optional `outputPath` | Mermaid source and a compact server-rendered PNG; saved SVG, PNG, HTML, and Markdown when requested. |
 | `render_c4_drawio` | Authored diagram fields and an optional `outputPath` ending in `.drawio` | Editable Draw.io XML, with a file when requested. |
-| `render_structurizr_dsl` | `input` with an authored diagram or workspace bundle and an optional `outputPath` ending in `.dsl` | Structurizr DSL with Context, Container, Component, or Deployment views. Available from source. |
+| `render_structurizr_dsl` | `input` with an authored diagram or workspace bundle and an optional `outputPath` ending in `.dsl` | Structurizr DSL with Context, Container, Component, or Deployment views. |
 
 Queries default to `direction: "both"`, `maxDepth: 1`, `maxNodes: 25`, `maxEdges: 50`, and `maxBytes: 16000`. Source evidence is opt-in. Start with a summary, then search for a component or request its incoming or outgoing dependencies. Smaller views are usually easier to review than a complete repository drawing.
 
@@ -283,7 +285,7 @@ Source analysis produces `Context`, `Container`, and `Component` graphs. The cor
 
 ### Render authored architecture views
 
-All seven C4 views can render explicit nodes and relationships. Use `render_c4_mermaid` with the diagram fields and an optional `outputPath`, or save the same diagram as JSON and run `npx -y c4-architect-mcp@0.2.0-alpha.6 render-diagram diagram.json --out DIAGRAM.md`. Both entry points produce Mermaid source, PNG, SVG, and interactive HTML alongside the Markdown when given an output path.
+All seven C4 views can render explicit nodes and relationships. Use `render_c4_mermaid` with the diagram fields and an optional `outputPath`, or save the same diagram as JSON and run `npx -y c4-architect-mcp@0.2.0-alpha.7 render-diagram diagram.json --out DIAGRAM.md`. Both entry points produce Mermaid source, PNG, SVG, and interactive HTML alongside the Markdown when given an output path.
 
 | `c4Level` | What to supply |
 | --- | --- |
@@ -312,7 +314,7 @@ This deployment diagram places an API and its data store on the same host.
 Save the input as `physical-deployment.json` and run the export command from the same directory. [Trail Notes physical deployment JSON](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/examples/trail-notes/diagrams/physical-deployment.json)
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.6 render-drawio physical-deployment.json --out trail-notes.drawio
+npx -y c4-architect-mcp@0.2.0-alpha.7 render-drawio physical-deployment.json --out trail-notes.drawio
 ```
 
 Use **File → Open from → Device** to open the file in Draw.io. Drag a deployment group by its header to move its contents together. Double-click a group title or a relationship label to edit it. Connectors remain attached to their shapes as you move them. [Draw.io editor](https://app.diagrams.net/)
@@ -333,13 +335,12 @@ Use the page tabs at the bottom of the editable file to switch views. Select any
 
 ### Export a Structurizr DSL workspace
 
-The Trail Notes workspace has four views of the same system. The Component view scopes the retry flow to the Notes API. Physical Deployment places instances of the web app, API, and database on the visitor center hardware. [Trail Notes workspace input](examples/trail-notes/diagrams/structurizr-workspace.json)
+The Trail Notes workspace has four views of the same system. The Component view scopes the retry flow to the Notes API. Physical Deployment places instances of the web app, API, and database on the visitor center hardware.
 
-Run these commands from a source checkout with dependencies installed.
+Save the input as `structurizr-workspace.json` and run the export command from the same directory. [Trail Notes workspace input](https://raw.githubusercontent.com/zrack/c4-architect-mcp/941ec79a12f3afd77fcf9ed093b858798ff9c688/examples/trail-notes/diagrams/structurizr-workspace.json)
 
 ```sh
-npm run build
-node dist/index.js render-structurizr examples/trail-notes/diagrams/structurizr-workspace.json --out output/trail-notes-structurizr/workspace.dsl
+npx -y c4-architect-mcp@0.2.0-alpha.7 render-structurizr structurizr-workspace.json --out workspace.dsl
 ```
 
 Point Structurizr Local at the output directory and use its diagram selector to switch views. Java or Docker is only needed to run the Structurizr viewer or validator. [Structurizr Local quickstart](https://docs.structurizr.com/local/quickstart)
@@ -357,8 +358,8 @@ Both TakeNote diagrams use the same source snapshot. On the right, focusing on `
 Use `query --search` to find the exact node ID for a focused diagram. These commands use the graph from the checkout example and show the outgoing dependencies of Order orchestration.
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.6 query output/order-service.graph.json --search "Order orchestration" --depth 0
-npx -y c4-architect-mcp@0.2.0-alpha.6 render output/order-service.graph.json --node component:orders --direction outgoing --out output/ORDER-SERVICE.outgoing.md
+npx -y c4-architect-mcp@0.2.0-alpha.7 query output/order-service.graph.json --search "Order orchestration" --depth 0
+npx -y c4-architect-mcp@0.2.0-alpha.7 render output/order-service.graph.json --node component:orders --direction outgoing --out output/ORDER-SERVICE.outgoing.md
 ```
 
 With `--node`, render defaults to both directions, depth 1, 25 nodes, and 50 relationships. Use `--direction incoming` or `--direction outgoing` to trace one direction. Set `--depth`, `--nodes`, and `--edges` to adjust the view. The diagram caption shows how much of the saved graph is included. The render result reports omitted nodes and relationships and whether a node or relationship limit was reached.
@@ -386,7 +387,7 @@ For MCP, pass `focus` to `render_architecture_graph`. Find the ID with `query_ar
 Pass `review` two saved graphs at the same C4 level and scan scope. Use each revision's boundary configuration if the pull request changes how files are assigned to components.
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.6 review base.graph.json head.graph.json --out PR-ARCHITECTURE.md
+npx -y c4-architect-mcp@0.2.0-alpha.7 review base.graph.json head.graph.json --out PR-ARCHITECTURE.md
 ```
 
 The report separates dependency changes, declared boundaries, and file reassignments from ordinary source edits. It lists source locations and flags partial scans. The focused diagram uses the head snapshot for an added or changed dependency and the base snapshot when dependencies were only removed. Keep the diagram files beside the Markdown when sharing the report.
@@ -394,7 +395,7 @@ The report separates dependency changes, declared boundaries, and file reassignm
 For links to exact GitHub source lines, pass each checkout's full commit SHA to `analyze --commit` when saving its graph. Then specify the repository and scan root for the report. Both snapshots must use the same repository-relative source root. The root defaults to `.` for a scan of the entire repository.
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.6 review base.graph.json head.graph.json --out PR-ARCHITECTURE.md \
+npx -y c4-architect-mcp@0.2.0-alpha.7 review base.graph.json head.graph.json --out PR-ARCHITECTURE.md \
   --github-repo OWNER/REPO --source-root src
 ```
 
