@@ -4,17 +4,20 @@ import { analyzeDirectory } from "./parsers/astParser.js";
 import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph, type AbstractionLevel } from "./model/graph.js";
 import { graphFocusSchema } from "./model/neighborhood.js";
 import { renderArchitectureGraph } from "./renderers/artifacts.js";
+import { writeArchitectureReview } from "./renderers/review.js";
 import { version } from "./version.js";
 
 const help = `C4-Architect ${version}
 
 No arguments: start the MCP server over stdio.
 
-  analyze <directory> --level Component --out graph.json [--config config.json] [--tsconfig tsconfig.json] [--summary]
+  analyze <directory> --level Component --out graph.json [--config config.json] [--tsconfig tsconfig.json] [--commit SHA] [--summary]
   render <graph.json> --out ARCHITECTURE.md [--title "Architecture"] [--node ID [--direction both] [--depth 1] [--nodes 25] [--edges 50]]
   summary <graph.json>
   query <graph.json> [--node ID | --search TEXT] [--direction both] [--depth 1] [--nodes 25] [--edges 50] [--bytes 16000] [--evidence]
   diff <before.json> <after.json> [--limit 25] [--bytes 16000]
+  review <before.json> <after.json> --out REVIEW.md [--title "Architecture review"]
+    [--github-repo OWNER/REPO [--source-root REPO_RELATIVE_PATH]]
 
 Levels: Context, Container, Component. Paths are relative to the current directory.
 Boundary configuration is loaded only with --config. Rendering writes Markdown,
@@ -28,8 +31,9 @@ export async function runCli(args: string[]): Promise<boolean> {
   if (args.length === 1 && ["--version", "-v"].includes(args[0])) { process.stdout.write(version + "\n"); return true; }
   const [command, ...rest] = args;
   const specs: Record<string, string[]> = {
-    analyze: ["level", "out", "config", "tsconfig", "summary"], render: ["out", "title", "node", "direction", "depth", "nodes", "edges"], summary: [],
+    analyze: ["level", "out", "config", "tsconfig", "commit", "summary"], render: ["out", "title", "node", "direction", "depth", "nodes", "edges"], summary: [],
     query: ["node", "search", "direction", "depth", "nodes", "edges", "bytes", "evidence"], diff: ["limit", "bytes"],
+    review: ["out", "title", "github-repo", "source-root"],
   };
   if (!Object.hasOwn(specs, command)) throw new Error(`Unknown command: ${command}. Use --help.`);
   const flags = new Map<string, string | boolean>(), positional: string[] = [];
@@ -45,7 +49,7 @@ export async function runCli(args: string[]): Promise<boolean> {
       flags.set(flag, value);
     }
   }
-  if (positional.length !== (command === "diff" ? 2 : 1)) throw new Error(`Invalid arguments for ${command}. Use --help.`);
+  if (positional.length !== (["diff", "review"].includes(command) ? 2 : 1)) throw new Error(`Invalid arguments for ${command}. Use --help.`);
   const str = (key: string) => flags.get(key) as string | undefined;
   const num = (key: string) => flags.has(key) ? Number(str(key)) : undefined;
   if (command === "analyze") {
@@ -53,7 +57,10 @@ export async function runCli(args: string[]): Promise<boolean> {
     if (!["Context", "Container", "Component"].includes(level)) throw new Error("--level must be Context, Container, or Component");
     const out = str("out");
     if (!out) throw new Error("analyze requires --out graph.json");
+    const commit = str("commit");
+    if (commit && !/^[0-9a-f]{40}$/i.test(commit)) throw new Error("--commit must be a full 40-character Git commit SHA");
     const graph = await analyzeDirectory(path.resolve(positional[0]), level as AbstractionLevel, { configPath: str("config"), tsconfigPath: str("tsconfig") });
+    if (commit) graph.metadata.commit = commit.toLowerCase();
     await fs.mkdir(path.dirname(path.resolve(out)), { recursive: true });
     await writeArchitectureGraph(out, graph);
     json(flags.has("summary") ? { ...summarizeArchitectureGraph(graph), graphPath: path.resolve(out) } : graph);
@@ -71,6 +78,13 @@ export async function runCli(args: string[]): Promise<boolean> {
     nodeId: str("node"), search: str("search"), direction: str("direction") as "both" | undefined,
     maxDepth: num("depth"), maxNodes: num("nodes"), maxEdges: num("edges"), maxBytes: num("bytes"), includeEvidence: flags.has("evidence"),
   }));
-  else json(compareArchitectureGraphs(await readArchitectureGraph(positional[0]), await readArchitectureGraph(positional[1]), { limit: num("limit"), maxBytes: num("bytes") }));
+  else if (command === "review") {
+    const out = str("out");
+    if (!out) throw new Error("review requires --out REVIEW.md");
+    const repository = str("github-repo"), sourceRoot = str("source-root");
+    if (sourceRoot && !repository) throw new Error("--source-root requires --github-repo OWNER/REPO");
+    const sourceLinks = repository ? { repository, sourceRoot } : undefined;
+    json(await writeArchitectureReview(positional[0], positional[1], out, str("title"), sourceLinks));
+  } else json(compareArchitectureGraphs(await readArchitectureGraph(positional[0]), await readArchitectureGraph(positional[1]), { limit: num("limit"), maxBytes: num("bytes") }));
   return true;
 }

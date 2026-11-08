@@ -2,6 +2,18 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## 0.2.0-alpha.3 — 2026-11-07
+
+### Added
+
+- Use `review` to compare saved graphs and write a Markdown PR report with dependency changes, declared boundary and source assignment changes, scan diagnostics, and a focused diagram when applicable.
+- Save revision SHAs with `analyze --commit` and use `review --github-repo` and `--source-root` to link evidence to the exact source lines.
+- Show unresolved import locations for both snapshots, prioritizing changed specifiers even when warning counts are equal.
+
+### Fixed
+
+- Preserve package subpath changes and explicit component technology changes in architecture reviews. Use recorded provenance to ignore inferred technology changes and qualify ambiguous legacy values.
+
 ## 0.2.0-alpha.2 — 2026-11-06
 
 ### Added

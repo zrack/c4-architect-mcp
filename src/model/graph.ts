@@ -51,6 +51,7 @@ export interface ArchitectureNode {
   label: string;
   type: ArchitectureNodeType;
   technology: string;
+  technologyBasis?: "declared" | "inferred";
   path: string;
   exports?: string[];
   parentId?: string;
@@ -108,7 +109,8 @@ export const architectureGraphSchema = z.object({
   }).passthrough(),
   nodes: z.array(z.object({
     id: identifier, label: nonempty, type: z.enum(["System", "ExternalSystem", "Container", "ContainerDb", "Component"]),
-    technology: nonempty, path: nonempty, exports: z.array(z.string()).optional(), parentId: identifier.optional(),
+    technology: nonempty, technologyBasis: z.enum(["declared", "inferred"]).optional(),
+    path: nonempty, exports: z.array(z.string()).optional(), parentId: identifier.optional(),
     description: z.string().optional(), classification: classificationSchema, evidence: z.array(evidenceSchema),
   }).passthrough()),
   edges: z.array(z.object({
@@ -340,12 +342,16 @@ const nodeSemantics = (node: ArchitectureNode, scanDirectory: string) => ({ id: 
 const edgeSemantics = (edge: ArchitectureEdge) => ({ source: edge.source, target: edge.target,
   label: edge.label, protocol: edge.protocol, kind: edge.kind });
 
-function reconcileUnmatchedEdges(before: ArchitectureEdge[], after: ArchitectureEdge[]): ArchitectureEdge[] {
-  const beforeIds = new Set(before.map(edge => edge.id));
-  const afterIds = new Set(after.map(edge => edge.id));
+function reconcileUnmatchedEdges(before: ArchitectureGraph, after: ArchitectureGraph): ArchitectureEdge[] {
+  const beforeIds = new Set(before.edges.map(edge => edge.id));
+  const afterIds = new Set(after.edges.map(edge => edge.id));
+  const externalIds = new Set([...before.nodes, ...after.nodes]
+    .filter(node => node.type === "ExternalSystem" || (node.type === "ContainerDb" && node.path.startsWith("package:")))
+    .map(node => node.id));
   const unmatchedByDependency = new Map<string, string[]>();
-  for (const edge of before) {
-    if (afterIds.has(edge.id)) continue;
+  for (const edge of before.edges) {
+    // A package node can represent distinct entry points such as zod/v3 and zod/v4.
+    if (afterIds.has(edge.id) || externalIds.has(edge.source) || externalIds.has(edge.target)) continue;
     const key = JSON.stringify(edgeSemantics(edge));
     const ids = unmatchedByDependency.get(key) ?? [];
     ids.push(edge.id);
@@ -355,37 +361,56 @@ function reconcileUnmatchedEdges(before: ArchitectureEdge[], after: Architecture
 
   // Existing IDs take precedence. Pair leftover equivalent dependencies once
   // each so a specifier spelling change does not hide a parallel edge change.
-  return [...after].sort((left, right) => left.id.localeCompare(right.id)).map(edge => {
+  return [...after.edges].sort((left, right) => left.id.localeCompare(right.id)).map(edge => {
     if (beforeIds.has(edge.id)) return edge;
     const previousId = unmatchedByDependency.get(JSON.stringify(edgeSemantics(edge)))?.pop();
     return previousId === undefined ? edge : { ...edge, id: previousId };
   });
 }
 
-export function compareArchitectureGraphs(beforeInput: ArchitectureGraph, afterInput: ArchitectureGraph, options: { limit?: number; maxBytes?: number } = {}) {
+function validateComparisonGraphs(beforeInput: ArchitectureGraph, afterInput: ArchitectureGraph) {
   const before = validateArchitectureGraph(beforeInput), after = validateArchitectureGraph(afterInput);
   if (before.metadata.abstractionLevel !== after.metadata.abstractionLevel) throw new Error("Compare graphs at the same abstraction level");
-  const limit = bounded(options.limit, 50, 1, 100, "limit"), maxBytes = bounded(options.maxBytes, 16000, 2048, 64000, "maxBytes");
+  return { before, after };
+}
+
+function computeArchitectureDiff(before: ArchitectureGraph, after: ArchitectureGraph) {
   const compare = <T>(left: T[], right: T[], key: (item: T) => string, value: (item: T, scanDirectory: string) => unknown) => {
     const previous = new Map(left.map(item => [key(item), item])), next = new Map(right.map(item => [key(item), item]));
     const added = [...next.keys()].filter(id => !previous.has(id)).sort();
     const removed = [...previous.keys()].filter(id => !next.has(id)).sort();
     const changed = [...next.keys()].filter(id => previous.has(id)
       && canonical(value(previous.get(id)!, before.metadata.scannedDirectory)) !== canonical(value(next.get(id)!, after.metadata.scannedDirectory))).sort();
-    return { counts: { added: added.length, removed: removed.length, changed: changed.length },
-      added: added.slice(0, limit), removed: removed.slice(0, limit), changed: changed.slice(0, limit) };
+    return { counts: { added: added.length, removed: removed.length, changed: changed.length }, added, removed, changed };
   };
-  const result = {
+  return {
     graphVersion: before.schemaVersion, abstractionLevel: before.metadata.abstractionLevel,
     nodes: compare(before.nodes, after.nodes, node => node.id, nodeSemantics),
-    edges: compare(before.edges, reconcileUnmatchedEdges(before.edges, after.edges), edge => edge.id, edgeSemantics),
+    edges: compare(before.edges, reconcileUnmatchedEdges(before, after), edge => edge.id, edgeSemantics),
     hierarchy: compare(before.hierarchy, after.hierarchy, boundary => boundary.id,
       (boundary, scanDirectory) => ({ ...boundary, label: labelForComparison(boundary, scanDirectory) })),
     sources: compare(before.sources, after.sources, source => source.path, source => source),
-    truncated: false,
   };
+}
+
+export function diffArchitectureGraphs(beforeInput: ArchitectureGraph, afterInput: ArchitectureGraph) {
+  const { before, after } = validateComparisonGraphs(beforeInput, afterInput);
+  return computeArchitectureDiff(before, after);
+}
+
+export function compareArchitectureGraphs(beforeInput: ArchitectureGraph, afterInput: ArchitectureGraph, options: { limit?: number; maxBytes?: number } = {}) {
+  const { before, after } = validateComparisonGraphs(beforeInput, afterInput);
+  const limit = bounded(options.limit, 50, 1, 100, "limit"), maxBytes = bounded(options.maxBytes, 16000, 2048, 64000, "maxBytes");
+  const result = { ...computeArchitectureDiff(before, after), truncated: false };
   const categories = [result.nodes, result.edges, result.hierarchy, result.sources];
-  result.truncated = categories.some(category => Object.entries(category.counts).some(([key, count]) => count > category[key as "added" | "removed" | "changed"].length));
+  for (const category of categories) {
+    for (const key of ["added", "removed", "changed"] as const) {
+      const ids = category[key];
+      if (ids.length <= limit) continue;
+      ids.length = limit;
+      result.truncated = true;
+    }
+  }
   while (Buffer.byteLength(JSON.stringify(result)) > maxBytes) {
     result.truncated = true;
     const arrays = categories.flatMap(category => [category.added, category.removed, category.changed]);

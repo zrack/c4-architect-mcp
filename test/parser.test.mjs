@@ -156,6 +156,8 @@ test('explicit boundary config produces actual C4 hierarchy and source evidence 
   const graph = await analyzeDirectory(directory, 'Component', options);
   const group = graph.nodes.find(node => node.id === 'component:features');
   assert.equal(group.classification.basis, 'declared');
+  assert.equal(group.technologyBasis, 'inferred');
+  assert.equal(byPath(graph, 'src/index.ts').technologyBasis, undefined);
   assert.equal(group.parentId, 'container:web');
   assert.ok(group.evidence.some(item => item.path === 'src/feature/index.ts'));
   assert.ok(group.evidence.some(item => item.path === 'src/services/orders.ts'));

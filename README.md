@@ -6,7 +6,7 @@
 
 C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io/) server that turns source imports into a versioned dependency graph, lets you review and name its architectural boundaries, and produces compact C4 diagrams. Use it from Codex, Claude Code, Claude Desktop, or another client that supports local MCP servers over `stdio`.
 
-**0.2.0-alpha.2 · TypeScript / TSX · Local parsing · MIT licensed**
+**0.2.0-alpha.3 · TypeScript / TSX · Local parsing · MIT licensed**
 
 [Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#read-the-diagram) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
@@ -36,10 +36,10 @@ Draw.io, Structurizr DSL, wiki publishing, cross-repository mapping, additional 
 Use Node.js 22 or 24 and npm. Run the pinned alpha without a checkout:
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.2 --help
+npx -y c4-architect-mcp@0.2.0-alpha.3 --help
 ```
 
-The examples pin `0.2.0-alpha.2` for a repeatable setup. `c4-architect-mcp@alpha` follows the prerelease channel and currently selects `0.2.0-alpha.2`. npm's `latest` tag remains on `0.2.0-alpha.1`, the initial prerelease. There is no stable release yet.
+The examples pin `0.2.0-alpha.3` for a repeatable setup. `c4-architect-mcp@alpha` follows the prerelease channel and currently selects `0.2.0-alpha.3`. npm's `latest` tag remains on `0.2.0-alpha.1`, the initial prerelease. There is no stable release yet.
 
 The server communicates over `stdio`; starting it without a subcommand waits for an MCP client rather than opening a browser page or an HTTP port. The following configurations let your client start it through `npx`.
 
@@ -51,13 +51,13 @@ Add this to `~/.codex/config.toml`, or use the MCP server settings in the Codex 
 ```toml
 [mcp_servers.c4-architect]
 command = "npx"
-args = ["-y", "c4-architect-mcp@0.2.0-alpha.2"]
+args = ["-y", "c4-architect-mcp@0.2.0-alpha.3"]
 ```
 
 You can also register it from the Codex CLI:
 
 ```sh
-codex mcp add c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.2
+codex mcp add c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.3
 ```
 
 Reconnect the server after configuration changes. See the [official Codex MCP setup guide](https://learn.chatgpt.com/docs/extend/mcp).
@@ -68,7 +68,7 @@ Reconnect the server after configuration changes. See the [official Codex MCP se
 <summary><strong>Claude Code</strong></summary>
 
 ```sh
-claude mcp add --transport stdio c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.2
+claude mcp add --transport stdio c4-architect -- npx -y c4-architect-mcp@0.2.0-alpha.3
 ```
 
 Use `/mcp` to inspect the connection. See the [official Claude Code MCP documentation](https://code.claude.com/docs/en/mcp).
@@ -85,7 +85,7 @@ Open **Settings → Developer → Edit Config** and merge this entry with your e
   "mcpServers": {
     "c4-architect": {
       "command": "npx",
-      "args": ["-y", "c4-architect-mcp@0.2.0-alpha.2"]
+      "args": ["-y", "c4-architect-mcp@0.2.0-alpha.3"]
     }
   }
 }
@@ -95,12 +95,12 @@ Completely restart Claude Desktop after saving. For Windows JSON paths, use forw
 
 </details>
 
-These are local `stdio` configurations. Verify the connection in your chosen client. If a desktop app cannot find `npx`, use the executable's absolute path. On Windows, a client that cannot launch `npx` directly can use `command: "cmd"` with `args: ["/c", "npx", "-y", "c4-architect-mcp@0.2.0-alpha.2"]`.
+These are local `stdio` configurations. Verify the connection in your chosen client. If a desktop app cannot find `npx`, use the executable's absolute path. On Windows, a client that cannot launch `npx` directly can use `command: "cmd"` with `args: ["/c", "npx", "-y", "c4-architect-mcp@0.2.0-alpha.3"]`.
 
 ### Optional global installation
 
 ```sh
-npm install -g c4-architect-mcp@0.2.0-alpha.2
+npm install -g c4-architect-mcp@0.2.0-alpha.3
 c4-architect-mcp --help
 ```
 
@@ -111,14 +111,14 @@ With a global installation, use `c4-architect-mcp` as the MCP command with no ar
 You can analyze and render without an MCP client:
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.2 analyze /absolute/path/to/project/src --level Component --out /absolute/path/to/project/architecture.graph.json --summary
-npx -y c4-architect-mcp@0.2.0-alpha.2 summary /absolute/path/to/project/architecture.graph.json
-npx -y c4-architect-mcp@0.2.0-alpha.2 render /absolute/path/to/project/architecture.graph.json --out /absolute/path/to/project/ARCHITECTURE.md
+npx -y c4-architect-mcp@0.2.0-alpha.3 analyze /absolute/path/to/project/src --level Component --out /absolute/path/to/project/architecture.graph.json --summary
+npx -y c4-architect-mcp@0.2.0-alpha.3 summary /absolute/path/to/project/architecture.graph.json
+npx -y c4-architect-mcp@0.2.0-alpha.3 render /absolute/path/to/project/architecture.graph.json --out /absolute/path/to/project/ARCHITECTURE.md
 ```
 
 Replace `/absolute/path/to/project` with your project's location. Open the generated `ARCHITECTURE.html` beside the Markdown to explore the diagram.
 
-For explicit compiler settings, add `--tsconfig /absolute/path/to/tsconfig.json` to `analyze`. The nearest `tsconfig.json` is otherwise discovered and read as data. Boundary configuration is loaded only when `--config` is supplied. The CLI also provides `query` and `diff` commands; `--help` lists their options.
+For explicit compiler settings, add `--tsconfig /absolute/path/to/tsconfig.json` to `analyze`. The nearest `tsconfig.json` is otherwise discovered and read as data. Boundary configuration is loaded only when `--config` is supplied. The CLI also provides `query`, `diff`, and `review` commands. Use `--help` for their options.
 
 ### Run from a checkout or try the sample
 
@@ -237,8 +237,8 @@ Both TakeNote diagrams use the same source snapshot. On the right, focusing on `
 Use `query --search` to find the exact node ID for a focused diagram. These commands use the graph from the checkout example and show the outgoing dependencies of Order orchestration.
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.2 query output/order-service.graph.json --search "Order orchestration" --depth 0
-npx -y c4-architect-mcp@0.2.0-alpha.2 render output/order-service.graph.json --node component:orders --direction outgoing --out output/ORDER-SERVICE.outgoing.md
+npx -y c4-architect-mcp@0.2.0-alpha.3 query output/order-service.graph.json --search "Order orchestration" --depth 0
+npx -y c4-architect-mcp@0.2.0-alpha.3 render output/order-service.graph.json --node component:orders --direction outgoing --out output/ORDER-SERVICE.outgoing.md
 ```
 
 With `--node`, render defaults to both directions, depth 1, 25 nodes, and 50 relationships. Use `--direction incoming` or `--direction outgoing` to trace one direction. Set `--depth`, `--nodes`, and `--edges` to adjust the view. The diagram caption shows how much of the saved graph is included. The render result reports omitted nodes and relationships and whether a node or relationship limit was reached.
@@ -260,6 +260,25 @@ For MCP, pass `focus` to `render_architecture_graph`. Find the ID with `query_ar
   }
 }
 ```
+
+### Review architecture changes for a pull request
+
+Pass `review` two saved graphs at the same C4 level and scan scope. Use each revision's boundary configuration if the pull request changes how files are assigned to components.
+
+```sh
+npx -y c4-architect-mcp@0.2.0-alpha.3 review base.graph.json head.graph.json --out PR-ARCHITECTURE.md
+```
+
+The report separates dependency changes, declared boundaries, and file reassignments from ordinary source edits. It lists source locations and flags partial scans. The focused diagram uses the head snapshot for an added or changed dependency and the base snapshot when dependencies were only removed. Keep the diagram files beside the Markdown when sharing the report.
+
+For links to exact GitHub source lines, pass each checkout's full commit SHA to `analyze --commit` when saving its graph. Then specify the repository and scan root for the report. Both snapshots must use the same repository-relative source root. The root defaults to `.` for a scan of the entire repository.
+
+```sh
+npx -y c4-architect-mcp@0.2.0-alpha.3 review base.graph.json head.graph.json --out PR-ARCHITECTURE.md \
+  --github-repo OWNER/REPO --source-root src
+```
+
+Partial scans list unresolved import locations and specifiers for both revisions. The report shows up to 25 locations per snapshot, with changes to the unresolved imports listed first.
 
 ## Read the diagram
 
