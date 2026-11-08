@@ -2,6 +2,12 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+### Added
+
+- Export authored Context, Container, Component, and Deployment views as Structurizr DSL using `render-structurizr` or `render_structurizr_dsl`. The Trail Notes sample demonstrates four views in one workspace.
+
 ## 0.2.0-alpha.6 — 2026-11-07
 
 ### Added

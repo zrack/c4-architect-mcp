@@ -26,6 +26,8 @@ npx -y c4-architect-mcp@0.2.0-alpha.5 render-diagram examples/trail-notes/diagra
 
 Open the generated HTML files for the interactive diagrams. Select an arrow to see its source locations, or use the links below.
 
+The [Structurizr workspace input](diagrams/structurizr-workspace.json) combines the published Context and Container examples with the Component and Physical Deployment diagrams from this directory. Follow the [Structurizr export instructions](../../README.md#export-a-structurizr-dsl-workspace) to open the four views in Structurizr Local.
+
 ### Component
 
 The client owns the retry. The Notes API validates the draft and delegates duplicate prevention to its repository.

@@ -4,7 +4,7 @@ import { analyzeDirectory } from "./parsers/astParser.js";
 import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph, type AbstractionLevel } from "./model/graph.js";
 import { graphFocusSchema } from "./model/neighborhood.js";
 import { diagramSchema } from "./model/diagram.js";
-import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, renderDrawioGraph } from "./renderers/artifacts.js";
+import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, renderDrawioGraph, renderStructurizrArtifacts } from "./renderers/artifacts.js";
 import { writeArchitectureReview } from "./renderers/review.js";
 import { version } from "./version.js";
 
@@ -16,6 +16,7 @@ No arguments: start the MCP server over stdio.
   render <graph.json> --out ARCHITECTURE.md [--title "Architecture"] [--node ID [--direction both] [--depth 1] [--nodes 25] [--edges 50]]
   render-diagram <diagram.json> --out DIAGRAM.md
   render-drawio <diagram-or-graph.json> --out DIAGRAM.drawio
+  render-structurizr <diagram-or-workspace.json> --out WORKSPACE.dsl
   summary <graph.json>
   query <graph.json> [--node ID | --search TEXT] [--direction both] [--depth 1] [--nodes 25] [--edges 50] [--bytes 16000] [--evidence]
   diff <before.json> <after.json> [--limit 25] [--bytes 16000]
@@ -25,7 +26,7 @@ No arguments: start the MCP server over stdio.
 Analysis levels: Context, Container, Component. Paths are relative to the current directory.
 Authored diagrams also support Deployment, Dynamic, System Landscape, and Code.
 Boundary configuration is loaded only with --config. Rendering writes Markdown,
-PNG, SVG, and standalone interactive HTML, or editable Draw.io XML. No repository code is executed.
+PNG, SVG, standalone interactive HTML, Draw.io XML, or Structurizr DSL. No repository code is executed.
 `;
 const json = (value: unknown) => process.stdout.write(JSON.stringify(value));
 
@@ -38,6 +39,7 @@ export async function runCli(args: string[]): Promise<boolean> {
     analyze: ["level", "out", "config", "tsconfig", "commit", "summary"], render: ["out", "title", "node", "direction", "depth", "nodes", "edges"], summary: [],
     "render-diagram": ["out"],
     "render-drawio": ["out"],
+    "render-structurizr": ["out"],
     query: ["node", "search", "direction", "depth", "nodes", "edges", "bytes", "evidence"], diff: ["limit", "bytes"],
     review: ["out", "title", "github-repo", "source-root"],
   };
@@ -92,6 +94,11 @@ export async function runCli(args: string[]): Promise<boolean> {
       ? await renderDrawioGraph(input, { outputPath })
       : await renderDrawioArtifacts(diagramSchema.parse(input), outputPath);
     json(result.structuredContent);
+  } else if (command === "render-structurizr") {
+    const outputPath = str("out");
+    if (!outputPath) throw new Error("render-structurizr requires --out WORKSPACE.dsl");
+    const input: unknown = JSON.parse(await fs.readFile(positional[0], "utf8"));
+    json((await renderStructurizrArtifacts(input, outputPath)).structuredContent);
   } else if (command === "summary") json(summarizeArchitectureGraph(await readArchitectureGraph(positional[0])));
   else if (command === "query") json(queryArchitectureGraph(await readArchitectureGraph(positional[0]), {
     nodeId: str("node"), search: str("search"), direction: str("direction") as "both" | undefined,

@@ -32,7 +32,7 @@ The result is a starting point for application and solution architecture review.
 
 Export native shapes, nested deployment groups, and connector labels that you can edit in Draw.io. [Editable Draw.io export](#export-editable-drawio-diagrams)
 
-Structurizr DSL, wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are planned. [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
+Structurizr DSL export is available from a source checkout. Wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are planned. [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
 ## C4 diagrams
 
@@ -255,6 +255,7 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 | `render_architecture_graph` | `graphPath`; optional `title`, `outputPath`, `focus`, `format` | Render a saved graph or a focused neighborhood. Use `format: "drawio"` for editable XML. |
 | `render_c4_mermaid` | `title`, `c4Level`, `nodes`, `relationships`, optional `outputPath` | Mermaid source and a compact server-rendered PNG; saved SVG, PNG, HTML, and Markdown when requested. |
 | `render_c4_drawio` | Authored diagram fields and an optional `outputPath` ending in `.drawio` | Editable Draw.io XML, with a file when requested. |
+| `render_structurizr_dsl` | `input` with an authored diagram or workspace bundle and an optional `outputPath` ending in `.dsl` | Structurizr DSL with Context, Container, Component, or Deployment views. Available from source. |
 
 Queries default to `direction: "both"`, `maxDepth: 1`, `maxNodes: 25`, `maxEdges: 50`, and `maxBytes: 16000`. Source evidence is opt-in. Start with a summary, then search for a component or request its incoming or outgoing dependencies. Smaller views are usually easier to review than a complete repository drawing.
 
@@ -329,6 +330,21 @@ Use the page tabs at the bottom of the editable file to switch views. Select any
 | Component | Physical Deployment |
 | --- | --- |
 | [![Trail Notes Component open in Draw.io](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Component-in-Drawio.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Component-in-Drawio.jpg) | [![Trail Notes Physical Deployment open in Draw.io](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Physical-in-Drawio.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Physical-in-Drawio.jpg) |
+
+### Export a Structurizr DSL workspace
+
+The Trail Notes workspace has four views of the same system. The Component view scopes the retry flow to the Notes API. Physical Deployment places instances of the web app, API, and database on the visitor center hardware. [Trail Notes workspace input](examples/trail-notes/diagrams/structurizr-workspace.json)
+
+Run these commands from a source checkout with dependencies installed.
+
+```sh
+npm run build
+node dist/index.js render-structurizr examples/trail-notes/diagrams/structurizr-workspace.json --out output/trail-notes-structurizr/workspace.dsl
+```
+
+Point Structurizr Local at the output directory and use its diagram selector to switch views. Java or Docker is only needed to run the Structurizr viewer or validator. [Structurizr Local quickstart](https://docs.structurizr.com/local/quickstart)
+
+The CLI and MCP tool accept an authored diagram or a workspace bundle with one diagram per level. A bundle uses shared node IDs, `systemId` for the software system, and `componentContainerId` for the Component view's container. Use `deploymentInstanceOf` to map deployment nodes that represent software instances to their logical IDs. The Trail Notes bundle maps `browser` to `web` and `database` to `db`.
 
 ### Focus a diagram on one node
 

@@ -3,6 +3,7 @@ import path from "node:path";
 import { renderC4Mermaid, type C4Diagram } from "./c4Mermaid.js";
 import { renderCompactC4 } from "./compactC4.js";
 import { renderC4Drawio } from "./drawio.js";
+import { renderStructurizrDsl } from "./structurizr.js";
 import { validateArchitectureGraph, type ArchitectureGraph } from "../model/graph.js";
 import { selectGraphNeighborhood, type GraphFocus } from "../model/neighborhood.js";
 
@@ -85,6 +86,20 @@ export async function renderDrawioArtifacts(diagram: C4Diagram, outputPath?: str
       relationshipCount: diagram.relationships.length,
       ...(drawio ? { artifacts: { drawio } } : {}),
     },
+  };
+}
+
+export async function renderStructurizrArtifacts(input: unknown, outputPath?: string) {
+  if (outputPath !== undefined && !/\.dsl$/i.test(outputPath)) throw new Error("outputPath must end in .dsl");
+  const { dsl, viewKeys } = renderStructurizrDsl(input);
+  const structurizr = outputPath === undefined ? undefined : path.resolve(outputPath);
+  if (structurizr) {
+    await fs.mkdir(path.dirname(structurizr), { recursive: true });
+    await fs.writeFile(structurizr, dsl, "utf8");
+  }
+  return {
+    content: [{ type: "text" as const, text: dsl }],
+    structuredContent: { viewKeys, ...(structurizr ? { artifacts: { structurizr } } : {}) },
   };
 }
 
