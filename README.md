@@ -314,9 +314,21 @@ Save the input as `physical-deployment.json` and run the export command from the
 npx -y c4-architect-mcp@0.2.0-alpha.6 render-drawio physical-deployment.json --out trail-notes.drawio
 ```
 
-Use **File → Open from → Device** to open the file in Draw.io. Drag a deployment group by its header to move its contents together. Double-click a group title or a relationship label to edit it. Connectors remain attached to their shapes as you move them. [Draw.io editor](https://app.diagrams.net/) · [Editable four-page Trail Notes example](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Four-Views.drawio)
+Use **File → Open from → Device** to open the file in Draw.io. Drag a deployment group by its header to move its contents together. Double-click a group title or a relationship label to edit it. Connectors remain attached to their shapes as you move them. [Draw.io editor](https://app.diagrams.net/)
 
 The same command also accepts a saved architecture graph. For MCP, send an authored diagram to `render_c4_drawio`, or set `format: "drawio"` on `render_architecture_graph` to export a saved graph or its focused neighborhood. Use a `.drawio` extension for the output path.
+
+#### Trail Notes in Draw.io
+
+Use the page tabs at the bottom of the editable file to switch views. Select any screenshot to open it full size. [Download the editable four-page Draw.io file](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.6/Trail-Notes-Four-Views.drawio)
+
+| Context | Container |
+| --- | --- |
+| [![Trail Notes Context open in Draw.io](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Context-in-Drawio.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Context-in-Drawio.jpg) | [![Trail Notes Container open in Draw.io](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Container-in-Drawio.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Container-in-Drawio.jpg) |
+
+| Component | Physical Deployment |
+| --- | --- |
+| [![Trail Notes Component open in Draw.io](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Component-in-Drawio.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Component-in-Drawio.jpg) | [![Trail Notes Physical Deployment open in Draw.io](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Physical-in-Drawio.jpg)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/aa01187fe81847c1155d178c561bf2af6741ba24/docs/reviews/drawio-export/Trail-Notes-Physical-in-Drawio.jpg) |
 
 ### Focus a diagram on one node
 
