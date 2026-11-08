@@ -280,6 +280,12 @@ npx -y c4-architect-mcp@0.2.0-alpha.3 review base.graph.json head.graph.json --o
 
 Partial scans list unresolved import locations and specifiers for both revisions. The report shows up to 25 locations per snapshot, with changes to the unresolved imports listed first.
 
+#### Run the review in GitHub Actions
+
+Open **Actions → PR architecture review → Run workflow**, choose the default branch, and enter the pull request number. The manual workflow compares Component snapshots of `src` at the PR's base and head commits. It scans the checkouts without running their code or installing their dependencies, so unresolved imports can appear in the report.
+
+Download the `pr-<number>-architecture-review-<attempt>` artifact from the run and extract it before opening `PR-ARCHITECTURE.md`. Keep the focused diagram files beside the report so its links work. If there is no changed neighborhood to render, the artifact contains only the report.
+
 ## Read the diagram
 
 ![Five-component order-service diagram derived from the checked-in TypeScript example](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/component-example.png)
