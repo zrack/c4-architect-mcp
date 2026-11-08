@@ -2,6 +2,12 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+### Added
+
+- Preview and publish an authored diagram bundle to Confluence Cloud using `publish-confluence` or `publish_to_confluence`. The preview includes Confluence storage XHTML and the page's PNG attachments.
+
 ## 0.2.0-alpha.8 — 2026-11-07
 
 ### Added
