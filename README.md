@@ -430,6 +430,12 @@ npx -y c4-architect-mcp@0.2.0-alpha.10 publish-notion structurizr-workspace.json
 
 For MCP, use `publish_to_notion` with `target: { parentPageId }` and `publish: true`. Each publish creates a new child page in the workspace after all PNGs upload. The publisher uses direct uploads up to 20 MiB per PNG, subject to the workspace's own limit. If Notion cannot confirm page creation, check the parent page before retrying. [Notion file limits](https://developers.notion.com/guides/data-apis/working-with-files-and-media) · [Notion guidance for timed-out writes](https://developers.notion.com/reference/request-limits#retry-a-write-that-returns-503)
 
+#### Trail Notes Notion preview
+
+The local preview shows Context, Container, Component, and Physical Deployment on one page. Select the screenshot to open it at full size. The preview command above generates the PNGs referenced by the manifest. [Download page.json](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.10/page.json)
+
+[![Full Trail Notes Notion preview showing all four diagrams](https://raw.githubusercontent.com/zrack/c4-architect-mcp/b78cd30162e856f1b4ed3b5531d1850c341b88c6/docs/reviews/notion-publishing/Trail-Notes-Notion-Full-Page.png)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/b78cd30162e856f1b4ed3b5531d1850c341b88c6/docs/reviews/notion-publishing/Trail-Notes-Notion-Full-Page.png)
+
 ### Focus a diagram on one node
 
 Both TakeNote diagrams use the same source snapshot. On the right, focusing on `NoteEditor.tsx` and its direct neighbors reduces the view from **108 nodes and 363 arrows** to **15 nodes and 19 arrows**. Follow `TakeNoteApp.tsx` → `NoteEditor.tsx` → `PreviewEditor.tsx` to see the difference.
