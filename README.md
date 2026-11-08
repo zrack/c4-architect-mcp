@@ -8,7 +8,7 @@ C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io
 
 **0.2.0-alpha.5 · TypeScript / TSX · Local parsing · MIT licensed**
 
-[Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#read-the-diagram) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
+[Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#c4-diagrams) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
 ![Workflow: parse local source, preserve evidence, declare boundaries, query and compare, render and export](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/workflow.svg)
 
@@ -31,6 +31,46 @@ The result is a starting point for application and solution architecture review.
 | Compact PNG, SVG, and interactive HTML | Trace orthogonal connections, inspect relationship labels, and export a selected view. |
 
 Draw.io, Structurizr DSL, wiki publishing, cross-repository mapping, additional languages, and assisted threat modeling are **planned**, not implemented. See the [roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md).
+
+## C4 diagrams
+
+### Trail Notes examples
+
+Start with the whole system, then zoom in as far as the question requires. These diagrams use the same fictional trail journal app. Select a preview to open the full-size PNG, or download its JSON to render it yourself. [C4 model diagram guide](https://c4model.com/diagrams)
+
+#### Static structure
+
+| 1. Context | 2. Container |
+| --- | --- |
+| See who uses Trail Notes and the system it depends on. | Zoom into the web app, Notes API, and database. |
+| [![Trail Notes Context diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.5/trail-notes-context.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.5/trail-notes-context.png) | [![Trail Notes Container diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.5/trail-notes-container.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.5/trail-notes-container.png) |
+| [Download Context JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.5/trail-notes-context.json) | [Download Container JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.5/trail-notes-container.json) |
+
+| 3. Component | 4. Code |
+| --- | --- |
+| Zoom into how the Notes API handles a submission. | See the functions and types behind saving a note. |
+| [![Trail Notes Component diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.5/trail-notes-component.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.5/trail-notes-component.png) | [![Trail Notes Code diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-code.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-code.png) |
+| [Download Component JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.5/trail-notes-component.json) | [Download Code JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-code.json) |
+
+For a Component example based on a real scan, follow the `App.tsx` → `CaseWorkspace.tsx` import in the [ReplayCase alpha.5 diagram](https://github.com/zrack/c4-architect-mcp/releases/tag/v0.2.0-alpha.5#replaycase-component-diagram).
+
+#### Supporting views
+
+Use these views to show the wider landscape, a sequence of interactions, or where the software runs.
+
+| System Landscape | Dynamic | Deployment |
+| --- | --- | --- |
+| Place Trail Notes in the wider set of people and systems. | Follow the five steps for submitting a note. | See which hosts run the web app, API, and database. |
+| [![Trail Notes System Landscape diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.png) | [![Trail Notes Dynamic diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.png) | [![Trail Notes Deployment diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.png) |
+| [Download System Landscape JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.json) | [Download Dynamic JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.json) | [Download Deployment JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.json) |
+
+Download any example JSON and run `render-diagram` from the folder where you saved it. This command renders the Context example.
+
+```sh
+npx -y c4-architect-mcp@0.2.0-alpha.5 render-diagram trail-notes-context.json --out TRAIL-NOTES.md
+```
+
+Open `TRAIL-NOTES.html` to explore the diagram.
 
 ## Get started
 
@@ -229,14 +269,14 @@ Source analysis produces `Context`, `Container`, and `Component` graphs. The cor
 
 ### Render authored architecture views
 
-Render Deployment, Dynamic, System Landscape, and Code views from explicit nodes and relationships. Use `render_c4_mermaid` with the diagram fields and an optional `outputPath`, or save the same diagram as JSON and run `npx -y c4-architect-mcp@0.2.0-alpha.5 render-diagram diagram.json --out DIAGRAM.md`. Both entry points produce Mermaid source, PNG, SVG, and interactive HTML alongside the Markdown when given an output path.
+All seven C4 views can render explicit nodes and relationships. Use `render_c4_mermaid` with the diagram fields and an optional `outputPath`, or save the same diagram as JSON and run `npx -y c4-architect-mcp@0.2.0-alpha.5 render-diagram diagram.json --out DIAGRAM.md`. Both entry points produce Mermaid source, PNG, SVG, and interactive HTML alongside the Markdown when given an output path.
 
 | `c4Level` | What to supply |
 | --- | --- |
-| `C4Deployment` | `DeploymentNode` nodes for hosts or environments. Set `parentId` on the software instances or nested deployment nodes inside them. Relationships connect instances or deployment nodes that have no children. |
-| `C4Dynamic` | Participants as nodes and interactions in execution order in `relationships`. The renderer numbers the interactions in that order. |
-| `C4Landscape` | People and software systems across the scope, with relationships between them. |
 | `C4Code` | Code elements such as `Class`, `Interface`, `Function`, and `Type`, with relationships that describe calls, implementations, or dependencies. |
+| `C4Landscape` | People and software systems across the scope, with relationships between them. |
+| `C4Dynamic` | Participants as nodes and interactions in execution order in `relationships`. The renderer numbers the interactions in that order. |
+| `C4Deployment` | `DeploymentNode` nodes for hosts or environments. Set `parentId` on the software instances or nested deployment nodes inside them. Relationships connect instances or deployment nodes that have no children. |
 
 This deployment diagram places an API and its data store on the same host.
 
@@ -252,30 +292,6 @@ This deployment diagram places an API and its data store on the same host.
   "relationships": [{ "from": "api", "to": "db", "label": "Reads and writes orders" }]
 }
 ```
-
-#### Trail Notes examples
-
-These four diagrams show different views of the same fictional trail journal app. Open a diagram for the full-size PNG, or download its JSON to render it yourself.
-
-| Deployment | Dynamic |
-| --- | --- |
-| See where the web app, API, and database run. | Follow the five steps for submitting a trail note. |
-| [![Trail Notes Deployment diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.png) | [![Trail Notes Dynamic diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.png) |
-| [Download Deployment JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.json) | [Download Dynamic JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.json) |
-
-| System Landscape | Code |
-| --- | --- |
-| See how Trail Notes connects to its users, trail catalog, and email service. | See how the Notes API’s functions, class, interface, and type work together. |
-| [![Trail Notes System Landscape diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.png) | [![Trail Notes Code diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-code.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-code.png) |
-| [Download System Landscape JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.json) | [Download Code JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-code.json) |
-
-For example, download `trail-notes-dynamic.json` and run this command from the folder where you saved it.
-
-```sh
-npx -y c4-architect-mcp@0.2.0-alpha.5 render-diagram trail-notes-dynamic.json --out TRAIL-NOTES.md
-```
-
-Open `TRAIL-NOTES.html` to explore the numbered interactions. See the [alpha.4 prerelease](https://github.com/zrack/c4-architect-mcp/releases/tag/v0.2.0-alpha.4) for the release notes and all example files.
 
 ### Focus a diagram on one node
 
@@ -401,7 +417,7 @@ The focused view shows the immediate neighbors of `cli.ts`. Follow **R01** to tr
 
 The server computes the image layout with ELK, compares horizontal and vertical arrangements, and reserves space for the wrapped labels it draws. PNG and SVG rendering do not require a browser at runtime. Mermaid remains a compatible source export; a client's Mermaid layout may differ from the server image.
 
-The saved graph preserves the system/container hierarchy. The current image renderer draws a flat view, with parent-container and inferred-boundary information in node descriptions rather than nested boundary boxes. Inspect those descriptions in the interactive view.
+The saved graph preserves the system/container hierarchy. Context, Container, and Component images show parent-container and inferred-boundary information in node descriptions. Authored Deployment diagrams can show nested hosts. Inspect those descriptions in the interactive view.
 
 Saving `ARCHITECTURE.md` also writes `ARCHITECTURE.svg`, `ARCHITECTURE.png`, and `ARCHITECTURE.html` beside it. The Markdown shows the PNG, links to the interactive view, includes a relationship table, and retains the Mermaid source in a collapsed section.
 
