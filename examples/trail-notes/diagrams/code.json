@@ -1,0 +1,75 @@
+{
+  "title": "Trail Notes | Code",
+  "caption": "Note repository · How insertOrGet prevents duplicate writes",
+  "c4Level": "C4Code",
+  "nodes": [
+    {
+      "id": "save",
+      "label": "saveNote()",
+      "type": "Function",
+      "technology": "Caller from Note service"
+    },
+    {
+      "id": "contract",
+      "label": "NoteRepository.insertOrGet()",
+      "type": "Interface",
+      "technology": "Repository contract"
+    },
+    {
+      "id": "adapter",
+      "label": "InMemoryNoteRepository",
+      "type": "Class",
+      "technology": "Single-process adapter"
+    },
+    {
+      "id": "saved",
+      "label": "SavedNote",
+      "type": "Type",
+      "technology": "Contains the original ID"
+    },
+    {
+      "id": "conflict",
+      "label": "RequestKeyConflict",
+      "type": "Class",
+      "technology": "Error"
+    },
+    {
+      "id": "index",
+      "label": "Notes Map",
+      "type": "CodeElement",
+      "technology": "Keyed by author and request key"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "save",
+      "to": "contract",
+      "label": "Passes author, key, and draft",
+      "description": "note-service.ts:11 · note-repository.ts:6"
+    },
+    {
+      "from": "adapter",
+      "to": "contract",
+      "label": "Implements the repository contract",
+      "description": "note-repository.ts:15 · note-repository.ts:22"
+    },
+    {
+      "from": "adapter",
+      "to": "index",
+      "label": "Looks up and inserts synchronously",
+      "description": "note-repository.ts:24 · note-repository.ts:25 · note-repository.ts:39"
+    },
+    {
+      "from": "adapter",
+      "to": "saved",
+      "label": "Returns the stored ID on a matching retry",
+      "description": "note-repository.ts:24 · note-repository.ts:30 · demo.ts:29"
+    },
+    {
+      "from": "adapter",
+      "to": "conflict",
+      "label": "Rejects a changed draft under the same key",
+      "description": "note-repository.ts:27 · note-repository.ts:28 · demo.ts:35"
+    }
+  ]
+}

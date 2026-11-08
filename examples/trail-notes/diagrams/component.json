@@ -1,0 +1,63 @@
+{
+  "title": "Trail Notes | Component",
+  "caption": "Notes API · Who owns retry, validation, and duplicate prevention?",
+  "c4Level": "C4Component",
+  "nodes": [
+    {
+      "id": "client",
+      "label": "Trail Notes client",
+      "type": "Container",
+      "technology": "TypeScript"
+    },
+    {
+      "id": "handler",
+      "label": "Note submission handler",
+      "type": "Component",
+      "technology": "TypeScript"
+    },
+    {
+      "id": "service",
+      "label": "Note service",
+      "type": "Component",
+      "technology": "TypeScript"
+    },
+    {
+      "id": "validation",
+      "label": "Note validation",
+      "type": "Component",
+      "technology": "TypeScript"
+    },
+    {
+      "id": "repository",
+      "label": "Note repository",
+      "type": "Component",
+      "technology": "In-memory adapter"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "client",
+      "to": "handler",
+      "label": "Retries with the same request key",
+      "description": "trail-client.ts:18 · trail-client.ts:21 · demo.ts:22"
+    },
+    {
+      "from": "handler",
+      "to": "service",
+      "label": "Forwards author, key, and draft",
+      "description": "submit-note.ts:21 · submit-note.ts:22"
+    },
+    {
+      "from": "service",
+      "to": "validation",
+      "label": "Validates the draft before saving",
+      "description": "note-service.ts:10 · note.ts:4"
+    },
+    {
+      "from": "service",
+      "to": "repository",
+      "label": "Delegates duplicate prevention",
+      "description": "note-service.ts:11 · note-repository.ts:24"
+    }
+  ]
+}

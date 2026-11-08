@@ -1,5 +1,8 @@
 # Source-backed order-processing example
 
+For a runnable example that connects Component and Code diagrams to a retry, see
+[Trail Notes](trail-notes/README.md).
+
 This small synthetic TypeScript application demonstrates the analyzer's local
 evidence and boundary mapping. It is not a deployed service. Payments and stock
 reservations are simulated, and orders are held in memory. No network services,
