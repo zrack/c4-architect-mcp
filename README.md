@@ -253,6 +253,30 @@ This deployment diagram places an API and its data store on the same host.
 }
 ```
 
+#### Trail Notes examples
+
+These four diagrams show different views of the same fictional trail journal app. Open a diagram for the full-size PNG, or download its JSON to render it yourself.
+
+| Deployment | Dynamic |
+| --- | --- |
+| See where the web app, API, and database run. | Follow the five steps for submitting a trail note. |
+| [![Trail Notes Deployment diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.png) | [![Trail Notes Dynamic diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.png) |
+| [Download Deployment JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-deployment.json) | [Download Dynamic JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-dynamic.json) |
+
+| System Landscape | Code |
+| --- | --- |
+| See how Trail Notes connects to its users, trail catalog, and email service. | See how the Notes API’s functions, class, interface, and type work together. |
+| [![Trail Notes System Landscape diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.png) | [![Trail Notes Code diagram](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-code.png)](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-code.png) |
+| [Download System Landscape JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-system-landscape.json) | [Download Code JSON](https://github.com/zrack/c4-architect-mcp/releases/download/v0.2.0-alpha.4/trail-notes-code.json) |
+
+For example, download `trail-notes-dynamic.json` and run this command from the folder where you saved it.
+
+```sh
+npx -y c4-architect-mcp@0.2.0-alpha.4 render-diagram trail-notes-dynamic.json --out TRAIL-NOTES.md
+```
+
+Open `TRAIL-NOTES.html` to explore the numbered interactions. See the [alpha.4 prerelease](https://github.com/zrack/c4-architect-mcp/releases/tag/v0.2.0-alpha.4) for the release notes and all example files.
+
 ### Focus a diagram on one node
 
 Both TakeNote diagrams use the same source snapshot. On the right, focusing on `NoteEditor.tsx` and its direct neighbors reduces the view from **108 nodes and 363 arrows** to **15 nodes and 19 arrows**. Follow `TakeNoteApp.tsx` → `NoteEditor.tsx` → `PreviewEditor.tsx` to see the difference.
