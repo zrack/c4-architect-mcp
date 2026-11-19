@@ -35,14 +35,16 @@ async function main() {
   await fs.access(cli);
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'c4-pr-review-'));
   const store = path.join(temporary, 'repository.git');
+  const emptyGitConfig = path.join(temporary, 'gitconfig');
   // Detached checkouts use only Git's built-in filters and an empty hook directory.
   const gitEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
-  Object.assign(gitEnv, { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: os.devNull, GIT_ATTR_NOSYSTEM: '1' });
+  Object.assign(gitEnv, { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: emptyGitConfig, GIT_ATTR_NOSYSTEM: '1' });
   const git = (...args) => exec('git', ['-c', `core.hooksPath=${temporary}/no-hooks`, '-c', 'core.autocrlf=false', ...args], { env: gitEnv });
   const run = async (...args) => JSON.parse((await exec(process.execPath, [cli, ...args], { cwd: temporary })).stdout);
   let evidenceDir;
   let completed = false;
   try {
+    await fs.writeFile(emptyGitConfig, '', { flag: 'wx' });
     await git('clone', '--quiet', '--bare', '--shared', '--local', '--no-tags', '--template=', '--', repo, store);
     await fs.mkdir(path.dirname(output), { recursive: true });
     evidenceDir = await fs.mkdtemp(path.join(path.dirname(output), `${path.basename(output, path.extname(output))}.snapshots-`));
