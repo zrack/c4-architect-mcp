@@ -514,6 +514,14 @@ For MCP, pass `focus` to `render_architecture_graph`. Find the ID with `query_ar
 
 ### Review architecture changes for a pull request
 
+In the development checkout, build C4 Architect with `npm ci` and `npm run build`, then try the companion skill in Codex:
+
+> Use $what-changed-in-this-pr on zrack/c4-architect-mcp#16. Show me which dependencies it added or removed and link each arrow to the import.
+
+The skill compares committed TypeScript and TSX snapshots. Its focused diagram shows only changed relationships. Numbered arrows link to source in the interactive view and match the rows in the Markdown report. Additions point to the PR head, removals to the base. [Skill instructions](.agents/skills/what-changed-in-this-pr/SKILL.md)
+
+PR #16 added ten dependencies when it introduced `explain-this-file`. Follow each arrow to the import that introduced it. [Read the PR #16 report](docs/reviews/pr-16/PR-16.md) · [View the focused diagram](docs/reviews/pr-16/PR-16.focus-9032b03b69eb2b17.png)
+
 Pass `review` two saved graphs at the same C4 level and scan scope. Use each revision's boundary configuration if the pull request changes how files are assigned to components.
 
 ```sh

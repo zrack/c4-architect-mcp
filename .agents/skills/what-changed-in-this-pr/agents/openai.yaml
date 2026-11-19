@@ -1,0 +1,4 @@
+interface:
+  display_name: "What changed in this PR?"
+  short_description: "Trace a pull request’s changed imports to source"
+  default_prompt: "Use $what-changed-in-this-pr on this pull request. Show the focused diagram and the source lines for its added and removed dependencies."

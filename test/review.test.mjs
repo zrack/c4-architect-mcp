@@ -178,6 +178,28 @@ test('review renders removed dependencies from the before snapshot', { timeout: 
   await checkFocusedArtifacts(result, markdown, 'Base');
 });
 
+test('a changed relationship in a change-only diagram preserves the evidence from both snapshots', { timeout: 30000 }, async t => {
+  const before = snapshot({ withLedger: true });
+  before.metadata.commit = 'a'.repeat(40);
+  const after = structuredClone(before);
+  after.metadata.commit = 'b'.repeat(40);
+  after.edges[0].label = 'Imports types';
+  after.edges[0].evidence[0].line = 5;
+  const directory = await saveSnapshots(t, before, after);
+  const { result, markdown } = await readReport(directory, 'review.md', ['--focus-changes', '--github-repo', 'example/project']);
+  const diagram = await fs.readFile(path.resolve(directory, result.diagram.markdown), 'utf8');
+  const rows = diagram.split('\n').filter(row => /^\| R\d+ \|/.test(row));
+  assert.equal(rows.length, 2);
+  for (const [side, graph] of [['base', before], ['head', after]]) {
+    const edge = graph.edges[0];
+    const row = rows.find(row => row.toLowerCase().includes(side) && row.includes(edge.label));
+    assert.ok(row, `Expected the ${side} label and relationship`);
+    const id = row.split('|')[1].trim();
+    const url = `https://github.com/example/project/blob/${graph.metadata.commit}/orders/submit.ts#L${edge.evidence[0].line}`;
+    assert.ok(markdown.split('\n').some(row => row.includes(id) && markdownLinks(row).includes(url)));
+  }
+});
+
 test('review links added and removed dependency evidence to their own commit and encodes the path', { timeout: 30000 }, async t => {
   const sourcePath = 'orders/submit [draft] #2 (review).ts';
   const before = snapshot({ withLedger: true, sourcePath });

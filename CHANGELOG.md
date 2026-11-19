@@ -2,6 +2,10 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+- Ask `what-changed-in-this-pr` to trace a pull request's changed TypeScript dependencies. Its focused diagram and report use numbered arrows with source links to the relevant revisions. The same view is available with `review --focus-changes`.
+
 ## 0.2.0-alpha.11 — 2026-11-19
 
 - Ask the `explain-this-file` skill who imports a TypeScript or TSX file and what it imports. The `explain_architecture_file` MCP tool and `explain-file` command generate a one-hop diagram and Markdown report with import locations and resolution gaps.

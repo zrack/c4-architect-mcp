@@ -53,6 +53,7 @@
   "files": [
     "dist/",
     ".agents/skills/explain-this-file/",
+    ".agents/skills/what-changed-in-this-pr/",
     "scripts/prepare-bin.mjs",
     "README.md",
     "LICENSE",

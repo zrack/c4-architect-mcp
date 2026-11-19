@@ -215,11 +215,18 @@ text{font-family:Arial,Helvetica,sans-serif;fill:#172b43}.diagram-title{font-wei
 </style><rect class="background" width="100%" height="100%" fill="white"/>${title}<text x="${layout.width / 2}" y="${55 + Math.max(0, titleLines.length - 1) * 24}" text-anchor="middle" font-size="12">${xml(caption)}</text>${boundaries}${paths}${nodeShapes}${labels}</svg>`;
 }
 
-function drawHtml(diagram: C4Diagram, svg: string, layout: CompactLayout): string {
+export type RelationshipSources = { label: string; url: string }[][];
+
+function drawHtml(diagram: C4Diagram, svg: string, layout: CompactLayout, sources: RelationshipSources): string {
   const data = JSON.stringify(layout).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+  const sourceTemplates = sources.map((locations, index) => {
+    const anchors = locations.filter(item => item.url.startsWith("https://github.com/")).map(item =>
+      `<small><a href="${xml(item.url)}" target="_blank" rel="noopener noreferrer">${xml(item.label)}</a></small>`).join("");
+    return anchors ? `<template id="sources-${layout.relationships[index].id}">${anchors}</template>` : "";
+  }).join("");
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${xml(diagram.title)}</title><style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#172b43;background:#f5f7fa}header{padding:14px 20px;background:white;border-bottom:1px solid #dbe2eb;display:flex;gap:16px;align-items:center;flex-wrap:wrap}h1{font-size:18px;margin:0;font-weight:600}header span{font-size:13px;color:#52657d}button{background:white;color:#183c6b;border:1px solid #afbed1;border-radius:5px;padding:7px 11px;cursor:pointer}main{display:grid;grid-template-columns:minmax(0,1fr) 310px;height:calc(100vh - 67px)}#canvas{overflow:auto;background:white;padding:12px}#canvas>svg{display:block;width:100%;height:auto;min-width:900px}aside{overflow:auto;padding:18px;background:#f5f7fa;border-left:1px solid #dbe2eb}aside h2{font-size:17px;margin:0 0 9px}aside p{font-size:13px;line-height:1.5;color:#52657d}#connections{padding-left:20px;font-size:13px;line-height:1.5}#connections li{margin:0 0 14px}#connections button{border:0;background:none;padding:0;text-align:left;line-height:1.5;color:#172b43}#connections small{display:block;color:#52657d}#details{white-space:pre-line}.legend{display:flex;gap:14px;font-size:12px;margin:12px 0}.legend span:first-child{color:#155dd5}.legend span:last-child{color:#a94a10}@media(max-width:900px){main{grid-template-columns:1fr;height:auto}#canvas{max-height:75vh}aside{border-left:0;border-top:1px solid #dbe2eb}}
-</style></head><body><header><h1>${xml(diagram.title)}</h1><span>Select a node or arrow to trace its connections.</span><button id="reset-view">Show all</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="export-png" title="Save the full diagram at 2× resolution with current highlighting">Export PNG</button><button id="export-svg" title="Save the full scalable diagram with current highlighting">Export SVG</button><span id="export-status" role="status" aria-live="polite"></span></header><main><div id="canvas">${svg}</div><aside aria-live="polite"><h2 id="selection-title">All connections</h2><p id="details">Select a node to highlight its incoming and outgoing arrows. Select an arrow or relationship below to isolate it.</p><div class="legend"><span>Blue: outgoing</span><span>Brown: incoming</span></div><ol id="connections"></ol></aside></main><script>
+</style></head><body><header><h1>${xml(diagram.title)}</h1><span>Select a node or arrow to trace its connections.</span><button id="reset-view">Show all</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="export-png" title="Save the full diagram at 2× resolution with current highlighting">Export PNG</button><button id="export-svg" title="Save the full scalable diagram with current highlighting">Export SVG</button><span id="export-status" role="status" aria-live="polite"></span></header><main><div id="canvas">${svg}</div><aside aria-live="polite"><h2 id="selection-title">All connections</h2><p id="details">Select a node to highlight its incoming and outgoing arrows. Select an arrow or relationship below to isolate it.</p><div class="legend"><span>Blue: outgoing</span><span>Brown: incoming</span></div><ol id="connections"></ol></aside></main>${sourceTemplates}<script>
 const graph=${data};
 const root=document.querySelector('#canvas svg'),title=document.getElementById('selection-title'),details=document.getElementById('details'),list=document.getElementById('connections');
 let locked=null,zoom=1;
@@ -232,7 +239,7 @@ function show(selection){
  root.querySelectorAll('.edge,.edgeLabel').forEach(element=>{const edge=graph.relationships.find(edge=>edge.id===element.dataset.edgeId),active=ids.has(edge.id);element.classList.toggle('dimmed',!!selection&&!active);element.classList.toggle('outgoing',!!selection&&active&&(selection.kind==='edge'||edge.from===selection.id));element.classList.toggle('incoming',!!selection&&active&&selection.kind==='node'&&edge.to===selection.id&&edge.from!==selection.id);});
  const node=selection?.kind==='node'?nodes.get(selection.id):null,edge=selection?.kind==='edge'?related[0]:null;
  title.textContent=node?.label??(edge?edge.id+' · '+edge.label:'All connections');details.textContent=node?[node.technology,node.description,related.length+' connected relationships'].filter(Boolean).join('\\n'):edge?[nodes.get(edge.from).label+' → '+nodes.get(edge.to).label,edge.technology,edge.description].filter(Boolean).join('\\n'):'Select a node to highlight its incoming and outgoing arrows. Select an arrow or relationship below to isolate it.';
- list.replaceChildren();for(const edge of related){const item=document.createElement('li'),button=document.createElement('button'),small=document.createElement('small');button.textContent=edge.id+' · '+nodes.get(edge.from).label+' → '+nodes.get(edge.to).label;small.textContent=edge.label+(edge.technology?' · '+edge.technology:'');button.append(small);button.addEventListener('click',()=>{locked={kind:'edge',id:edge.id};show(locked);});item.append(button);list.append(item);}
+ list.replaceChildren();for(const edge of related){const item=document.createElement('li'),button=document.createElement('button'),small=document.createElement('small');button.textContent=edge.id+' · '+nodes.get(edge.from).label+' → '+nodes.get(edge.to).label;small.textContent=edge.label+(edge.technology?' · '+edge.technology:'');button.append(small);button.addEventListener('click',()=>{locked={kind:'edge',id:edge.id};show(locked);});item.append(button);const sources=document.getElementById('sources-'+edge.id);if(sources)item.append(sources.content.cloneNode(true));list.append(item);}
 }
 root.querySelectorAll('.node').forEach(element=>{const select=()=>{locked={kind:'node',id:element.dataset.nodeId};show(locked);};element.addEventListener('click',select);element.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}});element.addEventListener('mouseenter',()=>{if(!locked)show({kind:'node',id:element.dataset.nodeId});});element.addEventListener('mouseleave',()=>{if(!locked)show(null);});});
 root.querySelectorAll('.edge,.edgeLabel').forEach(element=>element.addEventListener('click',()=>{locked={kind:'edge',id:element.dataset.edgeId};show(locked);}));
@@ -242,9 +249,9 @@ ${diagramExportScript}
 </script></body></html>`;
 }
 
-export async function renderCompactC4(diagram: C4Diagram): Promise<{ svg: string; png: Buffer; html: string; layout: CompactLayout }> {
+export async function renderCompactC4(diagram: C4Diagram, sources: RelationshipSources = []): Promise<{ svg: string; png: Buffer; html: string; layout: CompactLayout }> {
   const layout = await layoutDiagram(diagram);
   const svg = drawSvg(diagram, layout);
   const png = await sharp(Buffer.from(svg)).png().toBuffer();
-  return { svg, png, html: drawHtml(diagram, svg, layout), layout };
+  return { svg, png, html: drawHtml(diagram, svg, layout, sources), layout };
 }

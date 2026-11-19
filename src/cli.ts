@@ -33,8 +33,8 @@ No arguments: start the MCP server over stdio.
   summary <graph.json>
   query <graph.json> [--node ID | --search TEXT] [--direction both] [--depth 1] [--nodes 25] [--edges 50] [--bytes 16000] [--evidence]
   diff <before.json> <after.json> [--limit 25] [--bytes 16000]
-  review <before.json> <after.json> --out REVIEW.md [--title "Architecture review"]
-    [--github-repo OWNER/REPO [--source-root REPO_RELATIVE_PATH]]
+  review <before.json> <after.json> --out REVIEW.md [--title "Architecture review"] [--focus-changes]
+    [--github-repo OWNER/REPO [--head-github-repo FORK/REPO] [--source-root REPO_RELATIVE_PATH]]
 
 Analysis levels: Context, Container, Component. Paths are relative to the current directory.
 Authored diagrams also support Deployment, Dynamic, System Landscape, and Code.
@@ -65,7 +65,7 @@ export async function runCli(args: string[]): Promise<boolean> {
     "publish-confluence": ["out", "publish", "site", "space-id", "parent-id", "page-id", "cloud-id"],
     "publish-notion": ["out", "publish", "parent-page-id"],
     query: ["node", "search", "direction", "depth", "nodes", "edges", "bytes", "evidence"], diff: ["limit", "bytes"],
-    review: ["out", "title", "github-repo", "source-root"],
+    review: ["out", "title", "github-repo", "head-github-repo", "source-root", "focus-changes"],
   };
   if (!Object.hasOwn(specs, command)) throw new Error(`Unknown command: ${command}. Use --help.`);
   const flags = new Map<string, string | boolean>(), positional: string[] = [];
@@ -74,7 +74,7 @@ export async function runCli(args: string[]): Promise<boolean> {
     if (!arg.startsWith("--")) { positional.push(arg); continue; }
     const flag = arg.slice(2);
     if (!specs[command].includes(flag) || flags.has(flag)) throw new Error(`Unknown or duplicate option: ${arg}`);
-    if (["summary", "evidence", "publish"].includes(flag)) flags.set(flag, true);
+    if (["summary", "evidence", "publish", "focus-changes"].includes(flag)) flags.set(flag, true);
     else {
       const value = rest[++i];
       if (!value || value.startsWith("--")) throw new Error(`Missing value for ${arg}`);
@@ -172,8 +172,10 @@ export async function runCli(args: string[]): Promise<boolean> {
     if (!out) throw new Error("review requires --out REVIEW.md");
     const repository = str("github-repo"), sourceRoot = str("source-root");
     if (sourceRoot && !repository) throw new Error("--source-root requires --github-repo OWNER/REPO");
-    const sourceLinks = repository ? { repository, sourceRoot } : undefined;
-    json(await writeArchitectureReview(positional[0], positional[1], out, str("title"), sourceLinks));
+    const headRepository = str("head-github-repo");
+    if (headRepository && !repository) throw new Error("--head-github-repo requires --github-repo OWNER/REPO");
+    const sourceLinks = repository ? { repository, sourceRoot, headRepository } : undefined;
+    json(await writeArchitectureReview(positional[0], positional[1], out, str("title"), sourceLinks, flags.has("focus-changes")));
   } else json(compareArchitectureGraphs(await readArchitectureGraph(positional[0]), await readArchitectureGraph(positional[1]), { limit: num("limit"), maxBytes: num("bytes") }));
   return true;
 }
