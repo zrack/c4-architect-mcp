@@ -15,14 +15,16 @@ const runNpm = (args, cwd = temporary) => run(process.execPath, [npmCli, ...args
 try {
   await runNpm(['run', 'build'], root);
   const [packed] = JSON.parse(await runNpm(['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], root));
+  const skills = ['explain-this-file', 'what-changed-in-this-pr'];
+  const skillFiles = skills.flatMap(skill => ['SKILL.md', 'agents/openai.yaml'].map(file => `.agents/skills/${skill}/${file}`));
+  const reviewHelper = '.agents/skills/what-changed-in-this-pr/scripts/review-commits.mjs';
+  skillFiles.push(reviewHelper);
   for (const file of packed.files) {
-    assert.match(file.path, /^(?:dist\/|\.agents\/skills\/explain-this-file\/(?:SKILL\.md|agents\/openai\.yaml)$|scripts\/prepare-bin\.mjs$|docs\/images\/|examples\/|(?:README|CHANGELOG|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT|ROADMAP|THIRD_PARTY_NOTICES)\.md$|LICENSE$|NOTICE$|package\.json$)/, `Unapproved package file: ${file.path}`);
+    if (!skillFiles.includes(file.path)) assert.match(file.path, /^(?:dist\/|scripts\/prepare-bin\.mjs$|docs\/images\/|examples\/|(?:README|CHANGELOG|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT|ROADMAP|THIRD_PARTY_NOTICES)\.md$|LICENSE$|NOTICE$|package\.json$)/, `Unapproved package file: ${file.path}`);
     assert.doesNotMatch(file.path, /(?:^|\/)(?:node_modules|output|\.local|\.env|\.git)(?:\/|$)/);
   }
   const paths = new Set(packed.files.map(file => file.path));
-  for (const file of ['SKILL.md', 'agents/openai.yaml']) {
-    assert.ok(paths.has(`.agents/skills/explain-this-file/${file}`), `Missing skill file: ${file}`);
-  }
+  for (const file of skillFiles) assert.ok(paths.has(file), `Missing skill file: ${file}`);
   for (const required of ['dist/index.js','dist/model/graph.js','dist/parsers/astParser.js','dist/renderers/diagramExports.js','LICENSE','NOTICE','README.md']) assert.ok(paths.has(required), `Missing ${required}`);
   await fs.writeFile(path.join(temporary, 'package.json'), JSON.stringify({ name: 'c4-package-smoke', version: '1.0.0', private: true }));
   await runNpm(['install', '--omit=dev', '--no-audit', '--no-fund', ...(process.env.C4_PACKAGE_OFFLINE === '1' ? ['--offline'] : []), path.join(temporary, packed.filename)]);
@@ -47,6 +49,30 @@ try {
   assert.equal(explanation.counts.incoming, 1);
   assert.equal(explanation.counts.outgoing, 0);
   assert.ok((await fs.stat(explanation.artifacts.png)).size > 100);
+  const fixture = path.join(temporary, 'review fixture');
+  await fs.mkdir(fixture);
+  const git = (...args) => run('git', ['-c', 'user.name=Package test', '-c', 'user.email=test@example.org',
+    '-c', 'commit.gpgSign=false', '-c', `core.hooksPath=${temporary}/no-hooks`, ...args], fixture);
+  await git('init', '--quiet', '--template=');
+  await fs.writeFile(path.join(fixture, 'module.ts'), 'export const value = 1;\n');
+  await git('add', 'module.ts');
+  await git('commit', '-qm', 'Base');
+  const base = (await git('rev-parse', 'HEAD')).trim();
+  await fs.writeFile(path.join(fixture, 'consumer.ts'), 'import "./module.js";\n');
+  await git('add', 'consumer.ts');
+  await git('commit', '-qm', 'Head');
+  const head = (await git('rev-parse', 'HEAD')).trim();
+  await fs.writeFile(path.join(fixture, 'consumer.ts'), 'export const uncommitted = true;\n');
+  const review = JSON.parse(await run(process.execPath, [path.join(installed, reviewHelper),
+    '--repo-dir', fixture, '--base', base, '--head', head, '--github-repo', 'example/project', '--source-root', '.',
+    '--out', path.join(temporary, 'pr-review.md')]));
+  const report = await fs.readFile(review.reportPath, 'utf8');
+  assert.ok(report.includes('| Dependencies | 1 | 0 | 0 |'));
+  assert.ok(report.includes(`/blob/${head}/consumer.ts#L1`));
+  assert.equal(JSON.parse(await fs.readFile(review.baseGraph, 'utf8')).metadata.commit, base);
+  assert.equal(JSON.parse(await fs.readFile(review.headGraph, 'utf8')).metadata.commit, head);
+  assert.equal(await fs.readFile(path.join(fixture, 'consumer.ts'), 'utf8'), 'export const uncommitted = true;\n');
+  assert.ok((await fs.stat(review.diagram.html)).size > 100);
   for (const extension of ['md','svg','png','html']) assert.ok((await fs.stat(path.join(temporary, `diagram.${extension}`))).size > 100);
-  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, PNG/SVG/HTML rendering.`);
+  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, rendering and PR skill.`);
 } finally { await fs.rm(temporary, { recursive: true, force: true }); }

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { renderC4Mermaid, type C4Diagram } from "./c4Mermaid.js";
-import { renderCompactC4 } from "./compactC4.js";
+import { renderCompactC4, type RelationshipSources } from "./compactC4.js";
 import { renderC4Drawio } from "./drawio.js";
 import { renderStructurizrDsl } from "./structurizr.js";
 import { validateArchitectureGraph, type ArchitectureGraph } from "../model/graph.js";
@@ -103,9 +103,9 @@ export async function renderStructurizrArtifacts(input: unknown, outputPath?: st
   };
 }
 
-export async function renderArtifacts(diagram: C4Diagram, outputPath?: string) {
+export async function renderArtifacts(diagram: C4Diagram, outputPath?: string, sources?: RelationshipSources) {
   const mermaidOutput = renderC4Mermaid(diagram);
-  const compact = await renderCompactC4(diagram);
+  const compact = await renderCompactC4(diagram, sources);
   let artifacts: { markdown: string; svg: string; png: string; html: string } | undefined;
   if (outputPath) {
     if (!/\.md$/i.test(outputPath)) throw new Error("outputPath must end in .md");

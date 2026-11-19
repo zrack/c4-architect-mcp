@@ -1,6 +1,6 @@
 {
   "name": "c4-architect-mcp",
-  "version": "0.2.0-alpha.11",
+  "version": "0.2.0-alpha.12",
   "description": "Local TypeScript architecture analysis with source evidence, C4 diagrams, and interactive exports over MCP",
   "type": "module",
   "bin": {
@@ -53,6 +53,7 @@
   "files": [
     "dist/",
     ".agents/skills/explain-this-file/",
+    ".agents/skills/what-changed-in-this-pr/",
     "scripts/prepare-bin.mjs",
     "README.md",
     "LICENSE",

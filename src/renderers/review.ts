@@ -3,7 +3,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { diffArchitectureGraphs, readArchitectureGraph, type ArchitectureEdge, type ArchitectureGraph, type ArchitectureNode,
   type GraphDiagnostic } from "../model/graph.js";
-import { renderArchitectureGraph } from "./artifacts.js";
+import { selectGraphNeighborhood } from "../model/neighborhood.js";
+import { diagramFromView, renderArtifacts } from "./artifacts.js";
+import type { C4Diagram } from "./c4Mermaid.js";
+import type { RelationshipSources } from "./compactC4.js";
 import { githubSourceLink, markdownText as text, sourceEvidence, type SourceLink, type GithubSourceOptions } from "./sourceLinks.js";
 
 const rowLimit = 25;
@@ -13,6 +16,8 @@ const byId = <T extends { id: string }>(items: T[]) => new Map(items.map(item =>
 const unresolvedCodes = new Set(["UNRESOLVED_IMPORT", "UNRESOLVED_PACKAGE"]);
 type Cell = string | { markdown: string };
 type SnapshotLinks = { base: SourceLink; head: SourceLink };
+type DependencyChange = { kind: typeof changes[number]; base?: ArchitectureEdge; head?: ArchitectureEdge };
+type ReviewFocus = { diagram: C4Diagram; digest: string; summary: string; keyLabel: string; anchor?: string; sources?: RelationshipSources };
 type Declaration = Pick<ArchitectureNode, "id" | "type" | "label" | "parentId" | "description" | "technologyBasis">
   & { technology?: string };
 
@@ -97,7 +102,68 @@ function detailRows(header: string[], rows: Cell[][]) {
     ? `\n\n${rows.length - rowLimit} more rows are available in the saved graph comparison.` : "");
 }
 
-function reviewMarkdown(before: ArchitectureGraph, after: ArchitectureGraph, title: string, links?: SnapshotLinks) {
+const digestOf = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
+
+function neighborhoodFocus(graph: ArchitectureGraph, nodeId: string, snapshot: string, change?: string): ReviewFocus {
+  const view = selectGraphNeighborhood(graph, { nodeId });
+  const title = `${view.center.label} · ${snapshot} neighborhood`;
+  const { truncated } = view.focus;
+  return {
+    diagram: diagramFromView(graph, title, view),
+    digest: digestOf([title, nodeId, graph.metadata.abstractionLevel, graph.nodes, graph.edges, graph.hierarchy]),
+    summary: `${snapshot} snapshot · ${text(view.center.label)} · ${view.nodes.length} nodes · ${view.edges.length} relationships`
+      + (truncated.nodes || truncated.edges ? " · Neighborhood limit reached" : ""),
+    anchor: change ? `Follow **R01** for the ${change} dependency that anchors this view.` : undefined,
+    keyLabel: "Neighborhood source evidence",
+  };
+}
+
+function changedDependencies(before: ArchitectureGraph, after: ArchitectureGraph, dependencies: DependencyChange[],
+  title: string, links?: SnapshotLinks) {
+  const baseNodes = byId(before.nodes), headNodes = byId(after.nodes);
+  // Reserve space for each kind of change when one category alone would fill the diagram.
+  const ranked = changes.flatMap(kind => dependencies.filter(change => change.kind === kind)
+    .map((change, rank) => ({ change, rank }))).sort((a, b) => a.rank - b.rank);
+  const visible = new Set(ranked.slice(0, rowLimit).map(item => item.change));
+  const edges: ArchitectureEdge[] = [];
+  const sources: RelationshipSources = [];
+  const nodes = new Map<string, ArchitectureNode>();
+  const rows: Cell[][] = [];
+  const ordered = [...dependencies].sort((left, right) => Number(visible.has(right)) - Number(visible.has(left)));
+  for (const change of ordered) {
+    for (const side of ["base", "head"] as const) {
+      const edge = change[side];
+      if (!edge) continue;
+      const snapshot = side === "base" ? "Base" : "Head";
+      const snapshotNodes = side === "base" ? baseNodes : headNodes;
+      const label = change.kind === "changed" ? `Changed · ${snapshot}` : labels[change.kind];
+      let arrow = "—";
+      if (visible.has(change)) {
+        for (const id of [edge.source, edge.target]) {
+          // A base-only endpoint uses its original label. Shared endpoints take the head label.
+          if (side === "head" || !nodes.has(id)) nodes.set(id, snapshotNodes.get(id)!);
+        }
+        edges.push({ ...edge, label: `${label} · ${edge.label}` });
+        if (links) sources.push(edge.evidence.slice(0, 3).map(item => ({
+          label: `${snapshot} · ${item.path}:${item.line}`, url: links[side](item.path, item.line),
+        })));
+        arrow = `R${String(edges.length).padStart(2, "0")}`;
+      }
+      rows.push([arrow, label, edgeLabel(edge, snapshotNodes), { markdown: `${snapshot} · ${evidence(edge, links?.[side])}` }]);
+    }
+  }
+
+  const graph = { ...after, edges, nodes: [...nodes.values()], hierarchy: [...byId([...before.hierarchy, ...after.hierarchy]).values()] };
+  const diagram = diagramFromView(graph, `${title} · Dependency changes`, undefined, true);
+  const caption = `${visible.size} of ${dependencies.length} dependency changes · ${nodes.size} nodes · ${edges.length} arrows`;
+  diagram.caption = caption;
+  const focus: ReviewFocus = { diagram, sources, digest: digestOf([diagram, sources]), summary: caption, keyLabel: "Diagram relationship key" };
+  const notes = visible.size < dependencies.length
+    ? [`Diagram limit reached. The table also lists the ${dependencies.length - visible.size} changes outside this view.`] : [];
+  return { focus, details: [table(["Arrow", "Change", "Relationship", "Source evidence"], rows), ...notes] };
+}
+
+function reviewMarkdown(before: ArchitectureGraph, after: ArchitectureGraph, title: string, links?: SnapshotLinks, focusChanges = false) {
   const diff = diffArchitectureGraphs(before, after);
   const beforeNodes = byId(before.nodes), afterNodes = byId(after.nodes);
   const beforeEdges = byId(before.edges), afterEdges = byId(after.edges);
@@ -163,7 +229,9 @@ function reviewMarkdown(before: ArchitectureGraph, after: ArchitectureGraph, tit
     if (omitted) sections.push(`${omitted} more unresolved locations are available in the saved graphs.`);
   }
 
-  if (dependencyChanges.length) sections.push("## Dependency changes", detailRows(["Change", "Relationship", "Source evidence"],
+  const delta = focusChanges && dependencyChanges.length ? changedDependencies(before, after, dependencyChanges, title, links) : undefined;
+  if (delta) sections.push("## Dependency changes", ...delta.details);
+  else if (dependencyChanges.length) sections.push("## Dependency changes", detailRows(["Change", "Relationship", "Source evidence"],
     dependencyChanges.map(({ kind, base, head }) => [labels[kind],
       [base && edgeLabel(base, beforeNodes), head && edgeLabel(head, afterNodes)].filter(Boolean).join(" → "),
       { markdown: [base && `Base · ${evidence(base, links?.base)}`, head && `Head · ${evidence(head, links?.head)}`].filter(Boolean).join(" · ") },
@@ -180,6 +248,7 @@ function reviewMarkdown(before: ArchitectureGraph, after: ArchitectureGraph, tit
   const sourceRows = changes.flatMap(kind => diff.sources[kind].map(filename => [labels[kind], filename]));
   if (sourceRows.length) sections.push("## Source file changes", detailRows(["Change", "Scan-relative path"], sourceRows));
 
+  if (focusChanges) return { sections, focus: delta?.focus };
   const first = dependencyChanges.find(change => change.head) ?? dependencyChanges[0];
   if (first) {
     const graph = first.head ? after : before;
@@ -187,22 +256,22 @@ function reviewMarkdown(before: ArchitectureGraph, after: ArchitectureGraph, tit
     const changedIds = new Set(dependencyChanges.map(change => (first.head ? change.head : change.base)?.id));
     const otherEdges = graph.edges.filter(item => item.id !== edge.id);
     otherEdges.sort((a, b) => Number(changedIds.has(b.id)) - Number(changedIds.has(a.id)));
-    return { sections, focus: { graph: { ...graph, edges: [edge, ...otherEdges] }, nodeId: edge.source,
-      snapshot: first.head ? "Head" : "Base", change: first.kind } };
+    return { sections, focus: neighborhoodFocus({ ...graph, edges: [edge, ...otherEdges] },
+      edge.source, first.head ? "Head" : "Base", first.kind) };
   }
-  if (assignmentChanges.length) return { sections, focus: { graph: after, nodeId: assignmentChanges[0].head.nodeId, snapshot: "Head" } };
+  if (assignmentChanges.length) return { sections, focus: neighborhoodFocus(after, assignmentChanges[0].head.nodeId, "Head") };
   for (const change of boundaryChanges) {
     const graph = change.head ? after : before;
     const hierarchy = byId(graph.hierarchy);
     const node = graph.nodes.find(item => item.id === change.id) ?? graph.nodes.find(item =>
       item.parentId && (item.parentId === change.id || hierarchy.get(item.parentId)?.parentId === change.id));
-    if (node) return { sections, focus: { graph, nodeId: node.id, snapshot: change.head ? "Head" : "Base" } };
+    if (node) return { sections, focus: neighborhoodFocus(graph, node.id, change.head ? "Head" : "Base") };
   }
   return { sections };
 }
 
 export async function writeArchitectureReview(beforePath: string, afterPath: string, outputPath: string,
-  title = "PR architecture review", sourceLinks?: GithubSourceOptions) {
+  title = "PR architecture review", sourceLinks?: GithubSourceOptions & { headRepository?: string }, focusChanges = false) {
   if (!/\.md$/i.test(outputPath)) throw new Error("Review output must end in .md");
   const reportPath = path.resolve(outputPath);
   const directory = path.dirname(reportPath);
@@ -210,8 +279,8 @@ export async function writeArchitectureReview(beforePath: string, afterPath: str
     readArchitectureGraph(beforePath), readArchitectureGraph(afterPath), fs.realpath(beforePath), fs.realpath(afterPath),
   ] as const);
   const links = sourceLinks && { base: githubSourceLink(before.metadata.commit, sourceLinks, "Base"),
-    head: githubSourceLink(after.metadata.commit, sourceLinks, "Head") };
-  const { sections, focus } = reviewMarkdown(before, after, title, links);
+    head: githubSourceLink(after.metadata.commit, { ...sourceLinks, repository: sourceLinks.headRepository ?? sourceLinks.repository }, "Head") };
+  const { sections, focus } = reviewMarkdown(before, after, title, links, focusChanges);
   await fs.mkdir(directory, { recursive: true });
   const checkDestination = async (filename: string) => {
     const existing = await fs.realpath(filename).catch(error => {
@@ -224,15 +293,9 @@ export async function writeArchitectureReview(beforePath: string, afterPath: str
   try {
     let diagram;
     if (focus) {
-      const { graph, nodeId, snapshot } = focus;
-      const node = graph.nodes.find(item => item.id === nodeId)!;
-      const diagramTitle = `${node.label} · ${snapshot} neighborhood`;
       // Snapshot-specific filenames keep published reports valid if runs overlap or a later write fails.
-      const digest = createHash("sha256").update(JSON.stringify([diagramTitle, nodeId, graph.metadata.abstractionLevel,
-        graph.nodes, graph.edges, graph.hierarchy])).digest("hex").slice(0, 16);
-      const stem = `${path.basename(reportPath, path.extname(reportPath))}.focus-${digest}`;
-      const rendered = await renderArchitectureGraph(graph, { title: diagramTitle, focus: { nodeId }, outputPath: path.join(staging, `${stem}.md`) });
-      const { layout } = rendered.structuredContent;
+      const stem = `${path.basename(reportPath, path.extname(reportPath))}.focus-${focus.digest}`;
+      const rendered = await renderArtifacts(focus.diagram, path.join(staging, `${stem}.md`), focus.sources);
       const artifacts = rendered.structuredContent.artifacts!;
       const destination = (filename: string) => path.join(directory, path.basename(filename));
       const link = (filename: string) => `<${encodeURIComponent(path.basename(filename))}>`;
@@ -240,12 +303,9 @@ export async function writeArchitectureReview(beforePath: string, afterPath: str
         svg: destination(artifacts.svg), html: destination(artifacts.html) };
       await Promise.all(Object.values(diagram).map(checkDestination));
       await Promise.all(Object.values(artifacts).map(filename => fs.rename(filename, destination(filename))));
-      const capped = "focus" in rendered.structuredContent ? rendered.structuredContent.focus.truncated : undefined;
-      sections.push("## Focused diagram", `${snapshot} snapshot · ${text(node.label)} · ${layout.nodeCount} nodes · ${layout.relationshipCount} relationships`
-        + (capped?.nodes || capped?.edges ? " · Neighborhood limit reached" : ""),
-      ...(focus.change ? [`Follow **R01** for the ${focus.change} dependency that anchors this view.`] : []),
+      sections.push("## Focused diagram", focus.summary, ...(focus.anchor ? [focus.anchor] : []),
       `![Focused architecture diagram](${link(diagram.png)})`,
-      `[Interactive diagram](${link(diagram.html)}) · [SVG](${link(diagram.svg)}) · [Neighborhood source evidence](${link(diagram.markdown)})`);
+      `[Interactive diagram](${link(diagram.html)}) · [SVG](${link(diagram.svg)}) · [${focus.keyLabel}](${link(diagram.markdown)})`);
     }
     const stagedReport = path.join(staging, path.basename(reportPath));
     await fs.writeFile(stagedReport, sections.join("\n\n") + "\n", "utf8");
