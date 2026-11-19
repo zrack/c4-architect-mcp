@@ -10,6 +10,16 @@ C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io
 
 [Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#c4-diagrams) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
+## What changed in this PR?
+
+Try the [PR review skill](#review-architecture-changes-for-a-pull-request) in Codex with this repository, or replace the PR URL with your own.
+
+> Use `$what-changed-in-this-pr` on https://github.com/zrack/c4-architect-mcp/pull/16. Show me the dependencies it added or removed in `src`, draw the focused diagram, and link each arrow to its import.
+
+PR #16 added ten internal dependencies when it introduced `explain-this-file`. Follow **R06** from the CLI and **R08** from the MCP server. Both import the same renderer. The report matches every arrow to its source line and identifies the two type-only imports. [Read the Markdown report for all ten added dependencies](https://github.com/zrack/c4-architect-mcp/blob/v0.2.0-alpha.12/docs/reviews/pr-16/PR-16.md#dependency-changes).
+
+[![Focused Component diagram of PR #16 with ten numbered arrows. R06 and R08 connect the CLI and MCP server to the explainFile renderer.](https://raw.githubusercontent.com/zrack/c4-architect-mcp/v0.2.0-alpha.12/docs/reviews/pr-16/PR-16.focus-9032b03b69eb2b17.png)](https://raw.githubusercontent.com/zrack/c4-architect-mcp/v0.2.0-alpha.12/docs/reviews/pr-16/PR-16.focus-9032b03b69eb2b17.png)
+
 ## Explain this file
 
 > Use $explain-this-file on `NoteEditor.tsx` in `./src`. What imports it, and what does it import? Show me the focused diagram and the source lines for both directions.
