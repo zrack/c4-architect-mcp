@@ -13,7 +13,7 @@ export function graphToDiagram(input: ArchitectureGraph, title?: string): C4Diag
 
 type Neighborhood = ReturnType<typeof selectGraphNeighborhood>;
 
-function diagramFromView(graph: ArchitectureGraph, title?: string, view?: Neighborhood, includeEvidence = Boolean(view)): C4Diagram {
+export function diagramFromView(graph: ArchitectureGraph, title?: string, view?: Neighborhood, includeEvidence = Boolean(view)): C4Diagram {
   const boundaries = new Map(graph.hierarchy.map(item => [item.id, item]));
   const { nodes, edges } = view ?? graph;
   const labelCounts = new Map<string, number>();

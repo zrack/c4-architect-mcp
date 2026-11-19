@@ -4,6 +4,7 @@ import path from "node:path";
 import { diffArchitectureGraphs, readArchitectureGraph, type ArchitectureEdge, type ArchitectureGraph, type ArchitectureNode,
   type GraphDiagnostic } from "../model/graph.js";
 import { renderArchitectureGraph } from "./artifacts.js";
+import { githubSourceLink, markdownText as text, sourceEvidence, type SourceLink, type GithubSourceOptions } from "./sourceLinks.js";
 
 const rowLimit = 25;
 const changes = ["added", "removed", "changed"] as const;
@@ -11,48 +12,14 @@ const labels = { added: "Added", removed: "Removed", changed: "Changed" };
 const byId = <T extends { id: string }>(items: T[]) => new Map(items.map(item => [item.id, item]));
 const unresolvedCodes = new Set(["UNRESOLVED_IMPORT", "UNRESOLVED_PACKAGE"]);
 type Cell = string | { markdown: string };
-type SourceLink = (filename: string, line?: number) => string;
-type ReviewSourceLinks = { repository: string; sourceRoot?: string };
 type SnapshotLinks = { base: SourceLink; head: SourceLink };
 type Declaration = Pick<ArchitectureNode, "id" | "type" | "label" | "parentId" | "description" | "technologyBasis">
   & { technology?: string };
-
-function text(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/[\\`*_{}\[\]|~]/g, "\\$&").replace(/\s+/g, " ").trim();
-}
 
 function table(header: string[], rows: Cell[][]): string {
   return [header.join(" | "), header.map(() => "---").join(" | "),
     ...rows.map(row => row.map(cell => typeof cell === "string" ? text(cell) : cell.markdown).join(" | "))]
     .map(line => `| ${line} |`).join("\n");
-}
-
-function repositoryPath(value: string, label: string, allowRoot = false): string[] {
-  const normalized = value.replace(/\\/g, "/");
-  const segments = normalized.split("/").filter(segment => segment && segment !== ".");
-  if (!value.trim() || normalized.startsWith("/") || /^[a-z]:/i.test(normalized) || /[\u0000-\u001f\u007f]/.test(value)
-    || segments.includes("..") || (!allowRoot && !segments.length)) {
-    throw new Error(`${label} must be a repository-relative path without parent traversal or control characters`);
-  }
-  return segments.map(segment => encodeURIComponent(segment)
-    .replace(/[!'()*]/g, char => `%${char.charCodeAt(0).toString(16).toUpperCase()}`));
-}
-
-function githubLinks(before: ArchitectureGraph, after: ArchitectureGraph, options: ReviewSourceLinks): SnapshotLinks {
-  const [owner, repository, ...extra] = options.repository.split("/");
-  if (!owner || owner.length > 39 || !/^[a-z\d]+(?:-[a-z\d]+)*$/i.test(owner) || !repository
-    || !/^[a-z\d_.-]{1,100}$/i.test(repository) || repository === "." || repository === ".." || extra.length) {
-    throw new Error("GitHub repository must be in OWNER/REPO form");
-  }
-  const root = repositoryPath(options.sourceRoot ?? ".", "Source root", true);
-  const pinned = (commit: string | undefined, snapshot: string): SourceLink => {
-    if (!commit || !/^[a-f\d]{40}$/i.test(commit)) throw new Error(`${snapshot} snapshot requires a full 40-hex commit for GitHub source links`);
-    const prefix = `https://github.com/${owner}/${repository}/blob/${commit.toLowerCase()}/`;
-    return (filename, line) => prefix + [...root, ...repositoryPath(filename, "Source evidence path")].join("/")
-      + (line === undefined ? "" : `#L${line}`);
-  };
-  return { base: pinned(before.metadata.commit, "Base"), head: pinned(after.metadata.commit, "Head") };
 }
 
 function declarations(graph: ArchitectureGraph) {
@@ -117,16 +84,6 @@ function prioritizeUnresolved(items: GraphDiagnostic[], other: GraphDiagnostic[]
 function edgeLabel(edge: ArchitectureEdge, nodes: Map<string, ArchitectureGraph["nodes"][number]>) {
   return `${nodes.get(edge.source)!.label} → ${nodes.get(edge.target)!.label} · ${edge.label} (${edge.kind})`
     + (edge.protocol === "unknown" ? "" : ` · ${edge.protocol}`);
-}
-
-function sourceEvidence(item: Pick<GraphDiagnostic, "path" | "line" | "column" | "specifier">, link?: SourceLink) {
-  const specifier = item.specifier ? text(item.specifier) : "";
-  if (!item.path) return specifier || "—";
-  const position = item.line === undefined ? item.path
-    : `${item.path}:${item.line}${item.column === undefined ? "" : `:${item.column}`}`;
-  const label = text(position);
-  const location = link ? `[${label}](<${link(item.path, item.line)}>)` : label;
-  return location + (specifier ? ` (${specifier})` : "");
 }
 
 function evidence(edge: ArchitectureEdge, link?: SourceLink) {
@@ -245,14 +202,15 @@ function reviewMarkdown(before: ArchitectureGraph, after: ArchitectureGraph, tit
 }
 
 export async function writeArchitectureReview(beforePath: string, afterPath: string, outputPath: string,
-  title = "PR architecture review", sourceLinks?: ReviewSourceLinks) {
+  title = "PR architecture review", sourceLinks?: GithubSourceOptions) {
   if (!/\.md$/i.test(outputPath)) throw new Error("Review output must end in .md");
   const reportPath = path.resolve(outputPath);
   const directory = path.dirname(reportPath);
   const [before, after, ...inputFiles] = await Promise.all([
     readArchitectureGraph(beforePath), readArchitectureGraph(afterPath), fs.realpath(beforePath), fs.realpath(afterPath),
   ] as const);
-  const links = sourceLinks && githubLinks(before, after, sourceLinks);
+  const links = sourceLinks && { base: githubSourceLink(before.metadata.commit, sourceLinks, "Base"),
+    head: githubSourceLink(after.metadata.commit, sourceLinks, "Head") };
   const { sections, focus } = reviewMarkdown(before, after, title, links);
   await fs.mkdir(directory, { recursive: true });
   const checkDestination = async (filename: string) => {

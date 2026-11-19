@@ -16,10 +16,13 @@ try {
   await runNpm(['run', 'build'], root);
   const [packed] = JSON.parse(await runNpm(['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], root));
   for (const file of packed.files) {
-    assert.match(file.path, /^(?:dist\/|scripts\/prepare-bin\.mjs$|docs\/images\/|examples\/|(?:README|CHANGELOG|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT|ROADMAP|THIRD_PARTY_NOTICES)\.md$|LICENSE$|NOTICE$|package\.json$)/, `Unapproved package file: ${file.path}`);
+    assert.match(file.path, /^(?:dist\/|\.agents\/skills\/explain-this-file\/(?:SKILL\.md|agents\/openai\.yaml)$|scripts\/prepare-bin\.mjs$|docs\/images\/|examples\/|(?:README|CHANGELOG|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT|ROADMAP|THIRD_PARTY_NOTICES)\.md$|LICENSE$|NOTICE$|package\.json$)/, `Unapproved package file: ${file.path}`);
     assert.doesNotMatch(file.path, /(?:^|\/)(?:node_modules|output|\.local|\.env|\.git)(?:\/|$)/);
   }
   const paths = new Set(packed.files.map(file => file.path));
+  for (const file of ['SKILL.md', 'agents/openai.yaml']) {
+    assert.ok(paths.has(`.agents/skills/explain-this-file/${file}`), `Missing skill file: ${file}`);
+  }
   for (const required of ['dist/index.js','dist/model/graph.js','dist/parsers/astParser.js','dist/renderers/diagramExports.js','LICENSE','NOTICE','README.md']) assert.ok(paths.has(required), `Missing ${required}`);
   await fs.writeFile(path.join(temporary, 'package.json'), JSON.stringify({ name: 'c4-package-smoke', version: '1.0.0', private: true }));
   await runNpm(['install', '--omit=dev', '--no-audit', '--no-fund', ...(process.env.C4_PACKAGE_OFFLINE === '1' ? ['--offline'] : []), path.join(temporary, packed.filename)]);
@@ -40,6 +43,10 @@ try {
   assert.equal(summary.analysisStatus, 'complete');
   const rendering = JSON.parse(await run(process.execPath, [entry, 'render', graphPath, '--out', 'diagram.md']));
   assert.equal(rendering.layout.engine, 'elk'); assert.equal(rendering.layout.nodeCount, 2);
+  const explanation = JSON.parse(await run(process.execPath, [entry, 'explain-file', 'src', 'value.ts', '--out', 'value.md']));
+  assert.equal(explanation.counts.incoming, 1);
+  assert.equal(explanation.counts.outgoing, 0);
+  assert.ok((await fs.stat(explanation.artifacts.png)).size > 100);
   for (const extension of ['md','svg','png','html']) assert.ok((await fs.stat(path.join(temporary, `diagram.${extension}`))).size > 100);
   console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, PNG/SVG/HTML rendering.`);
 } finally { await fs.rm(temporary, { recursive: true, force: true }); }

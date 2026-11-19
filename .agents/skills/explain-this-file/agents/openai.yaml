@@ -1,0 +1,4 @@
+interface:
+  display_name: "Explain this file"
+  short_description: "Trace a TypeScript file’s direct imports and importers"
+  default_prompt: "Use $explain-this-file to show what imports this TypeScript file, what it imports, and where those connections appear in the source."

@@ -2,6 +2,10 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## 0.2.0-alpha.11 — unreleased
+
+- Ask the `explain-this-file` skill who imports a TypeScript or TSX file and what it imports. The `explain_architecture_file` MCP tool and `explain-file` command generate a one-hop diagram and Markdown report with import locations and resolution gaps.
+
 ## 0.2.0-alpha.10 — 2026-11-08
 
 ### Added
