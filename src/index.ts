@@ -19,10 +19,28 @@ import { runNotion } from "./publishers/notion.js";
 import { notionTargetSchema } from "./publishers/notionTransport.js";
 import { wikiDocumentSchema } from "./publishers/wikiDiagrams.js";
 import { runCli } from "./cli.js";
+import { explainFile } from "./renderers/explainFile.js";
 import { version } from "./version.js";
 
 const server = new McpServer({ name: "c4-architect-mcp", version });
 const textResult = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value) }] });
+
+server.tool("explain_architecture_file",
+  "Scan local TypeScript/TSX and explain one file's direct incoming and outgoing dependencies. Writes a focused diagram and a Markdown report with source locations and resolution diagnostics.",
+  {
+    targetDir: z.string().min(1).describe("Directory containing the source to scan"),
+    file: z.string().min(1).describe("Scan-relative source path or unique filename"),
+    outputPath: z.string().min(1).describe("Destination for the Markdown report ending in .md"),
+    tsconfigPath: z.string().optional(),
+    repository: z.string().optional().describe("GitHub owner/repo for source links, with commit"),
+    commit: z.string().optional().describe("Full 40-character SHA of the scanned source for GitHub links"),
+    sourceRoot: z.string().optional().describe("Path from the repository root to targetDir for GitHub links"),
+    maxNodes: graphFocusSchema.shape.maxNodes.optional(),
+    maxEdges: graphFocusSchema.shape.maxEdges.optional(),
+  }, async ({ targetDir, file, outputPath, ...options }) => {
+    const result = await explainFile(targetDir, file, outputPath, options);
+    return { ...textResult(result), structuredContent: result };
+  });
 
 server.tool("analyze_architectural_boundaries",
   "Locally parses TypeScript/TSX dependencies with source evidence, inferred or declared C4 mappings, and diagnostics. Save a graph and return a summary to keep the response small.",

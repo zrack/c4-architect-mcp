@@ -23,6 +23,13 @@ test('saved-graph MCP workflow preserves source evidence and declared boundaries
     await fs.writeFile(config, JSON.stringify({schemaVersion:'1.0',system:{id:'example',label:'Example'},defaultContainer:{id:'service',label:'Service'},components:[{id:'api',label:'API',paths:['api.ts']},{id:'storage',label:'Storage',paths:['storage.ts']}]}));
     await client.connect(new StdioClientTransport({command:process.execPath,args:[path.join(root,'dist/index.js')],cwd:temporary}));
     const tools = (await client.listTools()).tools.map(tool => tool.name);
+    assert.ok(tools.includes('explain_architecture_file'));
+    const explanation = text(await client.callTool({ name: 'explain_architecture_file', arguments: {
+      targetDir: path.join(temporary, 'src'), file: 'storage.ts', outputPath: path.join(temporary, 'storage.md'),
+    } }));
+    assert.equal(explanation.counts.incoming, 1);
+    assert.equal(explanation.counts.outgoing, 0);
+    assert.match(await fs.readFile(explanation.artifacts.markdown, 'utf8'), /api\.ts#L1/);
     for (const tool of ['analyze_architectural_boundaries','get_architecture_summary','query_architecture_graph','compare_architecture_graphs','render_architecture_graph','render_c4_mermaid']) assert.ok(tools.includes(tool));
     const graphPath = path.join(temporary, 'graph.json');
     const summary = text(await client.callTool({name:'analyze_architectural_boundaries',arguments:{targetDir:path.join(temporary,'src'),c4Level:'Component',configPath:config,outputPath:graphPath,responseMode:'summary'}}));

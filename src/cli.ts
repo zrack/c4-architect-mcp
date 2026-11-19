@@ -5,17 +5,22 @@ import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGrap
 import { graphFocusSchema } from "./model/neighborhood.js";
 import { diagramSchema } from "./model/diagram.js";
 import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, renderDrawioGraph, renderStructurizrArtifacts } from "./renderers/artifacts.js";
+import { explainFile } from "./renderers/explainFile.js";
 import { writeArchitectureReview } from "./renderers/review.js";
 import { runAdoWiki } from "./publishers/adoWiki.js";
 import { runConfluence } from "./publishers/confluence.js";
 import { runNotion } from "./publishers/notion.js";
 import { version } from "./version.js";
 
+const explainUsage = `explain-file <directory> <file> --out FILE.md [--tsconfig tsconfig.json] [--nodes 25] [--edges 50]
+    [--github-repo OWNER/REPO --commit SHA [--source-root REPO_RELATIVE_PATH]]`;
+
 const help = `C4-Architect ${version}
 
 No arguments: start the MCP server over stdio.
 
   analyze <directory> --level Component --out graph.json [--config config.json] [--tsconfig tsconfig.json] [--commit SHA] [--summary]
+  ${explainUsage}
   render <graph.json> --out ARCHITECTURE.md [--title "Architecture"] [--node ID [--direction both] [--depth 1] [--nodes 25] [--edges 50]]
   render-diagram <diagram.json> --out DIAGRAM.md
   render-drawio <diagram-or-graph.json> --out DIAGRAM.drawio
@@ -46,8 +51,13 @@ export async function runCli(args: string[]): Promise<boolean> {
   if (args.length === 1 && ["--help", "-h", "help"].includes(args[0])) { process.stdout.write(help); return true; }
   if (args.length === 1 && ["--version", "-v"].includes(args[0])) { process.stdout.write(version + "\n"); return true; }
   const [command, ...rest] = args;
+  if (command === "explain-file" && rest.length === 1 && ["--help", "-h"].includes(rest[0])) {
+    process.stdout.write(`${explainUsage}\n\nUse a scan-relative path or unique filename. Writes a Markdown report and a focused PNG.\n`);
+    return true;
+  }
   const specs: Record<string, string[]> = {
     analyze: ["level", "out", "config", "tsconfig", "commit", "summary"], render: ["out", "title", "node", "direction", "depth", "nodes", "edges"], summary: [],
+    "explain-file": ["out", "tsconfig", "nodes", "edges", "github-repo", "commit", "source-root"],
     "render-diagram": ["out"],
     "render-drawio": ["out"],
     "render-structurizr": ["out"],
@@ -71,7 +81,7 @@ export async function runCli(args: string[]): Promise<boolean> {
       flags.set(flag, value);
     }
   }
-  if (positional.length !== (["diff", "review"].includes(command) ? 2 : 1)) throw new Error(`Invalid arguments for ${command}. Use --help.`);
+  if (positional.length !== (["diff", "review", "explain-file"].includes(command) ? 2 : 1)) throw new Error(`Invalid arguments for ${command}. Use --help.`);
   const str = (key: string) => flags.get(key) as string | undefined;
   const num = (key: string) => flags.has(key) ? Number(str(key)) : undefined;
   if (command === "analyze") {
@@ -86,6 +96,13 @@ export async function runCli(args: string[]): Promise<boolean> {
     await fs.mkdir(path.dirname(path.resolve(out)), { recursive: true });
     await writeArchitectureGraph(out, graph);
     json(flags.has("summary") ? { ...summarizeArchitectureGraph(graph), graphPath: path.resolve(out) } : graph);
+  } else if (command === "explain-file") {
+    const out = str("out");
+    if (!out) throw new Error("explain-file requires --out FILE.md");
+    json(await explainFile(positional[0], positional[1], out, {
+      tsconfigPath: str("tsconfig"), repository: str("github-repo"), sourceRoot: str("source-root"), commit: str("commit"),
+      maxNodes: num("nodes"), maxEdges: num("edges"),
+    }));
   } else if (command === "render") {
     const out = str("out"); if (!out) throw new Error("render requires --out ARCHITECTURE.md");
     const nodeId = str("node");

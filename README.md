@@ -6,9 +6,43 @@
 
 C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io/) server that turns source imports into a versioned dependency graph, lets you review and name its architectural boundaries, and produces compact C4 diagrams. Use it from Codex, Claude Code, Claude Desktop, or another client that supports local MCP servers over `stdio`.
 
-**0.2.0-alpha.10 · TypeScript / TSX · Local parsing · MIT licensed**
+**Published alpha · 0.2.0-alpha.10 · TypeScript / TSX · Local parsing · MIT licensed**
 
 [Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#c4-diagrams) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
+
+## Explain this file
+
+> Use $explain-this-file on `NoteEditor.tsx` in `./src`. What imports it, and what does it import? Show me the focused diagram and the source lines for both directions.
+
+Try this alpha.11 source preview in a TakeNote checkout, or substitute a file from your own TypeScript project. On TakeNote's `src` snapshot, the skill narrows **108 nodes and 363 relationships to 15 nodes and 19 relationships**. Two arrows show where the editor fits.
+
+- **Incoming · R01.** `TakeNoteApp.tsx` imports `NoteEditor`. [Read the import on line 11](https://github.com/taniarascia/takenote/blob/e0eddbb9a21ae4cf4c4c7c183f29cfd666e08331/src/client/containers/TakeNoteApp.tsx#L11)
+- **Outgoing · R19.** `NoteEditor.tsx` imports `PreviewEditor`. [Read the import on line 12](https://github.com/taniarascia/takenote/blob/e0eddbb9a21ae4cf4c4c7c183f29cfd666e08331/src/client/containers/NoteEditor.tsx#L12)
+
+The editor has one direct importer and 18 outgoing import statements. Ten of those statements reference packages whose installed files were unavailable in the clean checkout. The report lists every import and identifies those ten locations. [Read the generated report](examples/takenote/NoteEditor.md) · [Open the full-size diagram](examples/takenote/NoteEditor.focus-fc1052d6a7d39748.png)
+
+<a href="examples/takenote/NoteEditor.focus-fc1052d6a7d39748.png"><img src="examples/takenote/NoteEditor.focus-fc1052d6a7d39748.png" alt="TakeNoteApp imports NoteEditor, which imports PreviewEditor and 12 other modules or packages. Each arrow has an ID that matches the source report." width="700"></a>
+
+<details>
+<summary><strong>Try the alpha.11 skill from source</strong></summary>
+
+In a C4 Architect checkout that includes this feature, use Node.js 22 or 24 and run `npm ci` followed by `npm run build`. Codex can discover the bundled skill when you open that checkout. To use the same build from other projects on macOS or Linux, run these commands from the C4 Architect root, then start a chat in the project you want to inspect:
+
+```sh
+mkdir -p "$HOME/.agents/skills"
+ln -s "$PWD/.agents/skills/explain-this-file" "$HOME/.agents/skills/explain-this-file"
+```
+
+With the alpha.11 source build connected as your MCP server, you can also copy the skill folder into your project's `.agents/skills/` directory. The skill uses `explain_architecture_file` or the built CLI. [Read the skill](.agents/skills/explain-this-file/SKILL.md)
+
+To reproduce the example, check out [the TakeNote revision used here](https://github.com/taniarascia/takenote/tree/e0eddbb9a21ae4cf4c4c7c183f29cfd666e08331) in a sibling directory named `takenote`. From the C4 Architect root, run:
+
+```sh
+node dist/index.js explain-file ../takenote/src NoteEditor.tsx --out output/NoteEditor.md \
+  --github-repo taniarascia/takenote --commit e0eddbb9a21ae4cf4c4c7c183f29cfd666e08331 --source-root src
+```
+
+</details>
 
 ![Workflow: parse local source, preserve evidence, declare boundaries, query and compare, render and export](https://raw.githubusercontent.com/zrack/c4-architect-mcp/main/docs/images/workflow.svg)
 
