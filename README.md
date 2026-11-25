@@ -139,6 +139,22 @@ npx -y c4-architect-mcp@0.2.0-alpha.12 render-diagram trail-notes-context.json -
 
 Open `TRAIL-NOTES.html` to explore the diagram.
 
+### Native data-flow diagrams (unreleased)
+
+Which path writes to Oracle? In the three-tier example below, a web request gets a response. A separate Kafka event reaches the application server, which writes an event-derived record to Oracle RAC. Each arrow names the data that moves and points toward its recipient.
+
+![Web request and response alongside an inbound Kafka event processed and stored in Oracle RAC](examples/three-tier-kafka-oracle/data-flow.png)
+
+The [editable example](examples/three-tier-kafka-oracle/data-flow.json) uses `"c4Level": "DataFlow"`. Use `ExternalEntity` for sources and recipients outside the processes being described, `Process` for work that handles data, and `DataStore` for retained data. A flow connects a process to another process, an external entity or a store. Supply the payload names and directions from your design.
+
+Render the example from a checkout built with this feature.
+
+```sh
+node dist/index.js render-diagram examples/three-tier-kafka-oracle/data-flow.json --out DATA-FLOW.md
+```
+
+Open `DATA-FLOW.html` and select Kafka to highlight its outgoing event. To generate the same diagram through MCP, pass the example JSON to `render_c4_mermaid` with `outputPath` set to `DATA-FLOW.md`.
+
 ## Get started
 
 Use Node.js 22 or 24 and npm. Run the pinned alpha without a checkout:

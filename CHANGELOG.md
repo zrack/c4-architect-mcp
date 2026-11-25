@@ -4,6 +4,7 @@ User-visible changes are recorded here. Unreleased work is not a published packa
 
 ## Unreleased
 
+- Render authored data-flow diagrams through MCP and the CLI, with distinct symbols for external entities, processes and data stores and a payload name on each arrow. The [Kafka and Oracle RAC example](examples/three-tier-kafka-oracle/data-flow.json) includes both a web request and response and a one-way event write.
 - Trace direct and indirect dependents of a TypeScript or TSX file with `$what-depends-on-this-file`, the `impact-file` command, or the `analyze_file_impact` MCP tool. The focused diagram and Markdown report show a shortest import path to the selected file with source evidence for each hop.
 
 ## GitHub Actions workflow — 2026-11-24
