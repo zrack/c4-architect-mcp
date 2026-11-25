@@ -2,7 +2,7 @@ import { posix } from "node:path";
 import { z } from "zod";
 import type { ArchitectureEdge, ArchitectureGraph, ArchitectureNode } from "../model/graph.js";
 import type { C4Diagram } from "./c4Mermaid.js";
-import { renderCompactC4 } from "./compactC4.js";
+import { renderFileImpactDiagram } from "./fileImpactDiagram.js";
 import { saveFileReport, scanFileReport, type FileSourceOptions } from "./fileReport.js";
 import { markdownText, sourceEvidence } from "./sourceLinks.js";
 
@@ -95,10 +95,12 @@ export async function fileImpact(targetDir: string, file: string, outputPath: st
     nameCounts.set(basename, (nameCounts.get(basename) ?? 0) + 1);
   }
   const depths = new Map(shown.map(item => [item.node.id, item.depth]));
+  const caption = `${shown.length} of ${dependents.length} observed ${dependents.length === 1 ? "dependent" : "dependents"} within ${depthLimit} · Importer → dependency`
+    + (beyondDepth ? " · More beyond depth limit" : "")
+    + (graph.metadata.analysisStatus === "partial" ? " · Partial scan" : "");
   const diagram: C4Diagram = {
     c4Level: "C4Component", title: `Dependents of ${center.path}`,
-    caption: `${shown.length} of ${dependents.length} ${dependents.length === 1 ? "dependent" : "dependents"} within ${depthLimit} · Importer → dependency`
-      + (beyondDepth ? " · More beyond depth limit" : ""),
+    caption,
     nodes: nodes.map(node => {
       const basename = posix.basename(node.path);
       const depth = depths.get(node.id) ?? 0;
@@ -111,7 +113,7 @@ export async function fileImpact(targetDir: string, file: string, outputPath: st
     }),
     relationships: shown.map(({ via }) => ({ from: via.source, to: via.target, label: via.label })),
   };
-  const { png: image } = await renderCompactC4(diagram);
+  const { png: image } = await renderFileImpactDiagram(diagram, hops.map(hop => hop.arrow));
 
   function section(indirect: boolean) {
     const selected = paths.filter(item => (item.depth > 1) === indirect);
@@ -141,7 +143,7 @@ export async function fileImpact(targetDir: string, file: string, outputPath: st
     `# What depends on ${markdownText(center.path)}?`,
     `**${counts.direct} direct** and **${counts.indirect} indirect** dependent files observed within ${depthLimit}. `
       + "Start with the direct importers. Each path follows source references back to the selected file.",
-    `![Dependent files and their shortest import paths](<${imageLink}>)`,
+    `![${caption}](<${imageLink}>)`,
     "## Direct dependents", section(false),
     "## Indirect dependents", section(true),
     ...(hops.length ? ["## Source evidence", [

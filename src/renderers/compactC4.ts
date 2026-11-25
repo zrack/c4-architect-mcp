@@ -34,11 +34,11 @@ export const nodeKinds: Record<DiagramNode["type"], string> = {
   DeploymentNode: "Deployment node", CodeElement: "Code element", Class: "Class", Interface: "Interface",
   Function: "Function", Type: "Type",
 };
-const xml = (value: string) => value.replace(/[&<>"']/g, character => ({
+export const xml = (value: string) => value.replace(/[&<>"']/g, character => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;",
 })[character]!);
 
-function wrap(text: string, width: number): string[] {
+export function wrap(text: string, width: number): string[] {
   const result: string[] = [];
   let line = "";
   for (const word of text.trim().split(/\s+/).filter(Boolean)) {
@@ -60,7 +60,7 @@ function wrap(text: string, width: number): string[] {
 
 // Use the same font and exact wrapped lines for measurement and SVG output.
 // Padding also accommodates small browser/font-substitution differences.
-async function textWidth(lines: string[], size: number): Promise<number> {
+export async function textWidth(lines: string[], size: number): Promise<number> {
   if (!lines.length) return 0;
   const metadata = await sharp({ text: { text: lines.map(xml).join("\n"), font: `Arial ${size}`, dpi: 72, rgba: true } }).metadata();
   return metadata.width ?? 0;

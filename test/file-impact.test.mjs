@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { renderFileImpactDiagram } from '../dist/renderers/fileImpactDiagram.js';
 
 const exec = promisify(execFile);
 const cli = fileURLToPath(new URL('../dist/index.js', import.meta.url));
@@ -17,7 +18,7 @@ const project = {
   'tsconfig.json': JSON.stringify({ compilerOptions: { baseUrl: './src', paths: { '@domain/*': ['domain/*'] } } }),
   'src/domain/Subject.ts': "import '../Top.js';\nimport '../outgoingOnly.js';\nexport type Subject = string;\n",
   'src/outgoingOnly.ts': 'export const out = 0;\n',
-  'src/alpha/Barrel.ts': "// public barrel\nexport type { Subject } from '../domain/Subject.js';\n",
+  'src/alpha/Barrel.ts': "// public barrel\nexport type { Subject }\n  from '../domain/Subject.js';\n",
   'src/beta space/Use.tsx': "// editor\n\nimport type { Subject } from '@domain/Subject';\nexport type View = Subject;\nimport type { Subject as Alias } from '@domain/Subject';\n",
   'src/Top.tsx': "import './beta space/Use.js';\nimport './alpha/Barrel.js';\nexport const top = 1;\n",
   'src/App.ts': "// application entry\nimport './Top.js';\n",
@@ -87,7 +88,7 @@ test('impact returns shortest importer paths with source evidence through aliase
   assert.deepEqual(typeOnly.evidence.map(item => item.line).sort(), [3, 5], 'Preserve repeated import sites without counting a file twice');
   const barrel = result.paths.find(item => item.file === 'alpha/Barrel.ts').hops[0];
   assert.equal(barrel.kind, 'type-re-export');
-  assert.equal(barrel.evidence[0].url, publishedLine('alpha/Barrel.ts', 2));
+  assert.equal(barrel.evidence[0].url, publishedLine('alpha/Barrel.ts', 3));
 
   const reversed = await setup(t, Object.fromEntries(Object.entries(project).reverse()));
   const rerun = await run(reversed, './' + target, ...pinned);
@@ -154,6 +155,37 @@ test('an incomplete scan qualifies the absence of observed dependents', async t 
   assert.deepEqual(result.paths, []);
   const markdown = await readFile(result.artifacts.markdown, 'utf8');
   assert.match(markdown, /partial|unresolved|scan.*incomplete/i);
+  assert.match(markdown, /!\[0 of 0 observed dependents within 3 hops · Importer → dependency · Partial scan\]/);
+});
+
+test('dense impact diagrams give every numbered reference its own row with both file names', async () => {
+  const makeNode = (id, label, technology) => ({ id, label, technology, type: 'Component' });
+  const selected = makeNode('target', 'Core.ts', 'Selected file');
+  const sources = Array.from({ length: 98 }, (_, i) =>
+    makeNode('file' + i, 'shared-spaces & long-names/feature-' + i + '/index.ts', 'Direct importer'));
+  const leaf = makeNode('leaf', 'entry.tsx', 'Indirect · 2 hops');
+  const relationships = sources.map(node => ({ from: node.id, to: selected.id, label: 'Imports module' }));
+  relationships.push({ from: leaf.id, to: sources[0].id, label: 'Re-exports types' });
+  const nodes = [selected, ...sources, leaf];
+  const diagram = { title: 'Dependents of Core.ts', caption: '99 of 99 observed dependents within 3 hops',
+    c4Level: 'C4Component', nodes, relationships };
+  const arrowIds = relationships.map((_, i) => 'R' + String(i + 1).padStart(2, '0'));
+  const result = await renderFileImpactDiagram(diagram, arrowIds);
+  const rows = [...result.svg.matchAll(/<g data-edge-id="([^"]+)">([\s\S]*?)<\/g>/g)];
+  assert.equal(rows.length, 99);
+  for (const [i, [, id, row]] of rows.entries()) {
+    const edge = relationships[i];
+    const words = row.replace(/<[^>]+>/g, '').replaceAll('&amp;', '&');
+    assert.equal(id, arrowIds[i]);
+    assert.ok(words.includes(id) && words.includes(edge.label));
+    assert.ok(words.includes(nodes.find(node => node.id === edge.from).label));
+    assert.ok(words.includes(nodes.find(node => node.id === edge.to).label));
+    assert.equal((row.match(/<path /g) ?? []).length, 1);
+  }
+  assert.match(rows.at(-1)[2], /Indirect · 2 hops/);
+  assert.equal(result.png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+  const smallDiagram = { ...diagram, nodes: [selected, sources[0]], relationships: relationships.slice(0, 1) };
+  assert.match((await renderFileImpactDiagram(smallDiagram, ['R01'])).svg, /data-engine="elk"/);
 });
 
 test('CLI and MCP expose the same pinned impact result and reject unsafe limits', { timeout: 30000 }, async t => {

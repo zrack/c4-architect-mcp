@@ -2,7 +2,7 @@
 
 **1 direct** and **2 indirect** dependent files observed within 3 hops. Start with the direct importers. Each path follows source references back to the selected file.
 
-![Dependent files and their shortest import paths](<NoteEditor.focus-0e29d2d8efc11823.png>)
+![3 of 3 observed dependents within 3 hops · Importer → dependency · Partial scan](<NoteEditor.focus-7b1dcac22e33c69b.png>)
 
 ## Direct dependents
 

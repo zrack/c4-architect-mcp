@@ -532,7 +532,7 @@ In the development checkout, ask Codex:
 
 The report starts with the files that import the editor directly. For each indirect dependent it shows a shortest path back to the editor and the source line for each hop. The default view follows up to three hops and includes up to 25 files, counting the selected file. It reports any limits or source-resolution gaps that affect the result.
 
-In the TakeNote example, start with `TakeNoteApp.tsx`: it imports the editor and renders it beside the note list. `App.tsx` and the client entry point reach the editor indirectly. The clean source scan covered 76 TypeScript and TSX files and marked unresolved references in the report. [Editor render site](https://github.com/taniarascia/takenote/blob/e0eddbb9a21ae4cf4c4c7c183f29cfd666e08331/src/client/containers/TakeNoteApp.tsx#L106) · [Focused diagram](examples/takenote/impact/NoteEditor.focus-0e29d2d8efc11823.png)
+In the TakeNote example, start with `TakeNoteApp.tsx`: it imports the editor and renders it beside the note list. `App.tsx` and the client entry point reach the editor indirectly. The clean source scan covered 76 TypeScript and TSX files and marked unresolved references in the report. [Editor render site](https://github.com/taniarascia/takenote/blob/e0eddbb9a21ae4cf4c4c7c183f29cfd666e08331/src/client/containers/TakeNoteApp.tsx#L106) · [Focused diagram](examples/takenote/impact/NoteEditor.focus-7b1dcac22e33c69b.png)
 
 Use the checkout’s built CLI or its `analyze_file_impact` MCP tool. From the C4 Architect checkout, with TakeNote checked out at the revision below:
 
