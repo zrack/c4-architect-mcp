@@ -45,6 +45,11 @@ try {
   assert.equal(summary.analysisStatus, 'complete');
   const rendering = JSON.parse(await run(process.execPath, [entry, 'render', graphPath, '--out', 'diagram.md']));
   assert.equal(rendering.layout.engine, 'elk'); assert.equal(rendering.layout.nodeCount, 2);
+  const dataFlowModel = path.join(installed, 'examples/three-tier-kafka-oracle/data-flow.json');
+  const dataFlow = JSON.parse(await run(process.execPath, [entry, 'render-diagram', dataFlowModel, '--out', 'data-flow.md']));
+  assert.equal(dataFlow.layout.nodeCount, 6);
+  assert.equal(dataFlow.layout.relationshipCount, 6);
+  assert.ok((await fs.stat(dataFlow.artifacts.png)).size > 100);
   const explanation = JSON.parse(await run(process.execPath, [entry, 'explain-file', 'src', 'value.ts', '--out', 'value.md']));
   assert.equal(explanation.counts.incoming, 1);
   assert.equal(explanation.counts.outgoing, 0);

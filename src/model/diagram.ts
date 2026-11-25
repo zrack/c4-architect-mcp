@@ -1,13 +1,15 @@
 import { z } from "zod";
 
 export const c4LevelSchema = z.enum([
-  "C4Context", "C4Container", "C4Component", "C4Deployment", "C4Dynamic", "C4Landscape", "C4Code",
+  "C4Context", "C4Container", "C4Component", "C4Deployment", "C4Dynamic", "C4Landscape", "C4Code", "DataFlow",
 ]);
 
+const dataFlowNodeTypes = ["ExternalEntity", "Process", "DataStore"] as const;
 const c4NodeTypeSchema = z.enum([
   "Person", "System", "System_Ext", "ExternalSystem", "Container", "ContainerDb", "Component",
-  "DeploymentNode", "CodeElement", "Class", "Interface", "Function", "Type",
+  "DeploymentNode", "CodeElement", "Class", "Interface", "Function", "Type", ...dataFlowNodeTypes,
 ]);
+const dataFlowTypes = new Set<C4NodeType>(dataFlowNodeTypes);
 
 export const diagramNodeSchema = z.object({
   id: z.string().refine(value => Boolean(value.trim()), "Node ID must not be empty."),
@@ -31,12 +33,22 @@ export const diagramSchema = z.object({
   caption: z.string().optional(),
   c4Level: c4LevelSchema,
   nodes: z.array(diagramNodeSchema).min(1, "Diagram must contain at least one node."),
-  relationships: z.array(diagramRelationshipSchema).describe("Relationships in display order, which is the step order for C4Dynamic"),
+  relationships: z.array(diagramRelationshipSchema).describe("Relationships in display order, which is the step order for C4Dynamic. For DataFlow, name the data in label and point from its origin to its receiver."),
 }).superRefine((diagram, context) => {
+  const isDataFlow = diagram.c4Level === "DataFlow";
   const nodes = new Map<string, DiagramNode>();
   diagram.nodes.forEach((node, index) => {
     if (nodes.has(node.id)) {
       context.addIssue({ code: "custom", path: ["nodes", index, "id"], message: `Duplicate node ID: ${node.id}` });
+    }
+    if (isDataFlow !== dataFlowTypes.has(node.type)) {
+      const message = isDataFlow
+        ? "DataFlow nodes must be ExternalEntity, Process, or DataStore."
+        : `${node.type} is only allowed in DataFlow diagrams.`;
+      context.addIssue({ code: "custom", path: ["nodes", index, "type"], message });
+    }
+    if (isDataFlow && !node.label.trim()) {
+      context.addIssue({ code: "custom", path: ["nodes", index, "label"], message: "Give each DataFlow node a name." });
     }
     nodes.set(node.id, node);
   });
@@ -75,6 +87,16 @@ export const diagramSchema = z.object({
   });
 
   diagram.relationships.forEach((relationship, index) => {
+    if (isDataFlow) {
+      if (!relationship.label.trim()) {
+        context.addIssue({ code: "custom", path: ["relationships", index, "label"], message: "A DataFlow label must name the data being transferred." });
+      }
+      const from = nodes.get(relationship.from);
+      const to = nodes.get(relationship.to);
+      if (from && to && from.type !== "Process" && to.type !== "Process") {
+        context.addIssue({ code: "custom", path: ["relationships", index], message: "At least one endpoint of a DataFlow relationship must be a Process." });
+      }
+    }
     for (const endpoint of ["from", "to"] as const) {
       const id = relationship[endpoint];
       const issuePath = ["relationships", index, endpoint];

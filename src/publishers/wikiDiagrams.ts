@@ -40,7 +40,7 @@ export async function renderWikiDiagrams(input: unknown) {
     const { png, layout } = await renderCompactC4(diagram);
     const hash = createHash("sha256").update(png).digest("hex");
     const index = diagrams.length + 1;
-    const slug = diagram.c4Level.slice(2).toLowerCase();
+    const slug = diagram.c4Level.replace(/^C4/, "").toLowerCase();
     diagrams.push({
       title: singleLine(diagram.title), caption: singleLine(diagram.caption ?? ""),
       name: `c4-${index}-${slug}-${hash}.png`, data: png,

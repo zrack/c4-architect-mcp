@@ -102,6 +102,35 @@ test('Trail Notes Draw.io export keeps editable nested groups and directed label
   await assert.rejects(readFile(path.join(cwd, 'invalid.svg')), { code: 'ENOENT' });
 });
 
+test('Draw.io preserves editable DFD symbols and the direction of each named payload', { timeout: 30000 }, async t => {
+  const { client } = await session(t);
+  const diagram = JSON.parse(await readFile(new URL('../examples/three-tier-kafka-oracle/data-flow.json', import.meta.url), 'utf8'));
+  const result = await client.callTool({ name: 'render_c4_drawio', arguments: diagram });
+  assert.notEqual(result.isError, true, JSON.stringify(result.content));
+  const { vertices, edges } = cellsIn(result.content[0].text);
+  const nodes = new Map(vertices.map(cell => [cell.c4Id, cell]));
+  assert.equal(nodes.size, diagram.nodes.length);
+  for (const { id, type, label } of diagram.nodes) {
+    const cell = nodes.get(id);
+    assert.equal(cell.c4Type, type);
+    assert.ok(visibleLabel(cell).includes(label));
+    if (type === 'ExternalEntity') assert.match(cell.style, /(?:^|;)rounded=0;/);
+    if (type === 'Process') assert.match(cell.style, /(?:^|;)rounded=1;/);
+    if (type === 'DataStore') {
+      for (const style of ['shape=partialRectangle', 'left=0', 'right=0', 'top=1', 'bottom=1']) {
+        assert.ok(cell.style.split(';').includes(style));
+      }
+    }
+  }
+  assert.equal(edges.length, diagram.relationships.length);
+  for (const { from, to, label } of diagram.relationships) {
+    const edge = edges.find(cell => cell.source === nodes.get(from).id && cell.target === nodes.get(to).id
+      && visibleLabel(cell).includes(label));
+    assert.ok(edge, `Missing directed data flow for ${label}`);
+    assert.match(edge.style, /endArrow=block/);
+  }
+});
+
 test('Draw.io preserves parallel arrows, self-loops, and escaped user text', { timeout: 30000 }, async t => {
   const { client } = await session(t);
   const literal = `<img src=x>&"'`;

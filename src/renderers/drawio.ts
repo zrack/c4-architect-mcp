@@ -25,12 +25,18 @@ function labelLines(lines: readonly string[]): string {
   return lines.map(escapeXml).join("<br>");
 }
 
+const dataFlowStyles: Partial<Record<CompactNode["type"], string>> = {
+  ExternalEntity: "rounded=0;fillColor=#f0f2f5;strokeColor=#818d9d;",
+  Process: "rounded=1;arcSize=40;fillColor=#e7f0fb;strokeColor=#5381b7;",
+  DataStore: "shape=partialRectangle;left=0;right=0;top=1;bottom=1;fillColor=#edf6f1;strokeColor=#37715b;strokeWidth=2;",
+};
+
 function nodeCell(node: CompactNode, parent: CompactNode | undefined): string {
   const boundary = node.boundaryHeader;
   const external = node.type === "System_Ext" || node.type === "ExternalSystem";
   const style = boundary
     ? `shape=swimlane;container=1;recursiveResize=0;startSize=${boundary.height};align=left;spacingLeft=12;fillColor=#e9eff7;swimlaneFillColor=#f7f9fc;strokeColor=#7288a1;`
-    : `rounded=1;arcSize=8;fillColor=${external ? "#edf0f4" : "#e5eef9"};strokeColor=${external ? "#7d8b9c" : "#4878b2"};`;
+    : dataFlowStyles[node.type] ?? `rounded=1;arcSize=8;fillColor=${external ? "#edf0f4" : "#e5eef9"};strokeColor=${external ? "#7d8b9c" : "#4878b2"};`;
   const label = [
     `<span style="font-size:11px;color:#475a71">${nodeKinds[node.type]}</span>`,
     `<b style="font-size:16px">${labelLines(node.titleLines)}</b>`,

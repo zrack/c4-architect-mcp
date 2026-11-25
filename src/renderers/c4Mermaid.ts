@@ -15,6 +15,9 @@ const stereotypes: Record<C4NodeType, string> = {
   Interface: "interface",
   Function: "function",
   Type: "type",
+  ExternalEntity: "external entity",
+  Process: "process",
+  DataStore: "data store",
 };
 
 // Explicit wrapping also works in Mermaid hosts that do not support Markdown
@@ -91,14 +94,16 @@ export function renderC4Mermaid(diagram: C4Diagram): string {
     "    edgeLabelBackground: '#ffffff'",
     "  themeCSS: '.edgeLabel rect { opacity: 1 !important; fill: #ffffff !important; }'",
     "  flowchart:",
-    "    htmlLabels: false",
+    // Mermaid's SVG-only edge labels print escaped payload punctuation verbatim.
+    `    htmlLabels: ${diagram.c4Level === "DataFlow"}`,
     "    wrappingWidth: 320",
     "    nodeSpacing: 160",
     "    rankSpacing: 180",
     "    curve: bumpY",
     "---",
     "flowchart TB",
-    `  %% ${diagram.c4Level}: C4 types with automatic graph layout`,
+    diagram.c4Level === "DataFlow" ? "  %% DataFlow: arrows point from data origin to receiver"
+      : `  %% ${diagram.c4Level}: C4 types with automatic graph layout`,
   ];
 
   const nodesByParent = new Map<string | undefined, DiagramNode[]>();
@@ -120,8 +125,12 @@ export function renderC4Mermaid(diagram: C4Diagram): string {
       lines.push(`${indent}subgraph ${id}["${text}"]`);
       for (const child of children) renderNode(child, `${indent}  `);
       lines.push(`${indent}end`);
+    } else if (node.type === "Process") {
+      lines.push(`${indent}${id}("${text}")`);
     } else {
       lines.push(node.type === "ContainerDb" ? `${indent}${id}[("${text}")]` : `${indent}${id}["${text}"]`);
+      // Keep user text in Mermaid's quoted label, outside the shape metadata.
+      if (node.type === "DataStore") lines.push(`${indent}${id}@{ shape: datastore }`);
     }
   };
   for (const node of nodesByParent.get(undefined) ?? []) renderNode(node, "  ");
@@ -143,9 +152,13 @@ export function renderC4Mermaid(diagram: C4Diagram): string {
   if (diagram.c4Level === "C4Deployment" && nodesByParent.size > 1) {
     lines.push("  classDef deployment fill:#f6f9fc,stroke:#737d8b,color:#15243a,stroke-dasharray:4 3");
   }
+  if (diagram.c4Level === "DataFlow") {
+    lines.push("  classDef store fill:#edf6f1,stroke:#37715b,color:#15243a");
+  }
   diagram.nodes.forEach(node => {
     const style = nodesByParent.has(node.id) ? "deployment"
-      : node.type === "System_Ext" || node.type === "ExternalSystem" ? "external"
+      : node.type === "System_Ext" || node.type === "ExternalSystem" || node.type === "ExternalEntity" ? "external"
+      : node.type === "DataStore" ? "store"
       : node.type === "Person" ? "person" : "internal";
     lines.push(`  class ${aliases.get(node.id)} ${style}`);
   });
