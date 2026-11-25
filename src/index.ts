@@ -20,10 +20,22 @@ import { notionTargetSchema } from "./publishers/notionTransport.js";
 import { wikiDocumentSchema } from "./publishers/wikiDiagrams.js";
 import { runCli } from "./cli.js";
 import { explainFile } from "./renderers/explainFile.js";
+import { writeWalkthroughReview } from "./renderers/walkthroughReview.js";
 import { version } from "./version.js";
 
 const server = new McpServer({ name: "c4-architect-mcp", version });
 const textResult = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value) }] });
+
+server.tool("review_architecture_walkthrough",
+  "Compare a scenario with an authored architecture walkthrough. Trace changes to the affected diagrams and save a Markdown report with model evidence and open questions.",
+  {
+    manifestPath: z.string().min(1).describe("Local walkthrough manifest JSON, with paths to its diagram models"),
+    scenarioPath: z.string().min(1).describe("Local scenario JSON containing claim changes and question answers"),
+    outputPath: z.string().min(1).describe("Destination for the Markdown report ending in .md"),
+  }, async ({ manifestPath, scenarioPath, outputPath }) => {
+    const result = await writeWalkthroughReview(manifestPath, scenarioPath, outputPath);
+    return { ...textResult(result), structuredContent: result };
+  });
 
 server.tool("explain_architecture_file",
   "Scan local TypeScript/TSX and explain one file's direct incoming and outgoing dependencies. Writes a focused diagram and a Markdown report with source locations and resolution diagnostics.",

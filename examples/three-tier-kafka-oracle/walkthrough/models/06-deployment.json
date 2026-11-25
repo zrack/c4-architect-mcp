@@ -1,0 +1,82 @@
+{
+  "title": "Runtime placement and Oracle RAC",
+  "caption": "Logical deployment · host count and sites are open",
+  "c4Level": "C4Deployment",
+  "nodes": [
+    {
+      "id": "web-env",
+      "label": "Web runtime",
+      "type": "DeploymentNode",
+      "technology": "Presentation tier"
+    },
+    {
+      "id": "web-app",
+      "label": "Web app",
+      "type": "Container",
+      "technology": "Hosting style open",
+      "parentId": "web-env"
+    },
+    {
+      "id": "app-env",
+      "label": "Application runtime",
+      "type": "DeploymentNode",
+      "technology": "Application tier"
+    },
+    {
+      "id": "app-server",
+      "label": "Application server",
+      "type": "Container",
+      "technology": "Includes the Kafka consumer",
+      "parentId": "app-env"
+    },
+    {
+      "id": "kafka",
+      "label": "Kafka",
+      "type": "System_Ext",
+      "technology": "Cluster topology open"
+    },
+    {
+      "id": "rac-env",
+      "label": "Oracle RAC environment",
+      "type": "DeploymentNode",
+      "technology": "Data tier"
+    },
+    {
+      "id": "instances",
+      "label": "RAC database instances",
+      "type": "DeploymentNode",
+      "technology": "Instance and host count open",
+      "parentId": "rac-env"
+    },
+    {
+      "id": "store",
+      "label": "Application datastore",
+      "type": "ContainerDb",
+      "technology": "One shared Oracle database",
+      "parentId": "rac-env"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "web-app",
+      "to": "app-server",
+      "label": "Sends web requests"
+    },
+    {
+      "from": "app-server",
+      "to": "kafka",
+      "label": "Consumes events from"
+    },
+    {
+      "from": "app-server",
+      "to": "instances",
+      "label": "Connects via database service",
+      "description": "The database service is a logical endpoint available on eligible instances."
+    },
+    {
+      "from": "instances",
+      "to": "store",
+      "label": "Access the shared database"
+    }
+  ]
+}

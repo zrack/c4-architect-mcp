@@ -10,6 +10,24 @@ C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io
 
 [Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#c4-diagrams) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
+## Solution architect walkthrough (alpha.14 preview)
+
+Where an integration bridge sits changes which diagrams an architect should revisit. This skill compares alternative answers against the same set of diagrams, traces each finding to a node or arrow, and lists the questions that still need an owner’s answer.
+
+> Use `$solution-architect-walkthrough` on the Kafka and Oracle RAC example. Compare a bridge that feeds Kafka with a bridge that consumes from Kafka and delivers to the application. Show which views need review and why.
+
+The [walkthrough manifest](examples/three-tier-kafka-oracle/walkthrough.json) records the baseline. Compare the [upstream bridge report](examples/three-tier-kafka-oracle/walkthrough/reports/bridge-before-kafka.md) with the [downstream bridge report](examples/three-tier-kafka-oracle/walkthrough/reports/bridge-after-kafka.md). Each scenario answers the placement question. The event contract, replay policy, and web user's outcome stay open.
+
+From a built checkout containing alpha.14, run the following commands. Codex can discover the skill in the checkout’s `.agents/skills` directory.
+
+```sh
+example=examples/three-tier-kafka-oracle
+node dist/index.js review-walkthrough "$example/walkthrough.json" "$example/walkthrough/bridge-before-kafka.json" --out output/bridge-before.md
+node dist/index.js review-walkthrough "$example/walkthrough.json" "$example/walkthrough/bridge-after-kafka.json" --out output/bridge-after.md
+```
+
+Through MCP, call `review_architecture_walkthrough` with `manifestPath`, `scenarioPath`, and `outputPath`. Each review checks the authored evidence against the saved diagram models. To apply it to another system, see the [manifest and scenario format](.agents/skills/solution-architect-walkthrough/references/walkthrough-format.md).
+
 ## What changed in this PR?
 
 Try this prompt in Codex with this repository, or replace the PR URL with your own. You can also generate the report from GitHub’s Actions tab. [Set up the skill](#review-architecture-changes-for-a-pull-request) · [Run it in GitHub Actions](#run-the-review-in-github-actions)

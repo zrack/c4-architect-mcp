@@ -1,0 +1,79 @@
+{
+  "title": "Inside the application server",
+  "caption": "Four proposed components inside tier 2",
+  "c4Level": "C4Component",
+  "nodes": [
+    {
+      "id": "web-app",
+      "label": "Web app",
+      "type": "Container",
+      "technology": "Tier 1 · Presentation",
+      "description": "Receives user input; hosting style and user operations are open."
+    },
+    {
+      "id": "web-handler",
+      "label": "Web request handler",
+      "type": "Component",
+      "technology": "Handles a web request"
+    },
+    {
+      "id": "consumer",
+      "label": "Kafka consumer",
+      "type": "Component",
+      "technology": "Reads inbound events"
+    },
+    {
+      "id": "processor",
+      "label": "Event processor",
+      "type": "Component",
+      "technology": "Maps an event to a record"
+    },
+    {
+      "id": "repository",
+      "label": "Record repository",
+      "type": "Component",
+      "technology": "Writes to the datastore"
+    },
+    {
+      "id": "kafka",
+      "label": "Kafka",
+      "type": "System_Ext",
+      "technology": "Event platform",
+      "description": "Carries events consumed by the application. A separate upstream eventing service is an open question."
+    },
+    {
+      "id": "store",
+      "label": "Application datastore",
+      "type": "ContainerDb",
+      "technology": "Tier 3 · Oracle RAC",
+      "description": "One logical application datastore hosted by Oracle RAC. Schema and operational ownership are open."
+    }
+  ],
+  "relationships": [
+    {
+      "from": "web-app",
+      "to": "web-handler",
+      "label": "Sends a web request"
+    },
+    {
+      "from": "consumer",
+      "to": "kafka",
+      "label": "Consumes events from"
+    },
+    {
+      "from": "consumer",
+      "to": "processor",
+      "label": "Passes the event"
+    },
+    {
+      "from": "processor",
+      "to": "repository",
+      "label": "Requests a record write"
+    },
+    {
+      "from": "repository",
+      "to": "store",
+      "label": "Persists the record"
+    }
+  ]
+}

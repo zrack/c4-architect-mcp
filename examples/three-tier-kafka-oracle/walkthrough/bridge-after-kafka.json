@@ -1,0 +1,16 @@
+{
+  "title": "Bridge delivers to the application",
+  "changes": [
+    {
+      "claim": "delivery-peer",
+      "value": "The application receives the event from the integration bridge.",
+      "reason": "Kafka consumption moves to the bridge. The bridge then delivers the event to the application."
+    }
+  ],
+  "answers": [
+    {
+      "question": "bridge-placement",
+      "answer": "The bridge sits between Kafka and the application. It consumes the Kafka event and delivers it to the application."
+    }
+  ]
+}
