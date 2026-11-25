@@ -8,6 +8,7 @@ import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, render
 import { explainFile } from "./renderers/explainFile.js";
 import { writeArchitectureReview } from "./renderers/review.js";
 import { writeWalkthroughReview } from "./renderers/walkthroughReview.js";
+import { writeReplayWalkthrough } from "./renderers/replayWalkthrough.js";
 import { runAdoWiki } from "./publishers/adoWiki.js";
 import { runConfluence } from "./publishers/confluence.js";
 import { runNotion } from "./publishers/notion.js";
@@ -18,6 +19,7 @@ const explainUsage = `explain-file <directory> <file> --out FILE.md [--tsconfig 
 
 const renderDiagramUsage = "render-diagram <diagram.json> --out DIAGRAM.md";
 const walkthroughUsage = "review-walkthrough <walkthrough.json> <scenario.json> --out REVIEW.md";
+const replayUsage = "review-replay <scenario.json> --out OUTPUT_DIRECTORY";
 const dataFlowHelp = "For a data-flow diagram, set c4Level to DataFlow and use ExternalEntity, Process, and DataStore nodes.\nEach relationship names the data and points from its origin to its receiver. At least one endpoint must be a Process.";
 
 const help = `C4-Architect ${version}
@@ -41,6 +43,7 @@ No arguments: start the MCP server over stdio.
   review <before.json> <after.json> --out REVIEW.md [--title "Architecture review"] [--focus-changes]
     [--github-repo OWNER/REPO [--head-github-repo FORK/REPO] [--source-root REPO_RELATIVE_PATH]]
   ${walkthroughUsage}
+  ${replayUsage}
 
 Analysis levels: Context, Container, Component. Paths are relative to the current directory.
 Authored diagrams also support Deployment, Dynamic, System Landscape, and Code.
@@ -58,6 +61,10 @@ export async function runCli(args: string[]): Promise<boolean> {
   if (args.length === 1 && ["--help", "-h", "help"].includes(args[0])) { process.stdout.write(help); return true; }
   if (args.length === 1 && ["--version", "-v"].includes(args[0])) { process.stdout.write(version + "\n"); return true; }
   const [command, ...rest] = args;
+  if (command === "review-replay" && rest.length === 1 && ["--help", "-h"].includes(rest[0])) {
+    process.stdout.write(`${replayUsage}\n\nRun six local Kafka and Oracle RAC simulations and save their traces, report, and side-by-side Dynamic diagrams.\n`);
+    return true;
+  }
   if (command === "review-walkthrough" && rest.length === 1 && ["--help", "-h"].includes(rest[0])) {
     process.stdout.write(`${walkthroughUsage}\n\nTrace a scenario's changed claims to the diagrams that use them and report which questions remain open.\n`);
     return true;
@@ -82,6 +89,7 @@ export async function runCli(args: string[]): Promise<boolean> {
     query: ["node", "search", "direction", "depth", "nodes", "edges", "bytes", "evidence"], diff: ["limit", "bytes"],
     review: ["out", "title", "github-repo", "head-github-repo", "source-root", "focus-changes"],
     "review-walkthrough": ["out"],
+    "review-replay": ["out"],
   };
   if (!Object.hasOwn(specs, command)) throw new Error(`Unknown command: ${command}. Use --help.`);
   const flags = new Map<string, string | boolean>(), positional: string[] = [];
@@ -183,7 +191,11 @@ export async function runCli(args: string[]): Promise<boolean> {
     nodeId: str("node"), search: str("search"), direction: str("direction") as "both" | undefined,
     maxDepth: num("depth"), maxNodes: num("nodes"), maxEdges: num("edges"), maxBytes: num("bytes"), includeEvidence: flags.has("evidence"),
   }));
-  else if (command === "review-walkthrough") {
+  else if (command === "review-replay") {
+    const out = str("out");
+    if (!out) throw new Error("review-replay requires --out OUTPUT_DIRECTORY");
+    json(await writeReplayWalkthrough(positional[0], out));
+  } else if (command === "review-walkthrough") {
     const out = str("out");
     if (!out) throw new Error("review-walkthrough requires --out REVIEW.md");
     json(await writeWalkthroughReview(positional[0], positional[1], out));

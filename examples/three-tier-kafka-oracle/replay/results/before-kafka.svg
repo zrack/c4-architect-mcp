@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1364" height="661" viewBox="0 0 1364 661" role="img" aria-labelledby="title description" font-family="Arial, Helvetica, sans-serif">
+<title id="title">Bridge before Kafka — delivery and replay</title>
+<desc id="description">The bridge publishes. The application consumes from Kafka and writes to Oracle RAC. Kafka checkpoint owner: Application server. Numbered interactions read from top to bottom in each panel. Each arrow starts at the sending actor's dot and ends at its recipient.</desc>
+<rect width="1364" height="661" fill="#f6f9fa"/>
+<text x="24" y="43" font-size="33" font-weight="700" text-anchor="start" fill="#172b43">Bridge before Kafka</text>
+<text x="24" y="74" font-size="19" font-weight="400" text-anchor="start" fill="#425970">The bridge publishes. The application consumes from Kafka and writes to Oracle RAC.</text>
+<text x="1340" y="36" font-size="16" font-weight="400" text-anchor="end" fill="#425970">Kafka checkpoint owner</text>
+<text x="1340" y="64" font-size="23" font-weight="700" text-anchor="end" fill="#086454">Application server</text>
+<g transform="translate(24 104)" role="group" aria-label="Successful delivery"><rect width="648" height="343" rx="10" fill="white" stroke="#c1cfd8"/><text x="18" y="32" font-size="24" font-weight="700" text-anchor="start" fill="#172b43">Successful delivery</text>
+<text x="18" y="65" font-size="14" font-weight="700" text-anchor="start" fill="#425970">Step</text>
+<text x="364" y="65" font-size="15" font-weight="700" text-anchor="middle" fill="#425970">Bridge</text>
+<text x="440" y="65" font-size="15" font-weight="700" text-anchor="middle" fill="#425970">Kafka</text>
+<text x="516" y="65" font-size="15" font-weight="700" text-anchor="middle" fill="#425970">App</text>
+<text x="592" y="65" font-size="15" font-weight="700" text-anchor="middle" fill="#425970">Oracle</text>
+<line x1="364" x2="364" y1="76" y2="288" stroke="#b7c7d2" stroke-dasharray="3 4"/>
+<line x1="440" x2="440" y1="76" y2="288" stroke="#b7c7d2" stroke-dasharray="3 4"/>
+<line x1="516" x2="516" y1="76" y2="288" stroke="#b7c7d2" stroke-dasharray="3 4"/>
+<line x1="592" x2="592" y1="76" y2="288" stroke="#b7c7d2" stroke-dasharray="3 4"/>
+<g><title>Step 1, attempt 1: Bridge → Kafka. Publish event to Kafka. 0 Oracle rows · next Kafka offset 41.</title>
+<text x="18" y="104" font-size="15" font-weight="700" text-anchor="start" fill="#172b43">1</text>
+<text x="49" y="104" font-size="17" font-weight="400" text-anchor="start" fill="#172b43">Publish event to Kafka</text>
+<path d="M364 98 H432.5" stroke="#172b43" stroke-width="2" fill="none"/><circle cx="364" cy="98" r="2.8" fill="#172b43"/><path d="M438.5 98 l-7 -4 v8 Z" fill="#172b43"/>
+</g>
+<g><title>Step 2, attempt 1: Kafka → App. Read offset 41. 0 Oracle rows · next Kafka offset 41.</title>
+<text x="18" y="142" font-size="15" font-weight="700" text-anchor="start" fill="#172b43">2</text>
+<text x="49" y="142" font-size="17" font-weight="400" text-anchor="start" fill="#172b43">Read offset 41</text>
+<path d="M440 136 H508.5" stroke="#172b43" stroke-width="2" fill="none"/><circle cx="440" cy="136" r="2.8" fill="#172b43"/><path d="M514.5 136 l-7 -4 v8 Z" fill="#172b43"/>
+</g>
+<g><title>Step 3, attempt 1: App → Oracle. Write row by event ID. 0 Oracle rows · next Kafka offset 41.</title>
+<text x="18" y="180" font-size="15" font-weight="700" text-anchor="start" fill="#172b43">3</text>
+<text x="49" y="180" font-size="17" font-weight="400" text-anchor="start" fill="#172b43">Write row by event ID</text>
+<path d="M516 174 H584.5" stroke="#172b43" stroke-width="2" fill="none"/><circle cx="516" cy="174" r="2.8" fill="#172b43"/><path d="M590.5 174 l-7 -4 v8 Z" fill="#172b43"/>
+</g>
+<g><title>Step 4, attempt 1: Oracle → App. Commit one Oracle row. 1 Oracle row · next Kafka offset 41.</title>
+<text x="18" y="218" font-size="15" font-weight="700" text-anchor="start" fill="#086454">4</text>
+<text x="49" y="218" font-size="17" font-weight="700" text-anchor="start" fill="#086454">Commit one Oracle row</text>
+<text x="49" y="237" font-size="14" font-weight="400" text-anchor="start" fill="#425970">1 Oracle row · next Kafka offset 41</text>
+<path d="M592 221.5 H523.5" stroke="#086454" stroke-width="2" fill="none"/><circle cx="592" cy="221.5" r="2.8" fill="#086454"/><path d="M517.5 221.5 l7 -4 v8 Z" fill="#086454"/>
+</g>
+<g><title>Step 5, attempt 1: App → Kafka. Commit next offset 42. 1 Oracle row · next Kafka offset 42.</title>
+<text x="18" y="275" font-size="15" font-weight="700" text-anchor="start" fill="#086454">5</text>
+<text x="49" y="275" font-size="17" font-weight="700" text-anchor="start" fill="#086454">Commit next offset 42</text>
+<path d="M516 269 H447.5" stroke="#086454" stroke-width="2" fill="none"/><circle cx="516" cy="269" r="2.8" fill="#086454"/><path d="M441.5 269 l7 -4 v8 Z" fill="#086454"/>
+</g>
+<line x1="1" x2="647" y1="290" y2="290" stroke="#cbd9de"/>
+<text x="18" y="322" font-size="17" font-weight="700" text-anchor="start" fill="#086454">Checkpoint saved</text>
+<text x="630" y="322" font-size="16" font-weight="400" text-anchor="end" fill="#172b43">1 Oracle row · next Kafka offset 42</text></g>
+<g transform="translate(692 104)" role="group" aria-label="Restart after Oracle commit"><rect width="648" height="533" rx="10" fill="white" stroke="#c1cfd8"/><text x="18" y="32" font-size="24" font-weight="700" text-anchor="start" fill="#172b43">Restart after Oracle commit</text>
+<text x="18" y="65" font-size="14" font-weight="700" text-anchor="start" fill="#425970">Step</text>
+<text x="364" y="65" font-size="15" font-weight="700" text-anchor="middle" fill="#425970">Bridge</text>
+<text x="440" y="65" font-size="15" font-weight="700" text-anchor="middle" fill="#425970">Kafka</text>
+<text x="516" y="65" font-size="15" font-weight="700" text-anchor="middle" fill="#425970">App</text>
+<text x="592" y="65" font-size="15" font-weight="700" text-anchor="middle" fill="#425970">Oracle</text>
+<rect x="1" y="250" width="646" height="57" fill="#fff3e5"/>
+<line x1="364" x2="364" y1="76" y2="478" stroke="#b7c7d2" stroke-dasharray="3 4"/>
+<line x1="440" x2="440" y1="76" y2="478" stroke="#b7c7d2" stroke-dasharray="3 4"/>
+<line x1="516" x2="516" y1="76" y2="478" stroke="#b7c7d2" stroke-dasharray="3 4"/>
+<line x1="592" x2="592" y1="76" y2="478" stroke="#b7c7d2" stroke-dasharray="3 4"/>
+<g><title>Step 1, attempt 1: Bridge → Kafka. Publish event to Kafka. 0 Oracle rows · next Kafka offset 41.</title>
+<text x="18" y="104" font-size="15" font-weight="700" text-anchor="start" fill="#172b43">1</text>
+<text x="49" y="104" font-size="17" font-weight="400" text-anchor="start" fill="#172b43">Publish event to Kafka</text>
+<path d="M364 98 H432.5" stroke="#172b43" stroke-width="2" fill="none"/><circle cx="364" cy="98" r="2.8" fill="#172b43"/><path d="M438.5 98 l-7 -4 v8 Z" fill="#172b43"/>
+</g>
+<g><title>Step 2, attempt 1: Kafka → App. Read offset 41. 0 Oracle rows · next Kafka offset 41.</title>
+<text x="18" y="142" font-size="15" font-weight="700" text-anchor="start" fill="#172b43">2</text>
+<text x="49" y="142" font-size="17" font-weight="400" text-anchor="start" fill="#172b43">Read offset 41</text>
+<path d="M440 136 H508.5" stroke="#172b43" stroke-width="2" fill="none"/><circle cx="440" cy="136" r="2.8" fill="#172b43"/><path d="M514.5 136 l-7 -4 v8 Z" fill="#172b43"/>
+</g>
+<g><title>Step 3, attempt 1: App → Oracle. Write row by event ID. 0 Oracle rows · next Kafka offset 41.</title>
+<text x="18" y="180" font-size="15" font-weight="700" text-anchor="start" fill="#172b43">3</text>
+<text x="49" y="180" font-size="17" font-weight="400" text-anchor="start" fill="#172b43">Write row by event ID</text>
+<path d="M516 174 H584.5" stroke="#172b43" stroke-width="2" fill="none"/><circle cx="516" cy="174" r="2.8" fill="#172b43"/><path d="M590.5 174 l-7 -4 v8 Z" fill="#172b43"/>
+</g>
+<g><title>Step 4, attempt 1: Oracle → App. Commit one Oracle row. 1 Oracle row · next Kafka offset 41.</title>
+<text x="18" y="218" font-size="15" font-weight="700" text-anchor="start" fill="#086454">4</text>
+<text x="49" y="218" font-size="17" font-weight="700" text-anchor="start" fill="#086454">Commit one Oracle row</text>
+<text x="49" y="237" font-size="14" font-weight="400" text-anchor="start" fill="#425970">1 Oracle row · next Kafka offset 41</text>
+<path d="M592 221.5 H523.5" stroke="#086454" stroke-width="2" fill="none"/><circle cx="592" cy="221.5" r="2.8" fill="#086454"/><path d="M517.5 221.5 l7 -4 v8 Z" fill="#086454"/>
+</g>
+<g><title>Step 5, attempt 1: App → App. Restart before checkpoint. 1 Oracle row · next Kafka offset 41.</title>
+<text x="18" y="275" font-size="15" font-weight="700" text-anchor="start" fill="#924611">5</text>
+<text x="49" y="275" font-size="17" font-weight="700" text-anchor="start" fill="#924611">Restart before checkpoint</text>
+<text x="49" y="294" font-size="14" font-weight="400" text-anchor="start" fill="#425970">1 Oracle row · next Kafka offset 41</text>
+<path d="M516 272.5 h16 v11 H523.5" stroke="#924611" stroke-width="2" fill="none"/><circle cx="516" cy="272.5" r="2.8" fill="#924611"/><path d="M517.5 283.5 l7 -4 v8 Z" fill="#924611"/>
+</g>
+<g><title>Step 6, attempt 2: Kafka → App. Replay offset 41. 1 Oracle row · next Kafka offset 41.</title>
+<text x="18" y="332" font-size="15" font-weight="700" text-anchor="start" fill="#172b43">6</text>
+<text x="49" y="332" font-size="17" font-weight="400" text-anchor="start" fill="#172b43">Replay offset 41</text>
+<path d="M440 326 H508.5" stroke="#172b43" stroke-width="2" fill="none"/><circle cx="440" cy="326" r="2.8" fill="#172b43"/><path d="M514.5 326 l-7 -4 v8 Z" fill="#172b43"/>
+</g>
+<g><title>Step 7, attempt 2: App → Oracle. Write row by event ID. 1 Oracle row · next Kafka offset 41.</title>
+<text x="18" y="370" font-size="15" font-weight="700" text-anchor="start" fill="#172b43">7</text>
+<text x="49" y="370" font-size="17" font-weight="400" text-anchor="start" fill="#172b43">Write row by event ID</text>
+<path d="M516 364 H584.5" stroke="#172b43" stroke-width="2" fill="none"/><circle cx="516" cy="364" r="2.8" fill="#172b43"/><path d="M590.5 364 l-7 -4 v8 Z" fill="#172b43"/>
+</g>
+<g><title>Step 8, attempt 2: Oracle → App. Find existing row by event ID. 1 Oracle row · next Kafka offset 41.</title>
+<text x="18" y="408" font-size="15" font-weight="700" text-anchor="start" fill="#086454">8</text>
+<text x="49" y="408" font-size="17" font-weight="700" text-anchor="start" fill="#086454">Find existing row by event ID</text>
+<text x="49" y="427" font-size="14" font-weight="400" text-anchor="start" fill="#425970">1 Oracle row · next Kafka offset 41</text>
+<path d="M592 411.5 H523.5" stroke="#086454" stroke-width="2" fill="none"/><circle cx="592" cy="411.5" r="2.8" fill="#086454"/><path d="M517.5 411.5 l7 -4 v8 Z" fill="#086454"/>
+</g>
+<g><title>Step 9, attempt 2: App → Kafka. Commit next offset 42. 1 Oracle row · next Kafka offset 42.</title>
+<text x="18" y="465" font-size="15" font-weight="700" text-anchor="start" fill="#086454">9</text>
+<text x="49" y="465" font-size="17" font-weight="700" text-anchor="start" fill="#086454">Commit next offset 42</text>
+<path d="M516 459 H447.5" stroke="#086454" stroke-width="2" fill="none"/><circle cx="516" cy="459" r="2.8" fill="#086454"/><path d="M441.5 459 l7 -4 v8 Z" fill="#086454"/>
+</g>
+<line x1="1" x2="647" y1="480" y2="480" stroke="#cbd9de"/>
+<text x="18" y="512" font-size="17" font-weight="700" text-anchor="start" fill="#086454">Checkpoint saved</text>
+<text x="630" y="512" font-size="16" font-weight="400" text-anchor="end" fill="#172b43">1 Oracle row · next Kafka offset 42</text></g>
+</svg>

@@ -60,6 +60,23 @@ try {
     const report = await fs.readFile(output, 'utf8');
     assert.ok(report.includes('Kafka'), `Missing model evidence for ${placement}`);
   }
+  const replay = JSON.parse(await run(process.execPath, [entry, 'review-replay',
+    path.join(exampleRoot, 'replay/scenario.json'), '--out', path.join(temporary, 'replay')]));
+  assert.equal(replay.runs.length, 6);
+  for (const [placement, owner] of [['before-kafka', 'application'], ['after-kafka', 'bridge']]) {
+    const runs = replay.runs.filter(run => run.placement === placement);
+    assert.equal(runs.length, 3);
+    for (const run of runs) {
+      const failed = run.scenario === 'failed-write';
+      assert.equal(run.checkpointOwner, owner);
+      assert.equal(run.rowCount, failed ? 0 : 1);
+      assert.equal(run.nextOffset, failed ? 41 : 42);
+    }
+    const comparison = replay.artifacts.comparisons.find(item => item.placement === placement);
+    assert.ok(comparison, `Missing replay comparison for ${placement}`);
+    assert.ok((await fs.stat(comparison.png)).size > 100);
+    assert.match(await fs.readFile(comparison.svg, 'utf8'), /<svg\b/);
+  }
   const explanation = JSON.parse(await run(process.execPath, [entry, 'explain-file', 'src', 'value.ts', '--out', 'value.md']));
   assert.equal(explanation.counts.incoming, 1);
   assert.equal(explanation.counts.outgoing, 0);
@@ -89,5 +106,5 @@ try {
   assert.equal(await fs.readFile(path.join(fixture, 'consumer.ts'), 'utf8'), 'export const uncommitted = true;\n');
   assert.ok((await fs.stat(review.diagram.html)).size > 100);
   for (const extension of ['md','svg','png','html']) assert.ok((await fs.stat(path.join(temporary, `diagram.${extension}`))).size > 100);
-  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, rendering, PR review and both walkthrough scenarios.`);
+  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, rendering, PR review, both bridge placements and six replay cases.`);
 } finally { await fs.rm(temporary, { recursive: true, force: true }); }

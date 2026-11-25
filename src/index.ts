@@ -21,10 +21,21 @@ import { wikiDocumentSchema } from "./publishers/wikiDiagrams.js";
 import { runCli } from "./cli.js";
 import { explainFile } from "./renderers/explainFile.js";
 import { writeWalkthroughReview } from "./renderers/walkthroughReview.js";
+import { writeReplayWalkthrough } from "./renderers/replayWalkthrough.js";
 import { version } from "./version.js";
 
 const server = new McpServer({ name: "c4-architect-mcp", version });
 const textResult = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value) }] });
+
+server.tool("review_replay_walkthrough",
+  "Simulate success, a failed Oracle write, and restart after commit for two Kafka bridge placements. Save the six traces, checkpoint owners, Dynamic diagrams, and side-by-side comparisons.",
+  {
+    scenarioPath: z.string().min(1).describe("Local replay scenario JSON with one event and a bridge acknowledgment contract"),
+    outputDirectory: z.string().min(1).describe("Destination directory for the Markdown report, editable models, traces, and images"),
+  }, async ({ scenarioPath, outputDirectory }) => {
+    const result = await writeReplayWalkthrough(scenarioPath, outputDirectory);
+    return { ...textResult(result), structuredContent: result };
+  });
 
 server.tool("review_architecture_walkthrough",
   "Compare a scenario with an authored architecture walkthrough. Trace changes to the affected diagrams and save a Markdown report with model evidence and open questions.",

@@ -1,6 +1,6 @@
 ---
 name: solution-architect-walkthrough
-description: Walk through a solution design across architecture views and review how a changed assumption or stakeholder answer affects those diagrams. Use for design walkthroughs, alternative integration placements, and questions that span multiple views.
+description: Walk through a solution design across architecture views, trace design changes, or compare success and replay when a Kafka bridge delivers records to Oracle. Use for design alternatives, checkpoint ownership, and questions that span multiple views.
 ---
 
 Start with the architect's question and the diagrams or brief they supplied. Identify the boundary and the perspective of each view. For example, a container can depend on a broker while the event payload travels from the broker to the application. Evaluate each arrow according to its meaning.
@@ -16,3 +16,5 @@ node dist/index.js review-walkthrough walkthrough.json scenario.json --out revie
 ```
 
 Compare the resulting reports in view order. For each flagged diagram, name the affected element or arrow and the reason it needs review. Distinguish structural findings from old notes on a question the scenario answers. Explain why a relevant view can keep its current structure, especially when an interface contract is still undecided. Carry forward the open questions and link the generated reports. A clean result covers the claims and evidence recorded in this manifest. Call out a missing claim or viewpoint when it limits the answer.
+
+For the Kafka and Oracle RAC replay walkthrough, use the [replay scenario format](references/walkthrough-format.md#replay-scenario) and call `review_replay_walkthrough` with `scenarioPath` and `outputDirectory`. Show the generated success and restart diagrams for each placement. Use the failed-write trace to check the saved offset. Name the Kafka consumer that owns the checkpoint, what it knows about the Oracle commit and any acknowledgment contract the architect still needs to decide.

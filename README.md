@@ -45,6 +45,20 @@ Open this repository in Codex to use the prompt above. Codex discovers the skill
 
 Through MCP, call `review_architecture_walkthrough` with `manifestPath`, `scenarioPath`, and `outputPath`. Each review checks the authored evidence against the saved diagram models. To apply it to another system, see the [manifest and scenario format](.agents/skills/solution-architect-walkthrough/references/walkthrough-format.md).
 
+### What happens if the consumer restarts after Oracle commits?
+
+The alpha.15 development walkthrough follows one event at Kafka offset 41. If the consumer restarts after the Oracle commit and before the Kafka checkpoint, it receives the event again. The example keys Oracle rows by event ID, so a second delivery can finish processing with one stored row. The application owns the Kafka checkpoint when it consumes directly. When the bridge consumes, it needs the application's acknowledgment that Oracle committed.
+
+Compare [bridge before Kafka](examples/three-tier-kafka-oracle/replay/results/before-kafka.svg) and [bridge after Kafka](examples/three-tier-kafka-oracle/replay/results/after-kafka.svg). Each diagram pairs success with restart and replay. The [six-case report](examples/three-tier-kafka-oracle/replay/results/report.md) also covers a failed write in each placement.
+
+From a built alpha.15 checkout, run the [editable scenario](examples/three-tier-kafka-oracle/replay/scenario.json) locally.
+
+```sh
+node dist/index.js review-replay examples/three-tier-kafka-oracle/replay/scenario.json --out output/replay
+```
+
+The fixture models persistence and restarts in memory. To try a design where the meaning of an acknowledgment is still open, set `bridgeAcknowledgment` to `unspecified` and compare the downstream checkpoint.
+
 ## What changed in this PR?
 
 Try this prompt in Codex with this repository, or replace the PR URL with your own. You can also generate the report from GitHub’s Actions tab. [Set up the skill](#review-architecture-changes-for-a-pull-request) · [Run it in GitHub Actions](#run-the-review-in-github-actions)
@@ -357,6 +371,7 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 
 | Tool | Input | Result |
 | --- | --- | --- |
+| `review_replay_walkthrough` | `scenarioPath`, `outputDirectory` | Six Kafka and Oracle replay traces, a Markdown report, and success and restart diagrams paired by checkpoint owner. |
 | `analyze_architectural_boundaries` | `targetDir`, `c4Level`; optional `configPath`, `tsconfigPath`, `outputPath`, `responseMode` | A saved graph, full response, or compact summary at the requested C4 level. |
 | `get_architecture_summary` | `graphPath` | A compact overview of a saved graph and its diagnostics. |
 | `query_architecture_graph` | `graphPath`; optional `nodeId`, `search`, `direction`, `maxDepth`, `maxNodes`, `maxEdges`, `maxBytes`, `includeEvidence` | A bounded neighborhood or search, with truncation reported. |
