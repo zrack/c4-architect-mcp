@@ -167,7 +167,7 @@ test('MCP analysis output feeds the renderer and the saved Markdown contains the
     })));
     assert.ok(analysis.nodes.length >= 2, 'Analyze the real project rather than an empty fixture');
     const outputPath = path.join(tempDir, 'ARCHITECTURE.md');
-    const diagram = toolText(await client.callTool({
+    const rendered = await client.callTool({
       name: 'render_c4_mermaid',
       arguments: {
         title: 'MCP integration architecture', c4Level: 'C4Component',
@@ -175,7 +175,14 @@ test('MCP analysis output feeds the renderer and the saved Markdown contains the
         relationships: analysis.edges.map(({ source, target, label, protocol }) => ({ from: source, to: target, label, technology: protocol })),
         outputPath,
       },
-    }));
+    });
+    const diagram = toolText(rendered);
+    assert.equal(rendered.structuredContent.layout.nodeCount, analysis.nodes.length);
+    assert.equal(rendered.structuredContent.layout.relationshipCount, analysis.edges.length);
+    const svg = await readFile(rendered.structuredContent.artifacts.svg, 'utf8');
+    for (const node of analysis.nodes) assert.ok(svg.includes(`data-node-id="${node.id}"`));
+    assert.deepEqual([...svg.matchAll(/class="flowchart-link" id="(R\d+)"/g)].map(match => match[1]),
+      analysis.edges.map((_, i) => 'R' + String(i + 1).padStart(2, '0')));
     assert.match(diagram, /\bflowchart\s+TB\b/);
     const saved = await readFile(outputPath, 'utf8');
     assert.ok(saved.includes(diagram), 'The tool response must be the same diagram written to disk');

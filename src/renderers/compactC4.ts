@@ -103,6 +103,11 @@ export async function layoutDiagram(diagram: C4Diagram): Promise<CompactLayout> 
     return { ...relationship, id, displayLines, width, height };
   }));
   const elk = new ElkConstructor();
+  // Each labeled relationship adds routing vertices to the layered graph. On large,
+  // densely connected component views the network simplex placement dominates both
+  // orientation passes. Brandes–Köpf places the layers without that iterative solve.
+  const denseComponent = diagram.c4Level === "C4Component"
+    && relations.length >= 80 && relations.length >= 2 * nodes.length;
   const candidates: Array<{ direction: "DOWN" | "RIGHT"; graph: ElkNode; score: number }> = [];
   for (const direction of ["DOWN", "RIGHT"] as const) {
     function elkNode(node: CompactNode): ElkNode {
@@ -122,7 +127,7 @@ export async function layoutDiagram(diagram: C4Diagram): Promise<CompactLayout> 
         "elk.spacing.nodeNode": "24", "elk.spacing.edgeEdge": "10",
         "elk.layered.spacing.nodeNodeBetweenLayers": "45", "elk.layered.spacing.edgeNodeBetweenLayers": "12",
         "elk.layered.spacing.edgeEdgeBetweenLayers": "10", "elk.layered.mergeEdges": "false",
-        "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+        "elk.layered.nodePlacement.strategy": denseComponent ? "BRANDES_KOEPF" : "NETWORK_SIMPLEX",
         "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
         "elk.padding": "[top=16,left=16,bottom=16,right=16]",
         ...(hasBoundaries ? { "elk.hierarchyHandling": "INCLUDE_CHILDREN" } : {}),
