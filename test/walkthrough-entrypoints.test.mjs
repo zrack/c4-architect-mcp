@@ -16,14 +16,16 @@ const order = ['context', 'container', 'data-flow', 'component', 'code', 'deploy
 
 test('CLI and MCP review both Kafka bridge placements against the same seven diagram models', { timeout: 30000 }, async t => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'c4-walkthrough-'));
-  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const client = new Client({ name: 'walkthrough-test', version: '1.0' });
+  t.after(async () => {
+    await client.close();
+    await fs.rm(dir, { recursive: true, force: true });
+  });
   const root = path.join(dir, 'architecture (v1) #draft');
   await fs.cp(fixture, root, { recursive: true });
   const manifestPath = path.join(root, 'walkthrough.json');
   const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
-  const client = new Client({ name: 'walkthrough-test', version: '1.0' });
   await client.connect(new StdioClientTransport({ command: process.execPath, args: [cli], cwd: dir }));
-  t.after(() => client.close());
   const tool = 'review_architecture_walkthrough';
   assert.ok((await client.listTools()).tools.some(item => item.name === tool));
 
