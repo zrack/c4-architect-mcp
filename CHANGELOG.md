@@ -2,6 +2,10 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+- Trace direct and indirect dependents of a TypeScript or TSX file with `$what-depends-on-this-file`, the `impact-file` command, or the `analyze_file_impact` MCP tool. The focused diagram and Markdown report show a shortest import path to the selected file with source evidence for each hop.
+
 ## GitHub Actions workflow — 2026-11-24
 
 - The opt-in PR workflow now uses the published `0.2.0-alpha.12` package. Its diagram shows up to 25 changed dependencies with source links to the PR head, base, or both. The Markdown artifact lists every changed dependency. Existing callers can update their workflow commit pin to adopt this view. [Setup and examples](https://github.com/zrack/c4-architect-mcp#run-the-review-in-github-actions)

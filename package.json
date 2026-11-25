@@ -54,6 +54,7 @@
     "dist/",
     ".agents/skills/explain-this-file/",
     ".agents/skills/what-changed-in-this-pr/",
+    ".agents/skills/what-depends-on-this-file/",
     "scripts/prepare-bin.mjs",
     "README.md",
     "LICENSE",
