@@ -1,0 +1,23 @@
+{
+  "typescript": "4.0.3",
+  "scope": "TakeNote tsconfig, skipLibCheck",
+  "results": [
+    {
+      "stage": "baseline",
+      "exit": 0,
+      "diagnostics": []
+    },
+    {
+      "stage": "required-prop",
+      "exit": 2,
+      "diagnostics": [
+        "src/client/containers/TakeNoteApp.tsx(106,18): error TS2741: Property 'readOnly' is missing in type '{}' but required in type '{ readOnly: boolean; }'."
+      ]
+    },
+    {
+      "stage": "caller-supplies-prop",
+      "exit": 0,
+      "diagnostics": []
+    }
+  ]
+}
