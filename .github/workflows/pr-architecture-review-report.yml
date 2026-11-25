@@ -55,11 +55,18 @@ jobs:
           pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
           base_sha=$(jq -er '.base.sha' <<< "$pr")
           head_sha=$(jq -er '.head.sha' <<< "$pr")
+          # A deleted fork can still have a head commit reachable via the base repository's PR ref.
+          head_repository=$(jq -er --arg base "$GITHUB_REPOSITORY" '.head.repo.full_name // $base' <<< "$pr")
           if [[ ! "$base_sha" =~ ^[0-9a-f]{40}$ || ! "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then
             echo '::error::GitHub did not return valid base and head commit SHAs.'
             exit 1
           fi
+          if [[ ! "$head_repository" =~ ^[a-zA-Z0-9-]+/[a-zA-Z0-9_.-]+$ ]]; then
+            echo '::error::GitHub did not return a valid head repository.'
+            exit 1
+          fi
           printf 'number=%s\nbase_sha=%s\nhead_sha=%s\n' "$PR_NUMBER" "$base_sha" "$head_sha" >> "$GITHUB_OUTPUT"
+          printf 'head_repository=%s\n' "$head_repository" >> "$GITHUB_OUTPUT"
 
       - name: Check out the PR base
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -86,7 +93,7 @@ jobs:
         working-directory: ${{ runner.temp }}
         run: |
           npm install --prefix "$RUNNER_TEMP/c4-review-tool" --omit=dev --ignore-scripts \
-            --no-audit --no-fund --registry=https://registry.npmjs.org c4-architect-mcp@0.2.0-alpha.3
+            --no-audit --no-fund --registry=https://registry.npmjs.org c4-architect-mcp@0.2.0-alpha.12
 
       - name: Compare Component snapshots
         id: compare
@@ -95,6 +102,7 @@ jobs:
           PR_NUMBER: ${{ steps.pr.outputs.number }}
           BASE_SHA: ${{ steps.pr.outputs.base_sha }}
           HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          HEAD_REPOSITORY: ${{ steps.pr.outputs.head_repository }}
           SOURCE_ROOT: ${{ inputs.source_root }}
           INCLUDE_COMMENT_SUMMARY: ${{ inputs.include_comment_summary }}
         run: |
@@ -170,9 +178,10 @@ jobs:
           graphs="$RUNNER_TEMP/c4-review-graphs"
           node "$cli" analyze "$base/$SOURCE_ROOT" --level Component --commit "$BASE_SHA" --out "$graphs/base.json" --summary
           node "$cli" analyze "$head/$SOURCE_ROOT" --level Component --commit "$HEAD_SHA" --out "$graphs/head.json" --summary
-          review=$(node "$cli" review "$graphs/base.json" "$graphs/head.json" \
+          review=$(node "$cli" review "$graphs/base.json" "$graphs/head.json" --focus-changes \
             --out "$RUNNER_TEMP/c4-architecture-review/PR-ARCHITECTURE.md" \
-            --github-repo "$GITHUB_REPOSITORY" --source-root "./$SOURCE_ROOT" --title "PR #$PR_NUMBER architecture review")
+            --github-repo "$GITHUB_REPOSITORY" --head-github-repo "$HEAD_REPOSITORY" \
+            --source-root "./$SOURCE_ROOT" --title "PR #$PR_NUMBER architecture review")
           printf '%s\n' "$review"
 
           if [[ "$INCLUDE_COMMENT_SUMMARY" == true ]]; then
