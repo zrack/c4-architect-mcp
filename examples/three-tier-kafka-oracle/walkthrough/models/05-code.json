@@ -1,0 +1,69 @@
+{
+  "title": "Inside the event processor",
+  "caption": "Proposed code contracts for one event",
+  "c4Level": "C4Code",
+  "nodes": [
+    {
+      "id": "event",
+      "label": "InboundEvent",
+      "type": "Type",
+      "technology": "Input from the consumer",
+      "description": "The event schema, identity and business fields are open."
+    },
+    {
+      "id": "proc",
+      "label": "process",
+      "type": "Function",
+      "technology": "process(event, writer)",
+      "description": "Coordinates one proposed processing attempt."
+    },
+    {
+      "id": "map",
+      "label": "toStoredRecord",
+      "type": "Function",
+      "technology": "toStoredRecord(event)",
+      "description": "Converts an accepted event into the application record."
+    },
+    {
+      "id": "record",
+      "label": "StoredRecord",
+      "type": "Type",
+      "technology": "Data to persist",
+      "description": "Field mapping and record identity depend on the event contract."
+    },
+    {
+      "id": "writer",
+      "label": "RecordWriter",
+      "type": "Interface",
+      "technology": "save(record)",
+      "description": "The record repository implements this port. Success and failure semantics need agreement."
+    }
+  ],
+  "relationships": [
+    {
+      "from": "proc",
+      "to": "event",
+      "label": "Accepts"
+    },
+    {
+      "from": "proc",
+      "to": "map",
+      "label": "Calls to map the event"
+    },
+    {
+      "from": "map",
+      "to": "record",
+      "label": "Returns"
+    },
+    {
+      "from": "proc",
+      "to": "writer",
+      "label": "Calls save(record)"
+    },
+    {
+      "from": "writer",
+      "to": "record",
+      "label": "Accepts for storage"
+    }
+  ]
+}

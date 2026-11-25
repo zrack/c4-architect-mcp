@@ -1,0 +1,52 @@
+{
+  "title": "The event integration landscape",
+  "caption": "Known integration neighborhood · system owners to confirm",
+  "c4Level": "C4Landscape",
+  "nodes": [
+    {
+      "id": "web-user",
+      "label": "Web user",
+      "type": "Person",
+      "technology": "Business role to confirm",
+      "description": "Someone using the web app. Exact role and task are open."
+    },
+    {
+      "id": "producer",
+      "label": "Upstream event producer",
+      "type": "System_Ext",
+      "technology": "Identity to confirm",
+      "description": "Placeholder for the system that publishes the inbound events; more than one publisher is possible."
+    },
+    {
+      "id": "kafka",
+      "label": "Kafka",
+      "type": "System_Ext",
+      "technology": "Event platform",
+      "description": "Carries events consumed by the application. A separate upstream eventing service is an open question."
+    },
+    {
+      "id": "application",
+      "label": "Event records application",
+      "type": "System",
+      "technology": "Serves web requests and stores incoming event records",
+      "description": "Working name for the application. The brief does not identify the business domain."
+    }
+  ],
+  "relationships": [
+    {
+      "from": "producer",
+      "to": "kafka",
+      "label": "Publishes inbound events"
+    },
+    {
+      "from": "kafka",
+      "to": "application",
+      "label": "Makes events available"
+    },
+    {
+      "from": "web-user",
+      "to": "application",
+      "label": "Uses the web interface"
+    }
+  ]
+}

@@ -2,6 +2,10 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased · 0.2.0-alpha.14
+
+- Review a change to a solution design with `$solution-architect-walkthrough`. The `review-walkthrough` command and `review_architecture_walkthrough` MCP tool trace an authored claim to the nodes and arrows that depend on it and carry open questions into each scenario. The Kafka and Oracle RAC example compares two placements of an integration bridge.
+
 ## 0.2.0-alpha.13 — 2026-11-25
 
 - Render authored data-flow diagrams through MCP and the CLI, with distinct symbols for external entities, processes and data stores and a payload name on each arrow. The [Kafka and Oracle RAC example](examples/three-tier-kafka-oracle/data-flow.json) includes both a web request and response and a one-way event write.

@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 1,
+  "title": "From a Kafka event to an Oracle record",
+  "views": [
+    {
+      "id": "context",
+      "title": "System Context",
+      "model": "walkthrough/models/01-context.json"
+    },
+    {
+      "id": "container",
+      "title": "Container",
+      "model": "walkthrough/models/02-container.json"
+    },
+    {
+      "id": "data-flow",
+      "title": "Data Flow",
+      "model": "data-flow.json"
+    },
+    {
+      "id": "component",
+      "title": "Component",
+      "model": "walkthrough/models/04-component.json"
+    },
+    {
+      "id": "code",
+      "title": "Code",
+      "model": "walkthrough/models/05-code.json"
+    },
+    {
+      "id": "deployment",
+      "title": "Deployment",
+      "model": "walkthrough/models/06-deployment.json"
+    },
+    {
+      "id": "landscape",
+      "title": "System Landscape",
+      "model": "walkthrough/models/07-system-landscape.json"
+    }
+  ],
+  "claims": [
+    {
+      "id": "kafka-publisher",
+      "kind": "proposal",
+      "statement": "Publishing handoff into Kafka",
+      "value": "An unidentified upstream producer publishes directly to Kafka.",
+      "evidence": [
+        {
+          "view": "landscape",
+          "from": "producer",
+          "to": "kafka",
+          "label": "Publishes inbound events",
+          "meaning": "This edge identifies the publisher on the Kafka side of the handoff. Show who writes to Kafka, while the business system that originated the event can remain unnamed."
+        }
+      ]
+    },
+    {
+      "id": "delivery-peer",
+      "kind": "proposal",
+      "statement": "Direct event delivery to the application",
+      "value": "The application consumes directly from Kafka.",
+      "evidence": [
+        {
+          "view": "context",
+          "from": "kafka",
+          "to": "application",
+          "label": "Makes inbound events available",
+          "meaning": "This edge identifies the immediate external supplier of events. A new delivery system changes the application's direct neighbor."
+        },
+        {
+          "view": "container",
+          "from": "app-server",
+          "to": "kafka",
+          "label": "Consumes events from",
+          "meaning": "The arrow points from the application server to its Kafka dependency. Identify who now consumes from Kafka and how the application receives that delivery."
+        },
+        {
+          "view": "data-flow",
+          "from": "kafka",
+          "to": "event",
+          "label": "Event record",
+          "meaning": "This arrow follows the incoming payload from its sender into the application. Review that sender independently of the outgoing record written to Oracle."
+        },
+        {
+          "view": "component",
+          "from": "consumer",
+          "to": "kafka",
+          "label": "Consumes events from",
+          "meaning": "The proposed Kafka consumer is inside the application server. If consumption moves outside, identify which application component receives the delivered event."
+        },
+        {
+          "view": "deployment",
+          "from": "app-server",
+          "to": "kafka",
+          "label": "Consumes events from",
+          "meaning": "The application runtime currently hosts the Kafka consumer and connects to Kafka. Identify the runtime that owns consumption and its handoff to the application."
+        },
+        {
+          "view": "landscape",
+          "from": "kafka",
+          "to": "application",
+          "label": "Makes events available",
+          "meaning": "This edge shows who delivers events from Kafka to the application. Include any intervening delivery system on this side of Kafka."
+        }
+      ]
+    },
+    {
+      "id": "web-entry",
+      "kind": "fact",
+      "statement": "Web entry path",
+      "value": "The web app sends requests to the application server.",
+      "evidence": [
+        {
+          "view": "context",
+          "from": "web-user",
+          "to": "application",
+          "label": "Uses the web interface",
+          "meaning": "A person uses the web entry point. A change of access channel would affect this boundary."
+        },
+        {
+          "view": "container",
+          "from": "web-app",
+          "to": "app-server",
+          "label": "Sends web requests",
+          "meaning": "The presentation tier sends requests to the application tier. A changed web path would affect this dependency."
+        },
+        {
+          "view": "data-flow",
+          "from": "web",
+          "to": "request",
+          "label": "Application request",
+          "meaning": "A web request enters the request handler. Its payload is independent of the Kafka event."
+        },
+        {
+          "view": "component",
+          "from": "web-app",
+          "to": "web-handler",
+          "label": "Sends a web request",
+          "meaning": "The proposed web request handler receives this call. Review its responsibility if the web entry path changes."
+        },
+        {
+          "view": "deployment",
+          "from": "web-app",
+          "to": "app-server",
+          "label": "Sends web requests",
+          "meaning": "The deployed web app calls the application server across tiers. A changed web path would affect their runtime connection."
+        },
+        {
+          "view": "landscape",
+          "from": "web-user",
+          "to": "application",
+          "label": "Uses the web interface",
+          "meaning": "The user accesses the application through a separate entry path from the event feed."
+        }
+      ]
+    },
+    {
+      "id": "event-store",
+      "kind": "fact",
+      "statement": "Persistence of event-derived records",
+      "value": "The application writes event-derived records to its Oracle RAC datastore.",
+      "evidence": [
+        {
+          "view": "container",
+          "from": "app-server",
+          "to": "store",
+          "label": "Writes event-derived records",
+          "meaning": "The application server writes to the logical datastore. A changed target would affect this storage dependency."
+        },
+        {
+          "view": "data-flow",
+          "from": "event",
+          "to": "oracle",
+          "label": "Event-derived record",
+          "meaning": "The event-derived record goes from the application process to Oracle RAC. This is a separate payload from the incoming event."
+        },
+        {
+          "view": "component",
+          "from": "repository",
+          "to": "store",
+          "label": "Persists the record",
+          "meaning": "The proposed Record repository persists the mapped record. Review its outgoing dependency if the target changes."
+        },
+        {
+          "view": "deployment",
+          "from": "instances",
+          "to": "store",
+          "label": "Access the shared database",
+          "meaning": "The RAC instances access a shared database. A change to the persistence target would affect this deployment."
+        }
+      ]
+    },
+    {
+      "id": "processor-input",
+      "kind": "proposal",
+      "statement": "Processor input contract",
+      "value": "The proposed process function accepts an InboundEvent.",
+      "evidence": [
+        {
+          "view": "code",
+          "from": "proc",
+          "to": "event",
+          "label": "Accepts",
+          "meaning": "The function accepts an InboundEvent. A change to the event contract would require review of this type and the mapping it feeds."
+        },
+        {
+          "view": "component",
+          "from": "consumer",
+          "to": "processor",
+          "label": "Passes the event",
+          "meaning": "The consumer passes an event to the processor. If the input contract changes, review what the receiving component accepts."
+        }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "bridge-placement",
+      "question": "Where does the event bridge sit relative to Kafka and the application?",
+      "views": [
+        "context",
+        "container",
+        "data-flow",
+        "component",
+        "deployment",
+        "landscape"
+      ],
+      "notes": [
+        {
+          "view": "context",
+          "node": "kafka"
+        },
+        {
+          "view": "container",
+          "node": "kafka"
+        },
+        {
+          "view": "component",
+          "node": "kafka"
+        },
+        {
+          "view": "landscape",
+          "node": "kafka"
+        }
+      ]
+    },
+    {
+      "id": "web-outcome",
+      "question": "After the event is stored, what should the web user see or do, and how quickly should the change be visible?",
+      "views": [
+        "context",
+        "container",
+        "data-flow"
+      ]
+    },
+    {
+      "id": "event-ownership",
+      "question": "Which business system originates the event, who owns its contract, and who operates the bridge and Kafka?",
+      "views": [
+        "context",
+        "deployment",
+        "landscape"
+      ]
+    },
+    {
+      "id": "event-contract",
+      "question": "What is one real event and its identity, how is it delivered, which fields reach the processor, and which Oracle rows and keys should it create or update?",
+      "views": [
+        "data-flow",
+        "component",
+        "code"
+      ]
+    },
+    {
+      "id": "replay-policy",
+      "question": "Who acknowledges each delivery and who checkpoints Kafka relative to the Oracle commit? What happens on duplicate or out-of-order delivery, a failed write, or a restart?",
+      "views": [
+        "data-flow",
+        "component",
+        "code",
+        "deployment"
+      ]
+    },
+    {
+      "id": "production-placement",
+      "question": "Where do the runtimes and Oracle RAC services run, who operates the datastore, and what throughput, recovery targets and failure domains must the production deployment support?",
+      "views": [
+        "container",
+        "deployment"
+      ]
+    }
+  ]
+}

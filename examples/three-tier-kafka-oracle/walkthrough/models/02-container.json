@@ -1,0 +1,65 @@
+{
+  "title": "The three application tiers",
+  "caption": "The application server uses the Kafka feed and writes to Oracle",
+  "c4Level": "C4Container",
+  "nodes": [
+    {
+      "id": "web-user",
+      "label": "Web user",
+      "type": "Person",
+      "technology": "Business role to confirm",
+      "description": "Someone using the web app. Exact role and task are open."
+    },
+    {
+      "id": "web-app",
+      "label": "Web app",
+      "type": "Container",
+      "technology": "Tier 1 · Presentation",
+      "description": "Receives user input; hosting style and user operations are open."
+    },
+    {
+      "id": "app-server",
+      "label": "Application server",
+      "type": "Container",
+      "technology": "Tier 2 · Application",
+      "description": "Handles web requests, consumes Kafka events and persists records."
+    },
+    {
+      "id": "kafka",
+      "label": "Kafka",
+      "type": "System_Ext",
+      "technology": "Event platform",
+      "description": "Carries events consumed by the application. A separate upstream eventing service is an open question."
+    },
+    {
+      "id": "store",
+      "label": "Application datastore",
+      "type": "ContainerDb",
+      "technology": "Tier 3 · Oracle RAC",
+      "description": "One logical application datastore hosted by Oracle RAC. Schema and operational ownership are open."
+    }
+  ],
+  "relationships": [
+    {
+      "from": "web-user",
+      "to": "web-app",
+      "label": "Uses the web interface"
+    },
+    {
+      "from": "web-app",
+      "to": "app-server",
+      "label": "Sends web requests"
+    },
+    {
+      "from": "app-server",
+      "to": "kafka",
+      "label": "Consumes events from",
+      "description": "A client dependency. Event records flow the other way."
+    },
+    {
+      "from": "app-server",
+      "to": "store",
+      "label": "Writes event-derived records"
+    }
+  ]
+}

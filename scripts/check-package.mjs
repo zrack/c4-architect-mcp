@@ -15,10 +15,10 @@ const runNpm = (args, cwd = temporary) => run(process.execPath, [npmCli, ...args
 try {
   await runNpm(['run', 'build'], root);
   const [packed] = JSON.parse(await runNpm(['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], root));
-  const skills = ['explain-this-file', 'what-changed-in-this-pr'];
+  const skills = ['explain-this-file', 'what-changed-in-this-pr', 'solution-architect-walkthrough'];
   const skillFiles = skills.flatMap(skill => ['SKILL.md', 'agents/openai.yaml'].map(file => `.agents/skills/${skill}/${file}`));
   const reviewHelper = '.agents/skills/what-changed-in-this-pr/scripts/review-commits.mjs';
-  skillFiles.push(reviewHelper);
+  skillFiles.push(reviewHelper, '.agents/skills/solution-architect-walkthrough/references/walkthrough-format.md');
   for (const file of packed.files) {
     if (!skillFiles.includes(file.path)) assert.match(file.path, /^(?:dist\/|scripts\/prepare-bin\.mjs$|docs\/images\/|examples\/|(?:README|CHANGELOG|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT|ROADMAP|THIRD_PARTY_NOTICES)\.md$|LICENSE$|NOTICE$|package\.json$)/, `Unapproved package file: ${file.path}`);
     assert.doesNotMatch(file.path, /(?:^|\/)(?:node_modules|output|\.local|\.env|\.git)(?:\/|$)/);
@@ -50,6 +50,16 @@ try {
   assert.equal(dataFlow.layout.nodeCount, 6);
   assert.equal(dataFlow.layout.relationshipCount, 6);
   assert.ok((await fs.stat(dataFlow.artifacts.png)).size > 100);
+  const exampleRoot = path.dirname(dataFlowModel);
+  for (const [placement, count] of [['before', 1], ['after', 6]]) {
+    const scenario = path.join(exampleRoot, 'walkthrough', `bridge-${placement}-kafka.json`);
+    const output = path.join(temporary, `bridge-${placement}.md`);
+    const review = JSON.parse(await run(process.execPath, [entry, 'review-walkthrough', path.join(exampleRoot, 'walkthrough.json'), scenario, '--out', output]));
+    assert.equal(review.views.filter(view => view.status === 'review').length, count);
+    assert.ok(review.openQuestions.length > 0 && review.answeredQuestions.some(question => question.id === 'bridge-placement'));
+    const report = await fs.readFile(output, 'utf8');
+    assert.ok(report.includes('Kafka'), `Missing model evidence for ${placement}`);
+  }
   const explanation = JSON.parse(await run(process.execPath, [entry, 'explain-file', 'src', 'value.ts', '--out', 'value.md']));
   assert.equal(explanation.counts.incoming, 1);
   assert.equal(explanation.counts.outgoing, 0);
@@ -79,5 +89,5 @@ try {
   assert.equal(await fs.readFile(path.join(fixture, 'consumer.ts'), 'utf8'), 'export const uncommitted = true;\n');
   assert.ok((await fs.stat(review.diagram.html)).size > 100);
   for (const extension of ['md','svg','png','html']) assert.ok((await fs.stat(path.join(temporary, `diagram.${extension}`))).size > 100);
-  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, rendering and PR skill.`);
+  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, rendering, PR review and both walkthrough scenarios.`);
 } finally { await fs.rm(temporary, { recursive: true, force: true }); }

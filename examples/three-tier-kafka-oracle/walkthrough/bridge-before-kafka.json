@@ -1,0 +1,16 @@
+{
+  "title": "Bridge publishes to Kafka",
+  "changes": [
+    {
+      "claim": "kafka-publisher",
+      "value": "The integration bridge publishes incoming events to Kafka.",
+      "reason": "The bridge takes the publishing role. The application still consumes directly from Kafka."
+    }
+  ],
+  "answers": [
+    {
+      "question": "bridge-placement",
+      "answer": "The bridge sits upstream of Kafka. It publishes to Kafka, and the application consumes the event from Kafka."
+    }
+  ]
+}
