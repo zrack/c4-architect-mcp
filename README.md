@@ -12,7 +12,7 @@ C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io
 
 ## What changed in this PR?
 
-Try the [PR review skill](#review-architecture-changes-for-a-pull-request) in Codex with this repository, or replace the PR URL with your own.
+Try this prompt in Codex with this repository, or replace the PR URL with your own. You can also generate the report from GitHub’s Actions tab. [Set up the skill](#review-architecture-changes-for-a-pull-request) · [Run it in GitHub Actions](#run-the-review-in-github-actions)
 
 > Use `$what-changed-in-this-pr` on https://github.com/zrack/c4-architect-mcp/pull/16. Show me the dependencies it added or removed in `src`, draw the focused diagram, and link each arrow to its import.
 
@@ -540,32 +540,37 @@ The skill compares committed TypeScript and TSX snapshots. Its focused diagram s
 
 PR #16 added ten dependencies when it introduced `explain-this-file`. Follow each arrow to the import that introduced it. [Read the PR #16 report](https://github.com/zrack/c4-architect-mcp/blob/fb550b7f5a7792fa0c66d0aed0cffc2aad09f89b/docs/reviews/pr-16/PR-16.md) · [View the focused diagram](https://github.com/zrack/c4-architect-mcp/blob/fb550b7f5a7792fa0c66d0aed0cffc2aad09f89b/docs/reviews/pr-16/PR-16.focus-9032b03b69eb2b17.png)
 
-Pass `review` two saved graphs at the same C4 level and scan scope. Use each revision's boundary configuration if the pull request changes how files are assigned to components.
+Pass `review` two saved graphs at the same C4 level and scan scope to see a changed component alongside its neighbors. For an added or changed dependency, this default view uses the head snapshot. If the only dependency changes are removals, it uses the base snapshot. The Markdown report also lists source edits and declared boundary changes. To compare boundary declarations, supply each revision's configuration to its scan.
 
 ```sh
 npx -y c4-architect-mcp@0.2.0-alpha.12 review base.graph.json head.graph.json --out PR-ARCHITECTURE.md
 ```
 
-The report separates dependency changes, declared boundaries, and file reassignments from ordinary source edits. It lists source locations and flags partial scans. The focused diagram uses the head snapshot for an added or changed dependency and the base snapshot when dependencies were only removed. Keep the diagram files beside the Markdown when sharing the report.
-
-For links to exact GitHub source lines, pass each checkout's full commit SHA to `analyze --commit` when saving its graph. Then specify the repository and scan root for the report. Both snapshots must use the same repository-relative source root. The root defaults to `.` for a scan of the entire repository.
+To reproduce the focused Actions view locally, use two Component graphs and add `--focus-changes`. For links to exact GitHub source lines, save each graph with `analyze --commit SHA`. Give `review` the same repository-relative source directory as both scans (use `.` for the repository root). For a PR from a fork, add `--head-github-repo FORK_OWNER/FORK_REPO`.
 
 ```sh
-npx -y c4-architect-mcp@0.2.0-alpha.12 review base.graph.json head.graph.json --out PR-ARCHITECTURE.md \
-  --github-repo OWNER/REPO --source-root src
+npx -y c4-architect-mcp@0.2.0-alpha.12 review base.graph.json head.graph.json \
+  --focus-changes --github-repo OWNER/REPO --source-root src --out PR-ARCHITECTURE.md
 ```
-
-Partial scans list unresolved import locations and specifiers for both revisions. The report shows up to 25 locations per snapshot, with changes to the unresolved imports listed first.
 
 #### Run the review in GitHub Actions
 
-Open **Actions → PR architecture review → Run workflow**, choose the default branch, and enter the pull request number. The manual workflow compares Component snapshots at the PR's base and head commits without running their code. The source directory defaults to `src`.
+1. Open **Actions → PR architecture review → Run workflow** on the default branch and enter the PR number. Use a source directory tracked in both revisions, such as `src` (the default), or `.` for the repository root.
+2. To post a comment with the dependency counts, both scan statuses, and a download link, select **Post an architecture review summary to the pull request**. It defaults to off. Re-running the same workflow run updates its comment.
+3. When the run finishes, download and extract `pr-<number>-architecture-review-<attempt>`. Open `PR-ARCHITECTURE.md` for the full list of added, removed, and modified dependencies. Open the adjacent HTML diagram and select a numbered arrow to see its source link. Keep the extracted files together.
 
-For each revision, the workflow stages dependencies from its manifest and v3 npm lockfile in a separate directory. It uses the public npm registry with integrity checks and disables scripts. If a lockfile is missing, uses workspaces or other unsupported dependency sources, or the install fails, the workflow scans that revision without staged dependencies and reports any unresolved imports.
+The workflow installs the published `c4-architect-mcp@0.2.0-alpha.12`, scans the base and head commits recorded by GitHub, and calls `review --focus-changes`. Additions link to the import in the head revision, removals to the import in the base revision, and modified dependencies to both. For fork PRs, head links use the fork when available. The diagram shows up to 25 dependency changes. The report and optional PR comment give totals for the full comparison. When zero dependencies change, the artifact contains just the Markdown report.
 
-Download the `pr-<number>-architecture-review-<attempt>` artifact from the run and extract it before opening `PR-ARCHITECTURE.md`. Keep the focused diagram files beside the report so its links work. If there is no changed neighborhood to render, the artifact contains only the report.
+The read-only scan does not execute PR code. To resolve package imports, it stages each revision's dependencies separately using a supported public npm v3 lockfile, with integrity checks and install scripts disabled. If a lockfile is missing, uses workspaces, or cannot be staged, that revision is scanned from source alone. Check the report for partial scans and unresolved imports. It lists up to 25 unresolved locations per revision. Sign in to GitHub to download an Actions artifact while the run retains it.
 
-Select **Post an architecture review summary to the pull request** when starting the workflow to share the dependency counts, scan status, and artifact link in a PR comment. The setting defaults to off. Readers with repository access can download the Markdown report and any focused diagram files after signing in to GitHub, while the artifact is available. Re-running the workflow updates that run's comment.
+##### Examples from GitHub Actions
+
+| Pull request | What to trace in the uploaded report |
+| --- | --- |
+| [PR #16 report and diagram](https://github.com/zrack/c4-architect-mcp/blob/main/docs/reviews/actions-alpha12/pr-16/PR-ARCHITECTURE.md) | Ten added dependencies. Follow R06 from the CLI and R08 from the MCP server to the same new renderer. |
+| [PR #14 report and diagram](https://github.com/zrack/c4-architect-mcp/blob/main/docs/reviews/actions-alpha12/pr-14/PR-ARCHITECTURE.md) | Thirteen added dependencies and three removed. Follow R16 to the preview's former renderer import at the base, then R06 to its new home in the shared wiki module at the head. |
+
+The saved examples include the original Actions artifacts and source-link checks. [View the pilot results and both workflow runs](https://github.com/zrack/c4-architect-mcp/tree/main/docs/reviews/actions-alpha12)
 
 ##### Use the workflow in another repository
 
@@ -591,17 +596,17 @@ permissions:
 
 jobs:
   review:
-    uses: zrack/c4-architect-mcp/.github/workflows/pr-architecture-review-report.yml@bbac6eea276202a284af02267eca5075c7293cda
+    uses: zrack/c4-architect-mcp/.github/workflows/pr-architecture-review-report.yml@1ab91407555f60014d9c60e99513ba028c888eea
     with:
       pr_number: ${{ inputs.pr_number }}
       source_root: ${{ inputs.source_root }}
 ```
 
-If your repository restricts reusable workflows, allow the pinned `uses` reference in its Actions settings. To offer opt-in comments, call `pr-architecture-review.yml` at the same commit instead, grant the calling job `pull-requests: write`, and pass a Boolean `post_comment` input. Its default is `false`, and the scan job still uses read-only permissions.
+Existing callers can adopt the focused review by updating the `uses` commit to the one above. If your repository restricts reusable workflows, allow that reference in its Actions settings. To offer opt-in comments, call `pr-architecture-review.yml` at the same commit, grant the calling job `pull-requests: write`, and pass a Boolean `post_comment` input. The separate comment job posts only when requested. The scan always runs with read-only permissions.
 
 ##### Example output from PR #4
 
-With commenting enabled, the workflow posted this summary on the PR that introduced the `review` command. [View the original comment on PR #4](https://github.com/zrack/c4-architect-mcp/pull/4#issuecomment-6716125585)
+This earlier run used the alpha.3 single-component neighborhood view. Its optional comment shows how reviewers can reach the report from a pull request. [View the original comment on PR #4](https://github.com/zrack/c4-architect-mcp/pull/4#issuecomment-6716125585)
 
 > **Component architecture review**
 >

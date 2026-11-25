@@ -13,6 +13,7 @@ The first release centers on TypeScript and TSX over local `stdio` MCP connectio
 - Separate observed source facts, inferred classifications, and declared architecture boundaries.
 - Keep manual mapping in a separate versioned configuration, with stable declared identifiers.
 - Save a versioned graph; summarize it, query a bounded neighborhood, and compare snapshots.
+- Explain a file's direct dependencies or compare a PR's dependencies using commit-pinned source links. The opt-in GitHub Actions workflow delivers a Markdown report and a focused diagram when dependencies changed. [PR review workflow](https://github.com/zrack/c4-architect-mcp#run-the-review-in-github-actions)
 - Render C4 Context, Container, and Component views, with compact PNG/SVG output and interactive connection highlighting.
 - Export full-size PNG/SVG images with the current selection.
 - Maintain parser, graph, MCP, package, and browser layout regression checks.
@@ -27,7 +28,7 @@ Make the graph useful throughout a project's life, rather than treating each dra
 - Expand module-resolution fixtures from real, sanitized project examples.
 - Add incremental analysis and caching with explicit invalidation rules.
 - Improve graph slicing, search, and explanations for large repositories.
-- Make graph comparison useful in pull requests without treating every source edit as an architecture change.
+- Pilot the PR report with reviewers. Check whether the numbered arrows help them choose the next source file to open and whether missing imports or diagram limits affect that decision.
 - Extend client and platform compatibility testing with reproducible reports.
 - Add a documented extension contract before accepting additional language parsers.
 

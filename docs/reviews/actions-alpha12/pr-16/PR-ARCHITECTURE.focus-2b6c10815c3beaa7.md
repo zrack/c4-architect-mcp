@@ -1,0 +1,83 @@
+# PR #16 architecture review · Dependency changes
+
+10 of 10 dependency changes · 10 nodes · 10 arrows
+
+![Compact C4 diagram](PR-ARCHITECTURE.focus-2b6c10815c3beaa7.png)
+
+[Interactive view](PR-ARCHITECTURE.focus-2b6c10815c3beaa7.html) · [Scalable SVG](PR-ARCHITECTURE.focus-2b6c10815c3beaa7.svg)
+
+<details>
+<summary>Mermaid source export</summary>
+
+```mermaid
+---
+title: "PR #16 architecture review · Dependency changes"
+config:
+  theme: base
+  themeVariables:
+    primaryTextColor: '#15243a'
+    lineColor: '#374151'
+    edgeLabelBackground: '#ffffff'
+  themeCSS: '.edgeLabel rect { opacity: 1 !important; fill: #ffffff !important; }'
+  flowchart:
+    htmlLabels: false
+    wrappingWidth: 320
+    nodeSpacing: 160
+    rankSpacing: 180
+    curve: bumpY
+---
+flowchart TB
+  %% C4Component: C4 types with automatic graph layout
+  n0["«component»<br/>renderers/review.ts (inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+  n1["«component»<br/>renderers/sourceLinks.ts<br/>(inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+  n2["«component»<br/>renderers/explainFile.ts<br/>(inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+  n3["«component»<br/>parsers/astParser.ts (inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+  n4["«component»<br/>model/neighborhood.ts (inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+  n5["«component»<br/>renderers/artifacts.ts<br/>(inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+  n6["«component»<br/>cli.ts (inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+  n7["«component»<br/>renderers/compactC4.ts<br/>(inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+  n8["«component»<br/>index.ts (inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+  n9["«component»<br/>model/graph.ts (inferred)<br/>#91;TypeScript#93;<br/>Inferred boundary · Within<br/>Application (inferred)"]
+
+  n0 -->|"Added · Imports module"| n1
+  n2 -->|"Added · Imports module"| n3
+  n2 -->|"Added · Imports module"| n1
+  n2 -->|"Added · Imports module"| n4
+  n2 -->|"Added · Imports module"| n5
+  n6 -->|"Added · Imports module"| n2
+  n2 -->|"Added · Imports module"| n7
+  n8 -->|"Added · Imports module"| n2
+  n1 -->|"Added · Imports types"| n9
+  n2 -->|"Added · Imports types"| n9
+
+  classDef internal fill:#e7f0fb,stroke:#3c6fa9,color:#15243a
+  classDef external fill:#f0f2f5,stroke:#737d8b,color:#15243a
+  classDef person fill:#dbeafe,stroke:#3c6fa9,color:#15243a
+  class n0 internal
+  class n1 internal
+  class n2 internal
+  class n3 internal
+  class n4 internal
+  class n5 internal
+  class n6 internal
+  class n7 internal
+  class n8 internal
+  class n9 internal
+```
+
+</details>
+
+## Relationships
+
+| ID | From | To | Action | Technology | Source evidence |
+|---|---|---|---|---|---|
+| R01 | renderers/review.ts (inferred) | renderers/sourceLinks.ts (inferred) | Added · Imports module |  | renderers/review.ts:7:115 (./sourceLinks.js) |
+| R02 | renderers/explainFile.ts (inferred) | parsers/astParser.ts (inferred) | Added · Imports module |  | renderers/explainFile.ts:7:34 (../parsers/astParser.js) |
+| R03 | renderers/explainFile.ts (inferred) | renderers/sourceLinks.ts (inferred) | Added · Imports module |  | renderers/explainFile.ts:10:81 (./sourceLinks.js) |
+| R04 | renderers/explainFile.ts (inferred) | model/neighborhood.ts (inferred) | Added · Imports module |  | renderers/explainFile.ts:6:41 (../model/neighborhood.js) |
+| R05 | renderers/explainFile.ts (inferred) | renderers/artifacts.ts (inferred) | Added · Imports module |  | renderers/explainFile.ts:8:33 (./artifacts.js) |
+| R06 | cli.ts (inferred) | renderers/explainFile.ts (inferred) | Added · Imports module |  | cli.ts:8:29 (./renderers/explainFile.js) |
+| R07 | renderers/explainFile.ts (inferred) | renderers/compactC4.ts (inferred) | Added · Imports module |  | renderers/explainFile.ts:9:33 (./compactC4.js) |
+| R08 | index.ts (inferred) | renderers/explainFile.ts (inferred) | Added · Imports module |  | index.ts:22:29 (./renderers/explainFile.js) |
+| R09 | renderers/sourceLinks.ts (inferred) | model/graph.ts (inferred) | Added · Imports types |  | renderers/sourceLinks.ts:1:38 (../model/graph.js) |
+| R10 | renderers/explainFile.ts (inferred) | model/graph.ts (inferred) | Added · Imports types |  | renderers/explainFile.ts:5:58 (../model/graph.js) |

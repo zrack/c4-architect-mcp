@@ -71,6 +71,8 @@ Before requesting review:
 
 The CI workflow also checks Node.js 22 and 24 on Linux, macOS, and Windows. A local pass does not replace those platform results.
 
+To try the optional architecture review on a TypeScript or TSX pull request, run **Actions → PR architecture review** and open the Markdown report in the downloaded artifact. If you share feedback, mention which numbered arrow you followed, which source file you opened, and whether that helped you review the change. [Workflow instructions and examples](https://github.com/zrack/c4-architect-mcp#run-the-review-in-github-actions)
+
 AI-assisted contributions are welcome. You are responsible for understanding the change, checking its evidence, and verifying its behavior. Mention limitations that a reviewer should know.
 
 ## License and conduct
