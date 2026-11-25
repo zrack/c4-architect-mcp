@@ -2,6 +2,10 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+- Render authored data-flow diagrams through MCP and the CLI, with distinct symbols for external entities, processes and data stores and a payload name on each arrow. The [Kafka and Oracle RAC example](examples/three-tier-kafka-oracle/data-flow.json) includes both a web request and response and a one-way event write.
+
 ## GitHub Actions workflow — 2026-11-24
 
 - The opt-in PR workflow now uses the published `0.2.0-alpha.12` package. Its diagram shows up to 25 changed dependencies with source links to the PR head, base, or both. The Markdown artifact lists every changed dependency. Existing callers can update their workflow commit pin to adopt this view. [Setup and examples](https://github.com/zrack/c4-architect-mcp#run-the-review-in-github-actions)

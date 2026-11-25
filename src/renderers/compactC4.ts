@@ -33,6 +33,7 @@ export const nodeKinds: Record<DiagramNode["type"], string> = {
   System: "Software system", System_Ext: "External system", ExternalSystem: "External system", Person: "Person",
   DeploymentNode: "Deployment node", CodeElement: "Code element", Class: "Class", Interface: "Interface",
   Function: "Function", Type: "Type",
+  ExternalEntity: "External entity", Process: "Process", DataStore: "Data store",
 };
 const xml = (value: string) => value.replace(/[&<>"']/g, character => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;",
@@ -72,6 +73,7 @@ function svgText(lines: string[], x: number, y: number, size: number, lineHeight
 
 function diagramCaption(diagram: C4Diagram): string {
   const { nodes, relationships } = diagram;
+  if (diagram.c4Level === "DataFlow") return diagram.caption ?? `${nodes.length} elements · ${relationships.length} data flows · Arrows point to the recipient`;
   return diagram.caption ?? (diagram.c4Level === "C4Dynamic"
     ? `${nodes.length} participants · ${relationships.length} steps · Follow the numbered arrows`
     : `${nodes.length} nodes · ${relationships.length} relationships · R IDs identify individual arrows`);
@@ -195,23 +197,34 @@ function drawSvg(diagram: C4Diagram, layout: CompactLayout): string {
     const titleY = box.y + 38;
     const technologyY = titleY + node.titleLines.length * 20 + 2;
     const fullText = [node.label, node.technology, node.description].filter(Boolean).join(" — ");
-    return `<title>${xml(fullText)}</title><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="${radius}"/>${svgText([nodeKinds[node.type]], x, box.y + 17, 11, 14, "node-kind")}${svgText(node.titleLines, x, titleY, 16, 20, "node-title")}${svgText(node.technologyLines, x, technologyY, 12, 16, "node-technology")}`;
+    const rails = node.type === "DataStore"
+      ? `<path class="store-rails" d="M${node.x},${node.y}h${node.width} M${node.x},${node.y + node.height}h${node.width}"/>` : "";
+    return `<title>${xml(fullText)}</title><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="${radius}"/>${rails}${svgText([nodeKinds[node.type]], x, box.y + 17, 11, 14, "node-kind")}${svgText(node.titleLines, x, titleY, 16, 20, "node-title")}${svgText(node.technologyLines, x, technologyY, 12, 16, "node-technology")}`;
   }
   // An enclosing group is wider than any nested group. Paint ancestors first.
   const boundaries = layout.nodes.filter(node => node.boundaryHeader).sort((a, b) => b.width - a.width)
     .map(node => `<g class="deployment-boundary" data-boundary-id="${xml(node.id)}">${nodeShape(node, node.boundaryHeader!, 7)}</g>`).join("");
+  const dataFlow = diagram.c4Level === "DataFlow";
   const nodeShapes = layout.nodes.filter(node => !node.boundaryHeader).map(node => {
-    const external = node.type === "System_Ext" || node.type === "ExternalSystem";
-    return `<g class="node${external ? " external" : ""}" id="component-${node.alias}" data-node-id="${xml(node.id)}" tabindex="0" role="button" aria-label="${xml(`Show connections for ${node.label}`)}">${nodeShape(node, node, 5)}</g>`;
+    const external = node.type === "System_Ext" || node.type === "ExternalSystem" || node.type === "ExternalEntity";
+    const radius = dataFlow ? (node.type === "Process" ? 18 : 0) : 5;
+    const notation = dataFlow ? ` data-dfd-type="${node.type}"` : "";
+    return `<g class="node${external ? " external" : ""}"${notation} id="component-${node.alias}" data-node-id="${xml(node.id)}" tabindex="0" role="button" aria-label="${xml(`Show connections for ${node.label}`)}">${nodeShape(node, node, radius)}</g>`;
   }).join("");
   const labels = layout.relationships.map(relationship => {
     const box = relationship.labelBox;
     const description = [`${relationship.id}: ${relationship.label}${relationship.technology ? ` [${relationship.technology}]` : ""}`, relationship.description].filter(Boolean).join("\n");
     return `<g class="edgeLabel" data-edge-id="${relationship.id}"><title>${xml(description)}</title><g class="label" data-id="${relationship.id}"><rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="3"/>${svgText(relationship.displayLines, box.x + box.width / 2, box.y + 16, 14, 18, "edge-label-text")}</g></g>`;
   }).join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}" data-engine="elk" role="img" aria-labelledby="diagram-title diagram-description"><title id="diagram-title">${xml(diagram.title)}</title><desc id="diagram-description">${layout.nodes.length} architecture nodes and ${layout.relationships.length} directed relationships. Select a node in the interactive view to trace its connections.</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#4d657c"/></marker></defs><style>
+  const description = dataFlow
+    ? `${layout.nodes.length} elements and ${layout.relationships.length} labeled data flows. Each arrow points from the source of the data to its recipient.`
+    : `${layout.nodes.length} architecture nodes and ${layout.relationships.length} directed relationships. Select a node in the interactive view to trace its connections.`;
+  const notationStyle = dataFlow
+    ? '.node[data-dfd-type="DataStore"] rect{fill:#edf6f1;stroke:none}.store-rails{fill:none;stroke:#37715b;stroke-width:2}.node:focus .store-rails,.node.selected .store-rails{stroke:#174fbb;stroke-width:3}'
+    : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}" data-engine="elk" role="img" aria-labelledby="diagram-title diagram-description"><title id="diagram-title">${xml(diagram.title)}</title><desc id="diagram-description">${description}</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#4d657c"/></marker></defs><style>
 text{font-family:Arial,Helvetica,sans-serif;fill:#172b43}.diagram-title{font-weight:500}.node rect{fill:#e7f0fb;stroke:#5381b7;stroke-width:1.2}.node.external rect{fill:#f0f2f5;stroke:#818d9d}.node-kind,.node-technology{fill:#4a5e76}.edge-halo,.flowchart-link{fill:none;stroke-linejoin:round}.edge-halo{stroke:white;stroke-width:5}.flowchart-link{stroke:#4d657c;stroke-width:1.5}.edgeLabel rect{fill:white}.node:focus rect{stroke:#174fbb;stroke-width:2.5}.node{cursor:pointer}.edge,.edgeLabel{cursor:pointer}.dimmed{opacity:.12}.selected rect{stroke:#174fbb;stroke-width:2.5}.outgoing .flowchart-link{stroke:#155dd5;stroke-width:2.5}.incoming .flowchart-link{stroke:#a94a10;stroke-width:2.5}.outgoing .edge-label-text{fill:#124da7}.incoming .edge-label-text{fill:#8f3e0d}
-.deployment-boundary{pointer-events:none}.deployment-boundary rect{fill:#f6faff;stroke:#6b829c;stroke-width:1.2;stroke-dasharray:6 4}
+.deployment-boundary{pointer-events:none}.deployment-boundary rect{fill:#f6faff;stroke:#6b829c;stroke-width:1.2;stroke-dasharray:6 4}${notationStyle}
 </style><rect class="background" width="100%" height="100%" fill="white"/>${title}<text x="${layout.width / 2}" y="${55 + Math.max(0, titleLines.length - 1) * 24}" text-anchor="middle" font-size="12">${xml(caption)}</text>${boundaries}${paths}${nodeShapes}${labels}</svg>`;
 }
 

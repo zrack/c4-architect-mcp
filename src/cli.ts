@@ -15,6 +15,9 @@ import { version } from "./version.js";
 const explainUsage = `explain-file <directory> <file> --out FILE.md [--tsconfig tsconfig.json] [--nodes 25] [--edges 50]
     [--github-repo OWNER/REPO --commit SHA [--source-root REPO_RELATIVE_PATH]]`;
 
+const renderDiagramUsage = "render-diagram <diagram.json> --out DIAGRAM.md";
+const dataFlowHelp = "For a data-flow diagram, set c4Level to DataFlow and use ExternalEntity, Process, and DataStore nodes.\nEach relationship names the data and points from its origin to its receiver. At least one endpoint must be a Process.";
+
 const help = `C4-Architect ${version}
 
 No arguments: start the MCP server over stdio.
@@ -22,7 +25,7 @@ No arguments: start the MCP server over stdio.
   analyze <directory> --level Component --out graph.json [--config config.json] [--tsconfig tsconfig.json] [--commit SHA] [--summary]
   ${explainUsage}
   render <graph.json> --out ARCHITECTURE.md [--title "Architecture"] [--node ID [--direction both] [--depth 1] [--nodes 25] [--edges 50]]
-  render-diagram <diagram.json> --out DIAGRAM.md
+  ${renderDiagramUsage}
   render-drawio <diagram-or-graph.json> --out DIAGRAM.drawio
   render-structurizr <diagram-or-workspace.json> --out WORKSPACE.dsl
   publish-ado-wiki <document.json> --out PREVIEW_DIRECTORY
@@ -38,6 +41,7 @@ No arguments: start the MCP server over stdio.
 
 Analysis levels: Context, Container, Component. Paths are relative to the current directory.
 Authored diagrams also support Deployment, Dynamic, System Landscape, and Code.
+${dataFlowHelp}
 Boundary configuration is loaded only with --config. Rendering writes Markdown,
 PNG, SVG, standalone interactive HTML, Draw.io XML, or Structurizr DSL. No repository code is executed.
 Publishing defaults to a local preview. Azure DevOps uses AZURE_DEVOPS_EXT_PAT
@@ -51,6 +55,10 @@ export async function runCli(args: string[]): Promise<boolean> {
   if (args.length === 1 && ["--help", "-h", "help"].includes(args[0])) { process.stdout.write(help); return true; }
   if (args.length === 1 && ["--version", "-v"].includes(args[0])) { process.stdout.write(version + "\n"); return true; }
   const [command, ...rest] = args;
+  if (command === "render-diagram" && rest.length === 1 && ["--help", "-h"].includes(rest[0])) {
+    process.stdout.write(`${renderDiagramUsage}\n\n${dataFlowHelp}\n`);
+    return true;
+  }
   if (command === "explain-file" && rest.length === 1 && ["--help", "-h"].includes(rest[0])) {
     process.stdout.write(`${explainUsage}\n\nUse a scan-relative path or unique filename. Writes a Markdown report and a focused PNG.\n`);
     return true;

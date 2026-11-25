@@ -8,9 +8,12 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { diagramSchema } from '../dist/model/diagram.js';
+import { renderC4Mermaid } from '../dist/renderers/c4Mermaid.js';
 
 const run = promisify(execFile);
 const entrypoint = fileURLToPath(new URL('../dist/index.js', import.meta.url));
+const dataFlow = JSON.parse(await readFile(new URL('../examples/three-tier-kafka-oracle/data-flow.json', import.meta.url), 'utf8'));
 
 const deployment = {
   title: 'Production deployment', c4Level: 'C4Deployment',
@@ -31,6 +34,7 @@ const codeNodes = [
   { id: 'module', label: 'orders.ts', type: 'CodeElement' },
 ];
 const diagrams = [
+  dataFlow,
   deployment,
   {
     title: 'Submit an order', c4Level: 'C4Dynamic',
@@ -83,13 +87,43 @@ function onBorder([x, y], box) {
     || (y >= box.y && y <= box.y + box.height && (close(x, box.x) || close(x, box.x + box.width)));
 }
 
+function verifyDataFlow(diagram, markdown, mermaid, svg) {
+  assert.match(markdown, /^## Data flows$/m);
+  assert.match(markdown, /^\|[^\n]*Data carried[^\n]*\|$/m);
+  const boxes = new Map();
+  for (const node of diagram.nodes) {
+    const group = svg.match(new RegExp(`<g\\b([^>]* data-node-id="${node.id}"[^>]*)>([^]*?)</g>`));
+    assert.ok(group, node.id);
+    assert.ok(group[1].includes(`data-dfd-type="${node.type}"`));
+    const radius = Number(group[2].match(/<rect\b[^>]* rx="([^"]+)"/)?.[1]);
+    if (node.type === 'Process') assert.ok(radius > 0, 'Processes have rounded corners');
+    if (node.type === 'ExternalEntity') assert.equal(radius, 0, 'External entities have square corners');
+    if (node.type === 'DataStore') assert.match(group[2], /<path\b[^>]*class="store-rails"/);
+    boxes.set(node.id, rect(svg, 'data-node-id', node.id));
+  }
+  assert.match(mermaid, /shape:\s*datastore\b/);
+  const aliases = new Map(diagram.nodes.map((node, index) => [node.id, `n${index}`]));
+  const arrows = [...svg.matchAll(/<g class="edge"[^>]*><title>([^<]*)<\/title>[^]*?<path class="flowchart-link"[^>]* d="([^"]+)"[^>]* marker-end=/g)];
+  assert.equal(arrows.length, diagram.relationships.length);
+  for (const { from, to, label } of diagram.relationships) {
+    assert.ok(mermaid.includes(`${aliases.get(from)} -->|"${label}"| ${aliases.get(to)}`), label);
+    const arrow = arrows.find(([, title]) => title.includes(`${from} → ${to}. ${label}`));
+    assert.ok(arrow, `Missing flow from ${from} to ${to} carrying ${label}`);
+    const points = [...arrow[2].matchAll(/[ML]([\d.]+),([\d.]+)/g)].map(([, x, y]) => [Number(x), Number(y)]);
+    assert.ok(onBorder(points[0], boxes.get(from)), `${label} starts at ${from}`);
+    assert.ok(onBorder(points.at(-1), boxes.get(to)), `${label} ends at ${to}`);
+  }
+}
+
 function verifyDiagram(diagram, markdown, svg) {
   const mermaid = markdown.match(/^```mermaid\n([^]*?)^```$/m)?.[1];
   assert.ok(mermaid, 'Markdown contains a Mermaid source export');
   for (const node of diagram.nodes) assert.ok(svg.includes(node.label), `Missing node ${node.label}`);
   for (const relation of diagram.relationships) assert.ok(svg.includes(relation.label), `Missing relationship ${relation.label}`);
 
-  if (diagram.c4Level === 'C4Deployment') {
+  if (diagram.c4Level === 'DataFlow') {
+    verifyDataFlow(diagram, markdown, mermaid, svg);
+  } else if (diagram.c4Level === 'C4Deployment') {
     assert.match(mermaid, /subgraph [^\n]*Production cloud[^\n]*\n\s*subgraph [^\n]*App cluster[^\n]*\n\s*[^\n]*Application/);
     const cloud = rect(svg, 'data-boundary-id', 'cloud');
     const cluster = rect(svg, 'data-boundary-id', 'cluster');
@@ -145,7 +179,7 @@ async function readArtifacts(diagram, outputPath, result) {
   return { markdown, png };
 }
 
-test('all four additional views render through MCP and CLI', { timeout: 30000 }, async t => {
+test('supporting views and Code render through MCP and CLI', { timeout: 30000 }, async t => {
   const dir = await mkdtemp(path.join(tmpdir(), 'c4-diagram-views-'));
   const client = new Client({ name: 'diagram-views-test', version: '1.0.0' });
   t.after(async () => {
@@ -171,6 +205,19 @@ test('all four additional views render through MCP and CLI', { timeout: 30000 },
     await readArtifacts(diagram, cliPath, JSON.parse(stdout));
   });
 
+  await t.test('rejects invalid data flows before writing output through MCP and CLI', async () => {
+    const invalid = { ...dataFlow, relationships: [{ from: 'kafka', to: 'oracle', label: 'Event record' }] };
+    const input = path.join(dir, 'invalid-data-flow.json');
+    const output = path.join(dir, 'invalid-data-flow.md');
+    const result = await client.callTool({ name: 'render_c4_mermaid', arguments: { ...invalid, outputPath: output } });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Process/);
+    await writeFile(input, JSON.stringify(invalid));
+    await assert.rejects(run(process.execPath, [entrypoint, 'render-diagram', input, '--out', output]),
+      error => error.code === 1 && /Process/.test(error.stderr));
+    await assert.rejects(readFile(output), { code: 'ENOENT' });
+  });
+
   await t.test('rejects malformed deployment hierarchy', async () => {
     const cycle = structuredClone(deployment);
     cycle.nodes[0].parentId = 'cluster';
@@ -187,4 +234,30 @@ test('all four additional views render through MCP and CLI', { timeout: 30000 },
       error => error.code === 1 && /deployment node/i.test(error.stderr) && /cloud/.test(error.stderr));
     await assert.rejects(readFile(output), { code: 'ENOENT' });
   });
+});
+
+test('DataFlow validates payload labels, endpoints and view-specific node types', () => {
+  const flow = (from, to, label) => ({ ...dataFlow, relationships: [{ from, to, label }] });
+  for (const [from, to] of [['user', 'kafka'], ['oracle', 'oracle'], ['kafka', 'oracle'], ['oracle', 'kafka']]) {
+    assert.throws(() => diagramSchema.parse(flow(from, to, 'Record')), /Process/);
+  }
+  for (const label of ['', ' \t\n']) {
+    assert.throws(() => diagramSchema.parse(flow('event', 'oracle', label)), /label/);
+  }
+  assert.throws(() => diagramSchema.parse(flow('event', 'missing', 'Record')), /unknown node/i);
+  const withContainer = { ...dataFlow, nodes: dataFlow.nodes.map(n => n.id === 'web' ? { ...n, type: 'Container' } : n) };
+  assert.throws(() => diagramSchema.parse(withContainer), /ExternalEntity, Process, or DataStore/);
+  assert.throws(() => diagramSchema.parse({ ...dataFlow, c4Level: 'C4Component' }), /only allowed in DataFlow/);
+  assert.doesNotThrow(() => diagramSchema.parse(flow('oracle', 'event', 'Stored record')));
+});
+
+test('DataFlow preserves punctuation in quoted Mermaid store and payload labels', () => {
+  const diagram = structuredClone(dataFlow);
+  diagram.nodes.find(node => node.type === 'DataStore').label = 'Records "A" | {B}';
+  diagram.relationships.at(-1).label = 'A | B & C';
+  const mermaid = renderC4Mermaid(diagram);
+  // Mermaid 12 renders numeric entities literally in SVG-only edge labels.
+  assert.match(mermaid, /htmlLabels:\s*true/);
+  assert.ok(mermaid.includes('Records #34;A#34; #124; #123;B#125;'));
+  assert.ok(mermaid.includes('-->|"A #124; B #38; C"|'));
 });

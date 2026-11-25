@@ -1,0 +1,74 @@
+{
+  "title": "Request and event data",
+  "c4Level": "DataFlow",
+  "caption": "Web responses are illustrative. Only the inbound event path writes to Oracle.",
+  "nodes": [
+    {
+      "id": "user",
+      "type": "ExternalEntity",
+      "label": "Web user"
+    },
+    {
+      "id": "web",
+      "type": "Process",
+      "label": "Web app",
+      "technology": "Presentation tier"
+    },
+    {
+      "id": "request",
+      "type": "Process",
+      "label": "Handle web request",
+      "technology": "Application server"
+    },
+    {
+      "id": "kafka",
+      "type": "ExternalEntity",
+      "label": "Kafka",
+      "technology": "External event platform"
+    },
+    {
+      "id": "event",
+      "type": "Process",
+      "label": "Process incoming event",
+      "technology": "Application server"
+    },
+    {
+      "id": "oracle",
+      "type": "DataStore",
+      "label": "Application datastore",
+      "technology": "Oracle RAC"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "user",
+      "to": "web",
+      "label": "Web request"
+    },
+    {
+      "from": "web",
+      "to": "user",
+      "label": "Web response"
+    },
+    {
+      "from": "web",
+      "to": "request",
+      "label": "Application request"
+    },
+    {
+      "from": "request",
+      "to": "web",
+      "label": "Application response"
+    },
+    {
+      "from": "kafka",
+      "to": "event",
+      "label": "Event record"
+    },
+    {
+      "from": "event",
+      "to": "oracle",
+      "label": "Event-derived record"
+    }
+  ]
+}

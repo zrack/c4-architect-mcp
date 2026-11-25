@@ -82,14 +82,14 @@ server.tool("render_architecture_graph", "Render a saved graph or a focused node
   });
 
 server.tool("render_c4_mermaid",
-  "Render an authored Context, Container, Component, Deployment, Dynamic, System Landscape, or Code diagram. Returns a compact PNG and Mermaid source. With outputPath saves Markdown, SVG, PNG and interactive HTML.",
+  "Render an authored C4 view or a DataFlow diagram. C4 views include Context, Container, Component, Deployment, Dynamic, System Landscape, and Code. For DataFlow use ExternalEntity, Process, and DataStore nodes and label each arrow with the data transferred. Returns a compact PNG and Mermaid source. With outputPath saves Markdown, SVG, PNG and interactive HTML.",
   {
     ...diagramSchema.shape,
     outputPath: z.string().optional().describe("Markdown destination ending in .md"),
   }, async ({ outputPath, ...diagram }) => renderArtifacts(diagram, outputPath));
 
 server.tool("render_c4_drawio",
-  "Render an authored C4 diagram as editable Draw.io XML with native shapes, deployment groups, and connector labels.",
+  "Render an authored C4 view or DataFlow diagram as editable Draw.io XML with native shapes, deployment groups, and connector labels.",
   {
     ...diagramSchema.shape,
     outputPath: z.string().optional().describe("Draw.io destination ending in .drawio"),
