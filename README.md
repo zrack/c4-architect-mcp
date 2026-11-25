@@ -16,7 +16,21 @@ Where an integration bridge sits changes which diagrams an architect should revi
 
 > Use `$solution-architect-walkthrough` on the Kafka and Oracle RAC example. Compare a bridge that feeds Kafka with a bridge that consumes from Kafka and delivers to the application. Show which views need review and why.
 
-The [walkthrough manifest](examples/three-tier-kafka-oracle/walkthrough.json) records the baseline. Compare the [upstream bridge report](examples/three-tier-kafka-oracle/walkthrough/reports/bridge-before-kafka.md) with the [downstream bridge report](examples/three-tier-kafka-oracle/walkthrough/reports/bridge-after-kafka.md). Each scenario answers the placement question. The event contract, replay policy, and web user's outcome stay open.
+### Kafka and Oracle RAC bridge comparison
+
+In the [baseline design](examples/three-tier-kafka-oracle/walkthrough.json), the application consumes events from Kafka and writes records to Oracle RAC. A bridge that **publishes to Kafka** changes the publisher in **1 of 7 diagrams**. A bridge that **consumes from Kafka** takes over delivery to the application, so **6 of 7 diagrams** need structural review.
+
+| Diagram | Bridge before Kafka · [alpha.14 report](https://github.com/zrack/c4-architect-mcp/blob/v0.2.0-alpha.14/examples/three-tier-kafka-oracle/walkthrough/reports/bridge-before-kafka.md) | Bridge after Kafka · [alpha.14 report](https://github.com/zrack/c4-architect-mcp/blob/v0.2.0-alpha.14/examples/three-tier-kafka-oracle/walkthrough/reports/bridge-after-kafka.md) |
+| --- | --- | --- |
+| System Context | Keep Kafka as the application's direct event source. | **Review R02.** Show the bridge as the application's direct event source. |
+| Container | Keep the application server's dependency on Kafka. | **Review R03.** Show the bridge consuming from Kafka and delivering to the application server. |
+| Data Flow | Keep the event record flowing from Kafka into processing. | **Review R05.** The incoming record now comes from the bridge. Processing still writes to Oracle RAC. |
+| Component | Keep the Kafka consumer inside the application server. | **Review R02.** Identify the component that receives events from the bridge. |
+| Code | Keep the processor's `InboundEvent` input. | Keep the same `InboundEvent` input. This scenario changes who delivers it. |
+| Deployment | Keep the Kafka consumer in the application server runtime. | **Review R02.** Identify the runtime that hosts the bridge's consumer and show its connection to the application. |
+| System Landscape | **Review R01.** Show the bridge publishing to Kafka. The originating business system is still unknown. | **Review R02.** Show the delivery path from Kafka through the bridge to the application. |
+
+The R numbers identify arrows within each diagram. Both reports also flag Kafka's description in System Context, Container, Component and System Landscape for a wording update. Five questions stay open in both placements, including when to checkpoint Kafka relative to the Oracle commit.
 
 To generate both reports from the published package on macOS or Linux, run these commands.
 
