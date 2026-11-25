@@ -2,7 +2,7 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
-## Unreleased
+## 0.2.0-alpha.13 — 2026-11-25
 
 - Render authored data-flow diagrams through MCP and the CLI, with distinct symbols for external entities, processes and data stores and a payload name on each arrow. The [Kafka and Oracle RAC example](examples/three-tier-kafka-oracle/data-flow.json) includes both a web request and response and a one-way event write.
 
