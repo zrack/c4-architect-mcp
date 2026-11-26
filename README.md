@@ -27,7 +27,7 @@ npm install -g c4-architect-mcp@0.2.0-alpha.15
 c4-architect-mcp demo replay
 ```
 
-The command prints paths to a Markdown report and two diagrams. Open the report for all six outcomes, including a failed write. The demo uses a local simulation and a bundled event. [Read the sample report](examples/three-tier-kafka-oracle/replay/results/report.md)
+The demo simulates one event locally. It prints paths to a Markdown report and two diagrams. Each diagram pairs a successful write with a restart after Oracle commits. With the bridge before Kafka, the application owns the checkpoint. With the bridge after Kafka, the bridge owns it. [Bridge before Kafka](examples/three-tier-kafka-oracle/replay/results/before-kafka.svg) · [Bridge after Kafka](examples/three-tier-kafka-oracle/replay/results/after-kafka.svg) · [Six-case report, including failed writes](examples/three-tier-kafka-oracle/replay/results/report.md)
 
 <details>
 <summary>Prefer running from a source checkout?</summary>
@@ -50,7 +50,7 @@ Open Codex with the walkthrough skill available. Start with a sentence about who
 
 > Walk through my system. Our web app receives orders from Kafka and stores them in Oracle. Draw the first diagram and ask me the question that matters most.
 
-Codex saves an editable overview, a rendered diagram, and a short `walkthrough.md` in your project. The first question depends on what you tell it. If the consumer is unclear, it can ask who reads from Kafka. Once you name the consumer, it can ask how that component knows the Oracle write committed.
+Codex saves an editable overview, a rendered diagram, and a short `walkthrough.md` in your project. The first question depends on what you tell it. If the consumer is unclear, it can ask who reads from Kafka. Once you name the consumer, it can ask how that component knows the Oracle write committed. [First-time results for both README paths](https://github.com/zrack/c4-architect-mcp/blob/v0.2.0-alpha.15/docs/reviews/alpha15-first-use/README.md)
 
 <details>
 <summary>Make the skill available in another project</summary>
@@ -416,7 +416,9 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 
 | Tool | Input | Result |
 | --- | --- | --- |
+| `review_architecture_walkthrough` | `manifestPath`, `scenarioPath`, `outputPath` | A Markdown report identifying the diagrams a design change affects, the supporting nodes or arrows, and open questions. |
 | `review_replay_walkthrough` | `scenarioPath`, `outputDirectory` | Six Kafka and Oracle replay traces, a Markdown report, and success and restart diagrams paired by checkpoint owner. |
+| `explain_architecture_file` | `targetDir`, `file`, `outputPath`. Optional `tsconfigPath`, `repository`, `commit`, `sourceRoot`, `maxNodes`, `maxEdges`. | A Markdown report and focused diagram of one file’s incoming and outgoing dependencies, with source locations and unresolved imports. |
 | `analyze_architectural_boundaries` | `targetDir`, `c4Level`; optional `configPath`, `tsconfigPath`, `outputPath`, `responseMode` | A saved graph, full response, or compact summary at the requested C4 level. |
 | `get_architecture_summary` | `graphPath` | A compact overview of a saved graph and its diagnostics. |
 | `query_architecture_graph` | `graphPath`; optional `nodeId`, `search`, `direction`, `maxDepth`, `maxNodes`, `maxEdges`, `maxBytes`, `includeEvidence` | A bounded neighborhood or search, with truncation reported. |

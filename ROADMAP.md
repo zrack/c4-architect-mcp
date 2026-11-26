@@ -14,7 +14,10 @@ The first release centers on TypeScript and TSX over local `stdio` MCP connectio
 - Keep manual mapping in a separate versioned configuration, with stable declared identifiers.
 - Save a versioned graph; summarize it, query a bounded neighborhood, and compare snapshots.
 - Explain a file's direct dependencies or compare a PR's dependencies using commit-pinned source links. The opt-in GitHub Actions workflow delivers a Markdown report and a focused diagram when dependencies changed. [PR review workflow](https://github.com/zrack/c4-architect-mcp#run-the-review-in-github-actions)
-- Render C4 Context, Container, and Component views, with compact PNG/SVG output and interactive connection highlighting.
+- Render Context, Container, and Component views from a dependency graph. Authored models also support Code, System Landscape, Dynamic, and Deployment views. [Seven Trail Notes views](README.md#trail-notes-examples)
+- Follow named payloads across processes, external entities, and data stores in a data-flow diagram (alpha.13). [Kafka and Oracle RAC example](README.md#native-data-flow-diagrams)
+- Trace a design change to specific nodes and arrows across a walkthrough and see which decisions remain open (alpha.14). [Compare two bridge placements](README.md#kafka-and-oracle-rac-bridge-comparison)
+- Use `demo replay` to simulate success, a failed write, and a restart after commit in both bridge placements. Use the walkthrough skill with your own brief to create a first diagram and identify an open design question (alpha.15). [Try the example](README.md#try-the-example) · [Walk through my system](README.md#walk-through-my-system)
 - Export full-size PNG/SVG images with the current selection.
 - Maintain parser, graph, MCP, package, and browser layout regression checks.
 - Prepare documentation, licensing, contribution guidance, and CI for a public alpha.
