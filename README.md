@@ -8,7 +8,55 @@ C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io
 
 **Published alpha · 0.2.0-alpha.14 · TypeScript / TSX · Local parsing · MIT licensed**
 
-[Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#c4-diagrams) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
+[Try the example](#try-the-example) · [Walk through my system](#walk-through-my-system) · [Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#c4-diagrams) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
+
+## Try the example
+
+**What happens if Oracle saves an event and the consumer restarts?** In the example below, Kafka sends the event again. The application finds the row it already saved, acknowledges the write, and the bridge can advance its checkpoint. Follow steps 5–11 on the right. [Open the full-size diagram](examples/three-tier-kafka-oracle/replay/results/after-kafka.svg)
+
+[![Successful delivery beside a restart after Oracle commits. The integration bridge owns the Kafka checkpoint in both cases.](examples/three-tier-kafka-oracle/replay/results/after-kafka.png)](examples/three-tier-kafka-oracle/replay/results/after-kafka.svg)
+
+Try this prompt in Codex from a checkout of the alpha.15 development build.
+
+> Try the Kafka and Oracle replay example. Show me what happens if Oracle saves the event and the consumer restarts. Who owns the checkpoint in each bridge placement?
+
+The installed alpha.15 CLI runs the same example from any folder.
+
+```sh
+c4-architect-mcp demo replay
+```
+
+The command prints paths to a Markdown report and two diagrams. Open the report for all six outcomes, including a failed write. The demo uses a local simulation and a bundled event. [Read the sample report](examples/three-tier-kafka-oracle/replay/results/report.md)
+
+<details>
+<summary>First time running the alpha.15 development build?</summary>
+
+Use Node.js 22 or newer. These commands build and run the example from this alpha.15 checkout.
+
+```sh
+npm ci
+npm run build
+node dist/index.js demo replay
+```
+
+To use the short command from other folders, run `npm install -g .` in the same built checkout. The public [npm alpha](https://www.npmjs.com/package/c4-architect-mcp) is currently alpha.14.
+
+</details>
+
+## Walk through my system
+
+Open Codex with the walkthrough skill available. Start with a sentence about who sends something, who receives it, and what happens next.
+
+> Walk through my system. Our web app receives orders from Kafka and stores them in Oracle. Draw the first diagram and ask me the question that matters most.
+
+Codex saves an editable overview, a rendered diagram, and a short `walkthrough.md` in your project. The first question depends on what you tell it. If the consumer is unclear, it can ask who reads from Kafka. Once you name the consumer, it can ask how that component knows the Oracle write committed.
+
+<details>
+<summary>Make the skill available in another project</summary>
+
+In the built alpha.15 checkout, Codex discovers `.agents/skills/solution-architect-walkthrough` automatically. To use it in your own project, install the CLI with `npm install -g .` from that checkout. Then copy the [solution-architect-walkthrough folder](.agents/skills/solution-architect-walkthrough) into your project's `.agents/skills/` directory and open a new Codex chat there. You can explicitly select `$solution-architect-walkthrough` with your description.
+
+</details>
 
 ## Solution architect walkthrough
 
@@ -44,6 +92,16 @@ c4-architect-mcp review-walkthrough "$example/walkthrough.json" "$example/walkth
 Open this repository in Codex to use the prompt above. Codex discovers the skill in the checkout’s `.agents/skills` directory.
 
 Through MCP, call `review_architecture_walkthrough` with `manifestPath`, `scenarioPath`, and `outputPath`. Each review checks the authored evidence against the saved diagram models. To apply it to another system, see the [manifest and scenario format](.agents/skills/solution-architect-walkthrough/references/walkthrough-format.md).
+
+### What happens if the consumer restarts after Oracle commits?
+
+The [one-command demo](#try-the-example) runs both bridge placements. To change the event or acknowledgment policy, copy the [editable scenario](examples/three-tier-kafka-oracle/replay/scenario.json) and pass its path to `review-replay`. The command below runs the bundled input from a built alpha.15 checkout.
+
+```sh
+node dist/index.js review-replay examples/three-tier-kafka-oracle/replay/scenario.json --out output/replay
+```
+
+The fixture models persistence and restarts in memory. To try a design where the meaning of an acknowledgment is still open, set `bridgeAcknowledgment` to `unspecified` and compare the downstream checkpoint.
 
 ## What changed in this PR?
 
@@ -357,6 +415,7 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 
 | Tool | Input | Result |
 | --- | --- | --- |
+| `review_replay_walkthrough` | `scenarioPath`, `outputDirectory` | Six Kafka and Oracle replay traces, a Markdown report, and success and restart diagrams paired by checkpoint owner. |
 | `analyze_architectural_boundaries` | `targetDir`, `c4Level`; optional `configPath`, `tsconfigPath`, `outputPath`, `responseMode` | A saved graph, full response, or compact summary at the requested C4 level. |
 | `get_architecture_summary` | `graphPath` | A compact overview of a saved graph and its diagnostics. |
 | `query_architecture_graph` | `graphPath`; optional `nodeId`, `search`, `direction`, `maxDepth`, `maxNodes`, `maxEdges`, `maxBytes`, `includeEvidence` | A bounded neighborhood or search, with truncation reported. |

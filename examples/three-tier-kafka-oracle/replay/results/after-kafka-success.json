@@ -1,0 +1,65 @@
+{
+  "title": "Bridge after Kafka · Successful delivery",
+  "caption": "Event evt-1042. Integration bridge owns the Kafka checkpoint.",
+  "c4Level": "C4Dynamic",
+  "nodes": [
+    {
+      "id": "kafka",
+      "label": "Kafka",
+      "type": "System_Ext"
+    },
+    {
+      "id": "bridge",
+      "label": "Integration bridge",
+      "type": "Container"
+    },
+    {
+      "id": "application",
+      "label": "Application server",
+      "type": "Container"
+    },
+    {
+      "id": "oracle",
+      "label": "Oracle RAC datastore",
+      "type": "ContainerDb"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "kafka",
+      "to": "bridge",
+      "label": "Read offset 41",
+      "description": "Attempt 1. Oracle rows: 0. Kafka next offset: 41."
+    },
+    {
+      "from": "bridge",
+      "to": "application",
+      "label": "Deliver event to application",
+      "description": "Attempt 1. Oracle rows: 0. Kafka next offset: 41."
+    },
+    {
+      "from": "application",
+      "to": "oracle",
+      "label": "Write row by event ID",
+      "description": "Attempt 1. Oracle rows: 0. Kafka next offset: 41."
+    },
+    {
+      "from": "oracle",
+      "to": "application",
+      "label": "Commit one Oracle row",
+      "description": "Attempt 1. Oracle rows: 1. Kafka next offset: 41."
+    },
+    {
+      "from": "application",
+      "to": "bridge",
+      "label": "Confirm durable write",
+      "description": "Attempt 1. Oracle rows: 1. Kafka next offset: 41."
+    },
+    {
+      "from": "bridge",
+      "to": "kafka",
+      "label": "Commit next offset 42",
+      "description": "Attempt 1. Oracle rows: 1. Kafka next offset: 42."
+    }
+  ]
+}

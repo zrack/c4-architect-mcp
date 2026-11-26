@@ -1,0 +1,16 @@
+{
+  "title": "From Kafka order to billing record",
+  "c4Level": "DataFlow",
+  "nodes": [
+    { "id": "kafka", "label": "Kafka", "type": "DataStore" },
+    { "id": "bridge", "label": "Fulfillment bridge", "type": "Process" },
+    { "id": "billing", "label": "Billing app", "type": "Process" },
+    { "id": "oracle", "label": "Oracle", "type": "DataStore" }
+  ],
+  "relationships": [
+    { "from": "kafka", "to": "bridge", "label": "Order consumed directly by bridge" },
+    { "from": "bridge", "to": "billing", "label": "Sends order" },
+    { "from": "billing", "to": "bridge", "label": "Immediately acknowledges receipt" },
+    { "from": "billing", "to": "oracle", "label": "Stores order" }
+  ]
+}

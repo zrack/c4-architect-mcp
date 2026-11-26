@@ -1,0 +1,83 @@
+{
+  "title": "Bridge before Kafka · Restart after commit",
+  "caption": "Event evt-1042. Application server owns the Kafka checkpoint.",
+  "c4Level": "C4Dynamic",
+  "nodes": [
+    {
+      "id": "bridge",
+      "label": "Integration bridge",
+      "type": "Container"
+    },
+    {
+      "id": "kafka",
+      "label": "Kafka",
+      "type": "System_Ext"
+    },
+    {
+      "id": "application",
+      "label": "Application server",
+      "type": "Container"
+    },
+    {
+      "id": "oracle",
+      "label": "Oracle RAC datastore",
+      "type": "ContainerDb"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "bridge",
+      "to": "kafka",
+      "label": "Publish event to Kafka",
+      "description": "Attempt 1. Oracle rows: 0. Kafka next offset: 41."
+    },
+    {
+      "from": "kafka",
+      "to": "application",
+      "label": "Read offset 41",
+      "description": "Attempt 1. Oracle rows: 0. Kafka next offset: 41."
+    },
+    {
+      "from": "application",
+      "to": "oracle",
+      "label": "Write row by event ID",
+      "description": "Attempt 1. Oracle rows: 0. Kafka next offset: 41."
+    },
+    {
+      "from": "oracle",
+      "to": "application",
+      "label": "Commit one Oracle row",
+      "description": "Attempt 1. Oracle rows: 1. Kafka next offset: 41."
+    },
+    {
+      "from": "application",
+      "to": "application",
+      "label": "Restart before checkpoint",
+      "description": "Attempt 1. Oracle rows: 1. Kafka next offset: 41."
+    },
+    {
+      "from": "kafka",
+      "to": "application",
+      "label": "Replay offset 41",
+      "description": "Attempt 2. Oracle rows: 1. Kafka next offset: 41."
+    },
+    {
+      "from": "application",
+      "to": "oracle",
+      "label": "Write row by event ID",
+      "description": "Attempt 2. Oracle rows: 1. Kafka next offset: 41."
+    },
+    {
+      "from": "oracle",
+      "to": "application",
+      "label": "Find existing row by event ID",
+      "description": "Attempt 2. Oracle rows: 1. Kafka next offset: 41."
+    },
+    {
+      "from": "application",
+      "to": "kafka",
+      "label": "Commit next offset 42",
+      "description": "Attempt 2. Oracle rows: 1. Kafka next offset: 42."
+    }
+  ]
+}

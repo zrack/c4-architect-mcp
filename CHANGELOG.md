@@ -2,6 +2,12 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased · 0.2.0-alpha.15
+
+- Try the bundled Kafka and Oracle example with `demo replay` from any folder. In Codex, describe your own system to get a first diagram and a focused design question.
+
+- Run `review-replay` or the `review_replay_walkthrough` MCP tool to see who can checkpoint Kafka after an Oracle write. The runnable example exercises both bridge placements through success, a failed write and a restart after commit. Its comparison diagrams and Markdown report use the same execution traces.
+
 ## 0.2.0-alpha.14 — 2026-11-25
 
 - Review a change to a solution design with `$solution-architect-walkthrough`. The `review-walkthrough` command and `review_architecture_walkthrough` MCP tool trace an authored claim to the nodes and arrows that depend on it and carry open questions into each scenario. The Kafka and Oracle RAC example compares two placements of an integration bridge.

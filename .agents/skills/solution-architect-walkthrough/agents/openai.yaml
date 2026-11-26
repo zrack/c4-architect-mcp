@@ -1,4 +1,4 @@
 interface:
   display_name: "Solution architect walkthrough"
-  short_description: "Trace design decisions across architecture views"
-  default_prompt: "Use $solution-architect-walkthrough to compare these alternatives against the same architecture. Show which diagrams need review, the evidence for each finding, and which questions stay open."
+  short_description: "Draw a system from a brief or try the replay example"
+  default_prompt: "Use $solution-architect-walkthrough to walk through my system from a short description and show me the first diagram and the key open question."

@@ -1,5 +1,29 @@
 # Walkthrough input format
 
+## First diagram
+
+From a text brief, author `overview.json` directly. For example, the statement “the returns app receives a return form and records the request” supports these flows:
+
+```json
+{
+  "title": "Recording a return request",
+  "c4Level": "DataFlow",
+  "nodes": [
+    { "id": "sender", "label": "Form sender", "type": "ExternalEntity" },
+    { "id": "app", "label": "Record return request", "type": "Process" },
+    { "id": "requests", "label": "Return requests", "type": "DataStore" }
+  ],
+  "relationships": [
+    { "from": "sender", "to": "app", "label": "Return form" },
+    { "from": "app", "to": "requests", "label": "Return request" }
+  ]
+}
+```
+
+For System Context, use `"c4Level": "C4Context"` and the applicable `Person`, `System` and `System_Ext` node types. Keep ownership or infrastructure that the brief leaves open in the walkthrough note.
+
+## Comparing alternatives
+
 A manifest records the baseline for one solution. A scenario describes one possible change to it. Put diagram models beside the manifest or in its subdirectories. The models use C4 Architect's existing authored diagram JSON format.
 
 ## Manifest
@@ -54,3 +78,19 @@ Give each view, claim, and question an ID within its list. Use `fact` for an ass
 An empty changes list is useful for reviewing a baseline. A change names the new value of an existing claim. A question closes only when its ID has an explicit answer. Keep independent alternatives in separate files so an answer from one cannot leak into another.
 
 The Kafka / Oracle example begins at `examples/three-tier-kafka-oracle/walkthrough.json` in this checkout or its npm package. Its `walkthrough/` directory holds both bridge scenarios. The generated reports are in `walkthrough/reports/`.
+
+## Replay scenario
+
+`review-replay` accepts a separate JSON input with one event ID and one Kafka partition offset. Use `examples/three-tier-kafka-oracle/replay/scenario.json` to run the bundled example.
+
+```json
+{
+  "schemaVersion": 1,
+  "event": { "id": "evt-1042", "offset": 41 },
+  "bridgeAcknowledgment": "after-commit"
+}
+```
+
+The example models a durable Oracle insert keyed by event ID. On redelivery, finding the committed ID satisfies the write without inserting another row. The Kafka checkpoint stores the **next** offset to read. The consumer may advance from 41 to 42 once it has evidence of the commit. For an upstream bridge, the application is that consumer. For a downstream bridge, `after-commit` means the application acknowledges persistence to the bridge, which owns the checkpoint. Set `bridgeAcknowledgment` to `unspecified` when the design gives no such promise. An acknowledgment on receipt also leaves persistence unconfirmed. Record what is known about receipt in the user's walkthrough. In the illustrative fixture the downstream checkpoint stays at 41 pending evidence of a durable write.
+
+Each run starts independently and processes the same event. The restart case retains the Oracle rows and Kafka checkpoint from the first attempt and loses the consumer's in-flight state. The failed-write case stops at the failure so the reviewer can inspect the offset before any retry.

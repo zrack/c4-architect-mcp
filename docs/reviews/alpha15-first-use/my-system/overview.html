@@ -1,0 +1,93 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>How an order reaches Oracle</title><style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#172b43;background:#f5f7fa}header{padding:14px 20px;background:white;border-bottom:1px solid #dbe2eb;display:flex;gap:16px;align-items:center;flex-wrap:wrap}h1{font-size:18px;margin:0;font-weight:600}header span{font-size:13px;color:#52657d}button{background:white;color:#183c6b;border:1px solid #afbed1;border-radius:5px;padding:7px 11px;cursor:pointer}main{display:grid;grid-template-columns:minmax(0,1fr) 310px;height:calc(100vh - 67px)}#canvas{overflow:auto;background:white;padding:12px}#canvas>svg{display:block;width:100%;height:auto;min-width:900px}aside{overflow:auto;padding:18px;background:#f5f7fa;border-left:1px solid #dbe2eb}aside h2{font-size:17px;margin:0 0 9px}aside p{font-size:13px;line-height:1.5;color:#52657d}#connections{padding-left:20px;font-size:13px;line-height:1.5}#connections li{margin:0 0 14px}#connections button{border:0;background:none;padding:0;text-align:left;line-height:1.5;color:#172b43}#connections small{display:block;color:#52657d}#details{white-space:pre-line}.legend{display:flex;gap:14px;font-size:12px;margin:12px 0}.legend span:first-child{color:#155dd5}.legend span:last-child{color:#a94a10}@media(max-width:900px){main{grid-template-columns:1fr;height:auto}#canvas{max-height:75vh}aside{border-left:0;border-top:1px solid #dbe2eb}}
+</style></head><body><header><h1>How an order reaches Oracle</h1><span>Select a node or arrow to trace its connections.</span><button id="reset-view">Show all</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="export-png" title="Save the full diagram at 2× resolution with current highlighting">Export PNG</button><button id="export-svg" title="Save the full scalable diagram with current highlighting">Export SVG</button><span id="export-status" role="status" aria-live="polite"></span></header><main><div id="canvas"><svg xmlns="http://www.w3.org/2000/svg" width="345" height="628" viewBox="0 0 345 628" data-engine="elk" role="img" aria-labelledby="diagram-title diagram-description"><title id="diagram-title">How an order reaches Oracle</title><desc id="diagram-description">3 elements and 2 labeled data flows. Each arrow points from the source of the data to its recipient.</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#4d657c"/></marker></defs><style>
+text{font-family:Arial,Helvetica,sans-serif;fill:#172b43}.diagram-title{font-weight:500}.node rect{fill:#e7f0fb;stroke:#5381b7;stroke-width:1.2}.node.external rect{fill:#f0f2f5;stroke:#818d9d}.node-kind,.node-technology{fill:#4a5e76}.edge-halo,.flowchart-link{fill:none;stroke-linejoin:round}.edge-halo{stroke:white;stroke-width:5}.flowchart-link{stroke:#4d657c;stroke-width:1.5}.edgeLabel rect{fill:white}.node:focus rect{stroke:#174fbb;stroke-width:2.5}.node{cursor:pointer}.edge,.edgeLabel{cursor:pointer}.dimmed{opacity:.12}.selected rect{stroke:#174fbb;stroke-width:2.5}.outgoing .flowchart-link{stroke:#155dd5;stroke-width:2.5}.incoming .flowchart-link{stroke:#a94a10;stroke-width:2.5}.outgoing .edge-label-text{fill:#124da7}.incoming .edge-label-text{fill:#8f3e0d}
+.deployment-boundary{pointer-events:none}.deployment-boundary rect{fill:#f6faff;stroke:#6b829c;stroke-width:1.2;stroke-dasharray:6 4}.node[data-dfd-type="DataStore"] rect{fill:#edf6f1;stroke:none}.store-rails{fill:none;stroke:#37715b;stroke-width:2}.node:focus .store-rails,.node.selected .store-rails{stroke:#174fbb;stroke-width:3}
+</style><rect class="background" width="100%" height="100%" fill="white"/><text class="diagram-title" x="172.5" y="28" font-size="21" text-anchor="middle"><tspan x="172.5" dy="0">How an order reaches Oracle</tspan></text><text x="172.5" y="55" text-anchor="middle" font-size="12">3 elements · 2 data flows · Arrows point to the recipient</text><g class="edge" data-edge-id="R01"><title>R01: kafka → app. Incoming order</title><path class="edge-halo" d="M199,188 L199,304"/><path class="flowchart-link" id="R01" data-edge-id="R01" d="M199,188 L199,304" marker-end="url(#arrow)"/></g><g class="edge" data-edge-id="R02"><title>R02: app → oracle. Writes order</title><path class="edge-halo" d="M199,388 L199,504"/><path class="flowchart-link" id="R02" data-edge-id="R02" d="M199,388 L199,504" marker-end="url(#arrow)"/></g><g class="node external" data-dfd-type="ExternalEntity" id="component-n0" data-node-id="kafka" tabindex="0" role="button" aria-label="Show connections for Kafka"><title>Kafka</title><rect x="109" y="104" width="180" height="84" rx="0"/><text class="node-kind" x="199" y="121" font-size="11" text-anchor="middle"><tspan x="199" dy="0">External entity</tspan></text><text class="node-title" x="199" y="142" font-size="16" text-anchor="middle"><tspan x="199" dy="0">Kafka</tspan></text><text class="node-technology" x="199" y="164" font-size="12" text-anchor="middle"></text></g><g class="node" data-dfd-type="Process" id="component-n1" data-node-id="app" tabindex="0" role="button" aria-label="Show connections for Web app"><title>Web app</title><rect x="109" y="304" width="180" height="84" rx="18"/><text class="node-kind" x="199" y="321" font-size="11" text-anchor="middle"><tspan x="199" dy="0">Process</tspan></text><text class="node-title" x="199" y="342" font-size="16" text-anchor="middle"><tspan x="199" dy="0">Web app</tspan></text><text class="node-technology" x="199" y="364" font-size="12" text-anchor="middle"></text></g><g class="node" data-dfd-type="DataStore" id="component-n2" data-node-id="oracle" tabindex="0" role="button" aria-label="Show connections for Oracle"><title>Oracle</title><rect x="109" y="504" width="180" height="84" rx="0"/><path class="store-rails" d="M109,504h180 M109,588h180"/><text class="node-kind" x="199" y="521" font-size="11" text-anchor="middle"><tspan x="199" dy="0">Data store</tspan></text><text class="node-title" x="199" y="542" font-size="16" text-anchor="middle"><tspan x="199" dy="0">Oracle</tspan></text><text class="node-technology" x="199" y="564" font-size="12" text-anchor="middle"></text></g><g class="edgeLabel" data-edge-id="R01"><title>R01: Incoming order</title><g class="label" data-id="R01"><rect x="56" y="233" width="141" height="26" rx="3"/><text class="edge-label-text" x="126.5" y="249" font-size="14" text-anchor="middle"><tspan x="126.5" dy="0">R01 Incoming order</tspan></text></g></g><g class="edgeLabel" data-edge-id="R02"><title>R02: Writes order</title><g class="label" data-id="R02"><rect x="74" y="433" width="123" height="26" rx="3"/><text class="edge-label-text" x="135.5" y="449" font-size="14" text-anchor="middle"><tspan x="135.5" dy="0">R02 Writes order</tspan></text></g></g></svg></div><aside aria-live="polite"><h2 id="selection-title">All connections</h2><p id="details">Select a node to highlight its incoming and outgoing arrows. Select an arrow or relationship below to isolate it.</p><div class="legend"><span>Blue: outgoing</span><span>Brown: incoming</span></div><ol id="connections"></ol></aside></main><script>
+const graph={"width":345,"height":628,"direction":"DOWN","nodes":[{"id":"kafka","label":"Kafka","type":"ExternalEntity","alias":"n0","x":109,"y":104,"width":180,"height":84,"titleLines":["Kafka"],"technologyLines":[]},{"id":"app","label":"Web app","type":"Process","alias":"n1","x":109,"y":304,"width":180,"height":84,"titleLines":["Web app"],"technologyLines":[]},{"id":"oracle","label":"Oracle","type":"DataStore","alias":"n2","x":109,"y":504,"width":180,"height":84,"titleLines":["Oracle"],"technologyLines":[]}],"relationships":[{"id":"R01","from":"kafka","to":"app","label":"Incoming order","displayLines":["R01 Incoming order"],"points":[{"x":199,"y":188},{"x":199,"y":304}],"labelBox":{"x":56,"y":233,"width":141,"height":26}},{"id":"R02","from":"app","to":"oracle","label":"Writes order","displayLines":["R02 Writes order"],"points":[{"x":199,"y":388},{"x":199,"y":504}],"labelBox":{"x":74,"y":433,"width":123,"height":26}}]};
+const root=document.querySelector('#canvas svg'),title=document.getElementById('selection-title'),details=document.getElementById('details'),list=document.getElementById('connections');
+let locked=null,zoom=1;
+const nodes=new Map(graph.nodes.map(node=>[node.id,node]));
+function show(selection){
+ const related=selection?.kind==='node'?graph.relationships.filter(edge=>edge.from===selection.id||edge.to===selection.id):selection?.kind==='edge'?graph.relationships.filter(edge=>edge.id===selection.id):graph.relationships;
+ const ids=new Set(related.map(edge=>edge.id)),visibleNodes=new Set(related.flatMap(edge=>[edge.from,edge.to]));
+ if(selection?.kind==='node')visibleNodes.add(selection.id);
+ root.querySelectorAll('.node').forEach(element=>{const id=element.dataset.nodeId;element.classList.toggle('dimmed',!!selection&&!visibleNodes.has(id));element.classList.toggle('selected',selection?.kind==='node'&&id===selection.id);});
+ root.querySelectorAll('.edge,.edgeLabel').forEach(element=>{const edge=graph.relationships.find(edge=>edge.id===element.dataset.edgeId),active=ids.has(edge.id);element.classList.toggle('dimmed',!!selection&&!active);element.classList.toggle('outgoing',!!selection&&active&&(selection.kind==='edge'||edge.from===selection.id));element.classList.toggle('incoming',!!selection&&active&&selection.kind==='node'&&edge.to===selection.id&&edge.from!==selection.id);});
+ const node=selection?.kind==='node'?nodes.get(selection.id):null,edge=selection?.kind==='edge'?related[0]:null;
+ title.textContent=node?.label??(edge?edge.id+' · '+edge.label:'All connections');details.textContent=node?[node.technology,node.description,related.length+' connected relationships'].filter(Boolean).join('\n'):edge?[nodes.get(edge.from).label+' → '+nodes.get(edge.to).label,edge.technology,edge.description].filter(Boolean).join('\n'):'Select a node to highlight its incoming and outgoing arrows. Select an arrow or relationship below to isolate it.';
+ list.replaceChildren();for(const edge of related){const item=document.createElement('li'),button=document.createElement('button'),small=document.createElement('small');button.textContent=edge.id+' · '+nodes.get(edge.from).label+' → '+nodes.get(edge.to).label;small.textContent=edge.label+(edge.technology?' · '+edge.technology:'');button.append(small);button.addEventListener('click',()=>{locked={kind:'edge',id:edge.id};show(locked);});item.append(button);const sources=document.getElementById('sources-'+edge.id);if(sources)item.append(sources.content.cloneNode(true));list.append(item);}
+}
+root.querySelectorAll('.node').forEach(element=>{const select=()=>{locked={kind:'node',id:element.dataset.nodeId};show(locked);};element.addEventListener('click',select);element.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}});element.addEventListener('mouseenter',()=>{if(!locked)show({kind:'node',id:element.dataset.nodeId});});element.addEventListener('mouseleave',()=>{if(!locked)show(null);});});
+root.querySelectorAll('.edge,.edgeLabel').forEach(element=>element.addEventListener('click',()=>{locked={kind:'edge',id:element.dataset.edgeId};show(locked);}));
+function reset(){locked=null;show(null);}document.getElementById('reset-view').addEventListener('click',reset);document.addEventListener('keydown',event=>{if(event.key==='Escape')reset();});root.querySelector('.background').addEventListener('click',reset);
+function setZoom(value){zoom=Math.max(.5,Math.min(3,value));root.style.width=zoom*100+'%';root.style.minWidth=zoom*900+'px';}document.getElementById('zoom-in').addEventListener('click',()=>setZoom(zoom*1.25));document.getElementById('zoom-out').addEventListener('click',()=>setZoom(zoom/1.25));show(null);
+
+const exportPngButton=document.getElementById('export-png');
+const exportSvgButton=document.getElementById('export-svg');
+const exportStatus=document.getElementById('export-status');
+function exportSlug(value,fallback){
+ return String(value).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80)||fallback;
+}
+function captureDiagramExport(){
+ const bounds=root.viewBox.baseVal;
+ const width=Math.ceil(bounds.width),height=Math.ceil(bounds.height);
+ if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)throw new Error('The diagram has no valid export dimensions.');
+ const clone=root.cloneNode(true);
+ // CSS zoom and scrolling affect the view only, never the exported diagram.
+ clone.removeAttribute('style');
+ clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+ clone.setAttribute('width',String(width));clone.setAttribute('height',String(height));
+ clone.setAttribute('viewBox',[bounds.x,bounds.y,bounds.width,bounds.height].join(' '));
+ const selectedNode=root.querySelector('.node.selected')?.getAttribute('data-node-id');
+ const scope=selectedNode?'node-'+exportSlug(selectedNode,'component'):locked?.kind==='edge'?'edge-'+exportSlug(locked.id,'relationship'):'all';
+ const filename=exportSlug(document.title,'c4-diagram').toLowerCase()+'-'+scope;
+ return {width,height,filename,source:new XMLSerializer().serializeToString(clone)};
+}
+function downloadDiagramBlob(blob,filename){
+ const url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download=filename;link.hidden=true;document.body.append(link);
+ try{link.click();}finally{
+  link.remove();
+  // Keep the URL alive long enough for browsers to begin reading the download.
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+ }
+}
+async function rasterizeDiagram(snapshot){
+ await document.fonts.ready;
+ const scale=2,width=snapshot.width*scale,height=snapshot.height*scale;
+ if(width>32767||height>32767||width*height>64000000)throw new Error('This diagram is too large for PNG. Use Export SVG for the full diagram.');
+ const url=URL.createObjectURL(new Blob([snapshot.source],{type:'image/svg+xml;charset=utf-8'}));
+ try{
+  const image=new Image();
+  await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error('The diagram image could not be loaded for PNG export.'));image.src=url;});
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const context=canvas.getContext('2d');
+  if(!context)throw new Error('PNG export is unavailable in this browser. Use Export SVG instead.');
+  context.fillStyle='#ffffff';context.fillRect(0,0,width,height);context.drawImage(image,0,0,width,height);
+  const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('PNG export failed. Use Export SVG instead.')),'image/png'));
+  return {blob,width,height};
+ }finally{URL.revokeObjectURL(url);}
+}
+async function exportDiagram(format){
+ if(exportPngButton.disabled||exportSvgButton.disabled)return;
+ exportPngButton.disabled=true;exportSvgButton.disabled=true;exportStatus.textContent='Preparing '+format.toUpperCase()+'…';
+ try{
+  // Capture the selection and filename before any await. Later UI changes must
+  // not change an export that is already in progress.
+  const snapshot=captureDiagramExport();
+  if(format==='svg'){
+   downloadDiagramBlob(new Blob([snapshot.source],{type:'image/svg+xml;charset=utf-8'}),snapshot.filename+'.svg');
+   exportStatus.textContent='SVG download started ('+snapshot.width+' × '+snapshot.height+').';
+  }else{
+   const result=await rasterizeDiagram(snapshot);
+   downloadDiagramBlob(result.blob,snapshot.filename+'.png');
+   exportStatus.textContent='PNG download started ('+result.width+' × '+result.height+').';
+  }
+ }catch(error){exportStatus.textContent='Export failed: '+(error instanceof Error?error.message:'Please try again.');}
+ finally{exportPngButton.disabled=false;exportSvgButton.disabled=false;}
+}
+exportPngButton.addEventListener('click',()=>exportDiagram('png'));
+exportSvgButton.addEventListener('click',()=>exportDiagram('svg'));
+
+</script></body></html>
