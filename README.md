@@ -6,7 +6,7 @@
 
 C4 Architect is a local [Model Context Protocol](https://modelcontextprotocol.io/) server that turns source imports into a versioned dependency graph, lets you review and name its architectural boundaries, and produces compact C4 diagrams. Use it from Codex, Claude Code, Claude Desktop, or another client that supports local MCP servers over `stdio`.
 
-**Published alpha · 0.2.0-alpha.16 · TypeScript / TSX · Local parsing · MIT licensed**
+**Published alpha · [0.2.0-alpha.16](https://github.com/zrack/c4-architect-mcp/releases/tag/v0.2.0-alpha.16) · TypeScript / TSX · Local parsing · MIT licensed**
 
 [Try the example](#try-the-example) · [Walk through my system](#walk-through-my-system) · [What depends on this file?](#what-depends-on-this-file) · [Get started](#get-started) · [npm package](https://www.npmjs.com/package/c4-architect-mcp) · [See the diagrams](#c4-diagrams) · [Contribute](https://github.com/zrack/c4-architect-mcp/blob/main/CONTRIBUTING.md) · [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
@@ -127,6 +127,8 @@ The editor has one direct importer and 18 outgoing import statements. Ten of tho
 
 <a href="https://raw.githubusercontent.com/zrack/c4-architect-mcp/62d94bfb4fd4c17d9b5ca157eb5a07f13eb4da73/examples/takenote/NoteEditor.focus-fc1052d6a7d39748.png"><img src="https://raw.githubusercontent.com/zrack/c4-architect-mcp/62d94bfb4fd4c17d9b5ca157eb5a07f13eb4da73/examples/takenote/NoteEditor.focus-fc1052d6a7d39748.png" alt="TakeNoteApp imports NoteEditor, which imports PreviewEditor and 12 other modules or packages. Each arrow has an ID that matches the source report." width="700"></a>
 
+Planning a change to the editor? The file-impact report follows its callers beyond the first import, from `TakeNoteApp.tsx` through `App.tsx` to the client entry point. [Trace the callers](#what-depends-on-this-file)
+
 <details>
 <summary><strong>Try it on your project or reproduce the TakeNote example</strong></summary>
 
@@ -171,6 +173,7 @@ The result is a starting point for application and solution architecture review.
 | Versioned graph and source evidence | Save a graph for review, with source locations, file hashes, and analysis diagnostics. |
 | Explicit boundary mapping | Give systems, containers, and components stable names through a separate configuration file. |
 | Summary, neighborhood queries, and comparison | Inspect a saved graph without returning the entire graph every time. |
+| [File impact](#what-depends-on-this-file) | Find direct and indirect importers before changing a file. Follow each reported path to its source lines. |
 | Context, Container, and Component diagrams | Render a graph projection or a graph supplied by the caller. |
 | Deployment, Dynamic, System Landscape, and Code diagrams | Render explicit nodes and relationships supplied by the caller. |
 | [Data-flow diagrams](#native-data-flow-diagrams) | Follow named payloads between external entities, processes and data stores. |
@@ -180,7 +183,7 @@ Export native shapes, nested deployment groups, and connector labels that you ca
 
 Export a Structurizr DSL workspace with up to four views of the same model. [Structurizr DSL export](#export-a-structurizr-dsl-workspace)
 
-Preview a diagram bundle as an Azure DevOps Wiki page and publish it with its PNG attachments. [Preview and publish a wiki page](#publish-to-azure-devops-wiki)
+Preview a diagram bundle locally, then publish its page and PNGs to a documentation workspace. [Azure DevOps Wiki](#publish-to-azure-devops-wiki) · [Confluence Cloud](#publish-to-confluence-cloud) · [Notion](#publish-to-notion)
 
 Cross-repository mapping, additional languages, and assisted threat modeling are planned. [Roadmap](https://github.com/zrack/c4-architect-mcp/blob/main/ROADMAP.md)
 
@@ -422,7 +425,7 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 | `analyze_architectural_boundaries` | `targetDir`, `c4Level`; optional `configPath`, `tsconfigPath`, `outputPath`, `responseMode` | A saved graph, full response, or compact summary at the requested C4 level. |
 | `get_architecture_summary` | `graphPath` | A compact overview of a saved graph and its diagnostics. |
 | `query_architecture_graph` | `graphPath`; optional `nodeId`, `search`, `direction`, `maxDepth`, `maxNodes`, `maxEdges`, `maxBytes`, `includeEvidence` | A bounded neighborhood or search, with truncation reported. |
-| `analyze_file_impact` | `targetDir`, `file`, `outputPath`; optional `maxDepth`, `maxNodes` | Direct and indirect importers grouped by distance, with a source-linked path for each file shown. |
+| `analyze_file_impact` | `targetDir`, `file`, `outputPath`. Optional `tsconfigPath`, `maxDepth`, `maxNodes`. For GitHub links, supply `repository` and `commit` together, plus `sourceRoot` when scanning a subdirectory. | Direct and indirect importers grouped by distance, with a source-linked path for each file shown. |
 | `compare_architecture_graphs` | `beforePath`, `afterPath`; optional `limit`, `maxBytes` | Change counts and bounded details for snapshots at the same C4 level. |
 | `render_architecture_graph` | `graphPath`; optional `title`, `outputPath`, `focus`, `format` | Render a saved graph or a focused neighborhood. Use `format: "drawio"` for editable XML. |
 | `render_c4_mermaid` | `title`, `c4Level`, `nodes`, `relationships`, optional `outputPath` | Mermaid source and a compact server-rendered PNG; saved SVG, PNG, HTML, and Markdown when requested. |
@@ -818,7 +821,7 @@ See [image provenance and regeneration instructions](https://github.com/zrack/c4
 
 The parser reads local source files and does not call an LLM API. Generated diagrams and their interaction code are self-contained. Your MCP client receives the tool results, and its own settings determine whether those results are sent to a model or another service. Review those settings before analyzing private source.
 
-Analysis is static; it does not run the analyzed application's code. Output options write the requested graph and diagram files. See [SECURITY.md](https://github.com/zrack/c4-architect-mcp/blob/main/SECURITY.md) for the security scope and reporting process.
+Analysis reads the source statically and writes the requested artifacts locally. The wiki and workspace publishers also default to a local preview. With an explicit publish request and destination, they upload the generated page and diagram images. [Publishing scope and credentials](https://github.com/zrack/c4-architect-mcp/blob/main/SECURITY.md#publishing-diagrams)
 
 ## Develop and verify
 

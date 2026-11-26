@@ -1,7 +1,14 @@
-# Source-backed order-processing example
+# Examples
 
-For a runnable example that connects Component and Code diagrams to a retry, see
-[Trail Notes](trail-notes/README.md).
+| What do you want to investigate? | Example |
+| --- | --- |
+| What imports a file directly, and what does that file import? | [TakeNote editor dependency report](takenote/NoteEditor.md) |
+| Which callers should I review before changing a file? | [TakeNote editor impact report](takenote/impact/NoteEditor.md) and [focused diagram](takenote/impact/NoteEditor.focus-7b1dcac22e33c69b.png) |
+| How does a note submission recover from a timeout? | [Runnable Trail Notes example with Component and Code diagrams](trail-notes/README.md) |
+| Who owns the Kafka checkpoint if a consumer restarts after an Oracle commit? | [Six-case replay report and diagrams](three-tier-kafka-oracle/replay/results/report.md) |
+| How do I map source files to named components? | [Order-processing example](#source-backed-order-processing-example) |
+
+## Source-backed order-processing example
 
 This small synthetic TypeScript application demonstrates the analyzer's local
 evidence and boundary mapping. It is not a deployed service. Payments and stock
@@ -16,7 +23,7 @@ The source contains:
 - A literal dynamic import through the inventory barrel.
 - Five declared logical components inside one declared application container.
 
-## Generate and inspect the graph
+### Generate and inspect the graph
 
 Run these commands from the repository root after `npm ci`:
 
@@ -26,8 +33,8 @@ node dist/index.js analyze examples/order-service/src --level Component --config
 node dist/index.js render output/example-graph.json --out output/example.md
 ```
 
-The first command saves the versioned graph and prints a small summary. The
-second creates the compact diagram, SVG/PNG exports, and a self-contained HTML
+The `analyze` command saves the versioned graph and prints a summary. The
+`render` command creates the compact diagram, SVG/PNG exports, and a self-contained HTML
 view beside the Markdown. Open the HTML, select **Order orchestration**, and use
 **Export PNG** or **Export SVG** to save the current highlight state.
 
@@ -47,7 +54,7 @@ There are no external-service or database heuristics in this example: a local
 payment simulator is not labeled as a real payment provider, and the in-memory
 map is not labeled as PostgreSQL.
 
-## Type-check the sample
+### Type-check the sample
 
 ```sh
 npx tsc --project examples/order-service/tsconfig.json --noEmit

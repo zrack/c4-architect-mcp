@@ -8,6 +8,16 @@ Treat access to the server as access to the local files its process can read and
 
 The parser runs locally without an LLM API call. Saved interactive HTML, SVG, and PNG assets are self-contained. These properties do not imply that an MCP host will keep tool responses on the machine.
 
+## Publishing diagrams
+
+The publishing tools write a local preview by default. When you supply a destination and set `publish: true` in MCP or pass `--publish` on the CLI, the publisher sends the generated page content and diagram PNGs to that destination. The CLI or MCP server reads credentials from its process environment.
+
+| Destination | Content sent | Environment variables |
+| --- | --- | --- |
+| [Azure DevOps Wiki](README.md#publish-to-azure-devops-wiki) | Wiki page in Markdown and PNG attachments | Exactly one of `AZURE_DEVOPS_EXT_PAT` or `AZURE_DEVOPS_BEARER_TOKEN` |
+| [Confluence Cloud](README.md#publish-to-confluence-cloud) | Page in Confluence storage format and PNG attachments | `CONFLUENCE_EMAIL` and `CONFLUENCE_API_TOKEN` |
+| [Notion](README.md#publish-to-notion) | A new child page with text and uploaded diagram images | `NOTION_API_TOKEN` |
+
 ## Supported versions
 
 Security fixes target the latest alpha code. Older alpha snapshots are not maintained separately. Rebuild and reconnect a local server after updating it.

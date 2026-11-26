@@ -38,10 +38,14 @@ Generated fixtures and browser reports are under `output/playwright/component-sc
 
 | Location | Responsibility |
 | --- | --- |
-| `src/index.ts` | MCP tool contracts and local artifact writes. |
+| `src/index.ts` | MCP tool definitions and handlers. |
+| `src/cli.ts` | CLI commands, arguments, and output. |
+| `.agents/skills/` | The four skills bundled in the npm package, their prompts, and supporting files. |
 | `src/parsers/` | Source extraction and module resolution. |
 | `src/model/` | Versioned graph, boundary configuration, projections, and graph operations. |
-| `src/renderers/` | Mermaid export, compact layout, images, and interactive HTML. |
+| `src/renderers/` | Diagrams, exports, and source-linked Markdown reports. |
+| `src/publishers/` | Local previews and opt-in publishing to Azure DevOps Wiki, Confluence, and Notion. |
+| `examples/` | Runnable samples and reports, including the [TakeNote file-impact example](examples/takenote/impact/NoteEditor.md). |
 | `test/` | Contract and regression tests with small fixtures. |
 | `scripts/` | Build, packaging, and browser verification helpers. |
 | `docs/images/` | Repository documentation artwork and generated examples. |
@@ -64,7 +68,7 @@ Keep a pull request focused enough to explain in a few paragraphs. Describe the 
 Before requesting review:
 
 1. Run `npm test`.
-2. Run `npm run test:package` for runtime dependencies, packaging, or CLI changes.
+2. Run `npm run test:package` for changes to the bundled skills, runtime dependencies, packaging, or CLI.
 3. Run `npm run test:layout` for renderer or interaction changes.
 4. Update examples and documentation affected by the change.
 5. Check that generated artifacts contain no private source or machine-specific paths.

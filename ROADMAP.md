@@ -6,7 +6,7 @@ This is a direction, not a release schedule. Features marked planned are not ava
 
 ## 1. Trustworthy local foundation — current alpha
 
-The first release centers on TypeScript and TSX over local `stdio` MCP connections.
+The public alpha supports TypeScript and TSX through a local CLI and MCP server over `stdio`. [Current prerelease and installation instructions](https://github.com/zrack/c4-architect-mcp/releases/tag/v0.2.0-alpha.16)
 
 - Extract dependencies locally with Tree-sitter and resolve supported modules using project configuration.
 - Preserve source locations, file hashes, parse diagnostics, and unresolved dependencies.
@@ -21,7 +21,7 @@ The first release centers on TypeScript and TSX over local `stdio` MCP connectio
 - Trace direct and indirect importers of a TypeScript or TSX file with source evidence for every hop (alpha.16). [TakeNote file impact example](README.md#what-depends-on-this-file)
 - Export full-size PNG/SVG images with the current selection.
 - Maintain parser, graph, MCP, package, and browser layout regression checks.
-- Prepare documentation, licensing, contribution guidance, and CI for a public alpha.
+- Maintain the public examples and contribution guide alongside the CLI and MCP tools. [Examples](examples/README.md) · [Contributing](CONTRIBUTING.md)
 
 ## 2. Make repeated use practical — next
 
