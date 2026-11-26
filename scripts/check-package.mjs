@@ -15,7 +15,7 @@ const runNpm = (args, cwd = temporary) => run(process.execPath, [npmCli, ...args
 try {
   await runNpm(['run', 'build'], root);
   const [packed] = JSON.parse(await runNpm(['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], root));
-  const skills = ['explain-this-file', 'what-changed-in-this-pr', 'solution-architect-walkthrough'];
+  const skills = ['explain-this-file', 'what-changed-in-this-pr', 'what-depends-on-this-file', 'solution-architect-walkthrough'];
   const skillFiles = skills.flatMap(skill => ['SKILL.md', 'agents/openai.yaml'].map(file => `.agents/skills/${skill}/${file}`));
   const reviewHelper = '.agents/skills/what-changed-in-this-pr/scripts/review-commits.mjs';
   skillFiles.push(reviewHelper, '.agents/skills/solution-architect-walkthrough/references/walkthrough-format.md');
@@ -95,6 +95,12 @@ try {
   assert.equal(explanation.counts.incoming, 1);
   assert.equal(explanation.counts.outgoing, 0);
   assert.ok((await fs.stat(explanation.artifacts.png)).size > 100);
+  await fs.writeFile(path.join(temporary, 'src/app.ts'), 'export { result } from "./index.js";\n');
+  const impact = JSON.parse(await run(process.execPath, [entry, 'impact-file', 'src', 'value.ts', '--depth', '2', '--out', 'impact.md']));
+  assert.equal(impact.counts.direct, 1);
+  assert.equal(impact.counts.indirect, 1);
+  assert.ok((await fs.stat(impact.artifacts.png)).size > 100);
+  assert.ok((await fs.readFile(path.join(temporary, 'impact.md'), 'utf8')).includes('app.ts'));
   const fixture = path.join(temporary, 'review fixture');
   await fs.mkdir(fixture);
   const git = (...args) => run('git', ['-c', 'user.name=Package test', '-c', 'user.email=test@example.org',
@@ -120,5 +126,5 @@ try {
   assert.equal(await fs.readFile(path.join(fixture, 'consumer.ts'), 'utf8'), 'export const uncommitted = true;\n');
   assert.ok((await fs.stat(review.diagram.html)).size > 100);
   for (const extension of ['md','svg','png','html']) assert.ok((await fs.stat(path.join(temporary, `diagram.${extension}`))).size > 100);
-  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, rendering, PR review, both bridge placements and all six replay cases from the first-run shortcut.`);
+  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, rendering, PR review, file impact, both bridge placements and all six replay cases from the first-run shortcut.`);
 } finally { await fs.rm(temporary, { recursive: true, force: true }); }

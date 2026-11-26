@@ -22,7 +22,7 @@ The first release centers on TypeScript and TSX over local `stdio` MCP connectio
 - Maintain parser, graph, MCP, package, and browser layout regression checks.
 - Prepare documentation, licensing, contribution guidance, and CI for a public alpha.
 
-The checked-in code and tests are the source of truth for supported cases. Public availability and package publication are separate release steps.
+The `main` checkout also traces indirect importers of a file. Its report links each hop to the import statement and shows where a change could reach beyond the first caller. This feature is queued for a future npm release. [File impact example and instructions](README.md#what-depends-on-this-file)
 
 ## 2. Make repeated use practical — next
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "What depends on this file?"
+  short_description: "Trace direct and indirect importers to source lines"
+  default_prompt: "Use $what-depends-on-this-file to show which files I should review before changing this file and trace the imports that connect them."
