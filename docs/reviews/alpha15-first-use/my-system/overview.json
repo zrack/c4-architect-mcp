@@ -1,0 +1,13 @@
+{
+  "title": "How an order reaches Oracle",
+  "c4Level": "DataFlow",
+  "nodes": [
+    { "id": "kafka", "label": "Kafka", "type": "ExternalEntity" },
+    { "id": "app", "label": "Web app", "type": "Process" },
+    { "id": "oracle", "label": "Oracle", "type": "DataStore" }
+  ],
+  "relationships": [
+    { "from": "kafka", "to": "app", "label": "Incoming order" },
+    { "from": "app", "to": "oracle", "label": "Writes order" }
+  ]
+}
