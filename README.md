@@ -420,6 +420,8 @@ To name architectural boundaries, supply `configPath` explicitly. The [example c
 | `analyze_architectural_boundaries` | `targetDir`, `c4Level`; optional `configPath`, `tsconfigPath`, `outputPath`, `responseMode` | A saved graph, full response, or compact summary at the requested C4 level. |
 | `get_architecture_summary` | `graphPath` | A compact overview of a saved graph and its diagnostics. |
 | `query_architecture_graph` | `graphPath`; optional `nodeId`, `search`, `direction`, `maxDepth`, `maxNodes`, `maxEdges`, `maxBytes`, `includeEvidence` | A bounded neighborhood or search, with truncation reported. |
+| `explain_architecture_file` | `targetDir`, `file`, `outputPath` | One file's direct incoming and outgoing dependencies, with a diagram and import locations. |
+| `analyze_file_impact` (development checkout) | `targetDir`, `file`, `outputPath`; optional `maxDepth`, `maxNodes` | Direct and indirect importers grouped by distance, with a source-linked path for each file shown. |
 | `compare_architecture_graphs` | `beforePath`, `afterPath`; optional `limit`, `maxBytes` | Change counts and bounded details for snapshots at the same C4 level. |
 | `render_architecture_graph` | `graphPath`; optional `title`, `outputPath`, `focus`, `format` | Render a saved graph or a focused neighborhood. Use `format: "drawio"` for editable XML. |
 | `render_c4_mermaid` | `title`, `c4Level`, `nodes`, `relationships`, optional `outputPath` | Mermaid source and a compact server-rendered PNG; saved SVG, PNG, HTML, and Markdown when requested. |
@@ -635,6 +637,28 @@ For MCP, pass `focus` to `render_architecture_graph`. Find the ID with `query_ar
   }
 }
 ```
+
+### What depends on this file?
+
+Build the current `main` checkout to use file impact. The published `0.2.0-alpha.15` includes the direct file explanation. To trace indirect importers from source, ask Codex:
+
+> Use `$what-depends-on-this-file` on TakeNote’s `NoteEditor.tsx` in `src`. Which files should I review first if I change the editor? Link every step back to the source.
+
+The report starts with the files that import the editor directly. For each indirect dependent it shows a shortest path back to the editor and the source line for each hop. The default view follows up to three hops and includes up to 25 files, counting the selected file. It reports any limits or source-resolution gaps that affect the result.
+
+In the TakeNote example, start with `TakeNoteApp.tsx`: it imports the editor and renders it beside the note list. `App.tsx` and the client entry point reach the editor indirectly. The clean source scan covered 76 TypeScript and TSX files and marked unresolved references in the report. [Editor render site](https://github.com/taniarascia/takenote/blob/e0eddbb9a21ae4cf4c4c7c183f29cfd666e08331/src/client/containers/TakeNoteApp.tsx#L106) · [Focused diagram](examples/takenote/impact/NoteEditor.focus-7b1dcac22e33c69b.png)
+
+Use the checkout’s built CLI or its `analyze_file_impact` MCP tool. From the C4 Architect checkout, with TakeNote checked out at the revision below:
+
+```sh
+npm ci
+npm run build
+node dist/index.js impact-file /path/to/takenote/src client/containers/NoteEditor.tsx \
+  --out output/NoteEditor-impact.md --depth 3 --nodes 25 \
+  --github-repo taniarascia/takenote --commit e0eddbb9a21ae4cf4c4c7c183f29cfd666e08331 --source-root src
+```
+
+For another project or a working tree with local edits, substitute its source directory and target file. Omit the three GitHub link options to use local evidence. [Read the skill](.agents/skills/what-depends-on-this-file/SKILL.md) · [Read the generated TakeNote report](examples/takenote/impact/NoteEditor.md) · [Regression, performance, and architect walkthrough](docs/reviews/file-impact-qa/README.md)
 
 ### Review architecture changes for a pull request
 

@@ -2,6 +2,10 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
+## Unreleased
+
+- Trace direct and indirect dependents of a TypeScript or TSX file with `$what-depends-on-this-file`, the `impact-file` command, or the `analyze_file_impact` MCP tool. The focused diagram and Markdown report show a shortest import path to the selected file with source evidence for each hop.
+
 ## 0.2.0-alpha.15 — 2026-11-26
 
 - Try the bundled Kafka and Oracle example with `demo replay` from any folder. In Codex, describe your own system to get a first diagram and a focused design question.

@@ -1,0 +1,248 @@
+{
+  "runtime": "v24.22.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "takeNoteCommit": "e0eddbb9a21ae4cf4c4c7c183f29cfd666e08331",
+  "started": "2026-11-25T06:21:26.938Z",
+  "scenarios": [
+    {
+      "name": "trail-notes",
+      "files": 6,
+      "direct": 3,
+      "indirect": 2,
+      "displayLimit": 25,
+      "repetitionsPerMode": 10,
+      "firstMcpMs": 311,
+      "mcp": {
+        "samplesMs": [
+          120,
+          55,
+          58,
+          85,
+          87,
+          92,
+          54,
+          51,
+          48,
+          110
+        ],
+        "medianMs": 58,
+        "p95Ms": 120,
+        "budgetMs": 2000,
+        "passed": true
+      },
+      "cli": {
+        "samplesMs": [
+          831,
+          870,
+          820,
+          787,
+          798,
+          863,
+          772,
+          829,
+          785,
+          810
+        ],
+        "medianMs": 810,
+        "p95Ms": 870,
+        "budgetMs": 4000,
+        "passed": true
+      }
+    },
+    {
+      "name": "takenote",
+      "files": 76,
+      "direct": 1,
+      "indirect": 2,
+      "displayLimit": 25,
+      "repetitionsPerMode": 15,
+      "firstMcpMs": 320,
+      "mcp": {
+        "samplesMs": [
+          260,
+          249,
+          254,
+          225,
+          236,
+          260,
+          234,
+          238,
+          251,
+          207,
+          236,
+          255,
+          235,
+          224,
+          246
+        ],
+        "medianMs": 238,
+        "p95Ms": 260,
+        "budgetMs": 2000,
+        "passed": true
+      },
+      "cli": {
+        "samplesMs": [
+          1152,
+          1056,
+          1077,
+          1059,
+          1065,
+          1119,
+          1148,
+          1219,
+          1042,
+          1034,
+          1034,
+          1038,
+          1117,
+          1118,
+          967
+        ],
+        "medianMs": 1065,
+        "p95Ms": 1219,
+        "budgetMs": 4000,
+        "passed": true
+      }
+    },
+    {
+      "name": "large",
+      "files": 1001,
+      "direct": 40,
+      "indirect": 960,
+      "displayLimit": 25,
+      "repetitionsPerMode": 10,
+      "firstMcpMs": 463,
+      "mcp": {
+        "samplesMs": [
+          371,
+          404,
+          356,
+          425,
+          326,
+          349,
+          339,
+          330,
+          305,
+          2470
+        ],
+        "medianMs": 349,
+        "p95Ms": 2470,
+        "budgetMs": 8000,
+        "passed": true
+      },
+      "cli": {
+        "samplesMs": [
+          1058,
+          1078,
+          1073,
+          977,
+          1027,
+          1037,
+          1004,
+          998,
+          999,
+          1020
+        ],
+        "medianMs": 1020,
+        "p95Ms": 1078,
+        "budgetMs": 8000,
+        "passed": true
+      }
+    },
+    {
+      "name": "large-multiline",
+      "files": 1001,
+      "direct": 40,
+      "indirect": 960,
+      "displayLimit": 25,
+      "repetitionsPerMode": 5,
+      "firstMcpMs": 845,
+      "mcp": {
+        "samplesMs": [
+          598,
+          599,
+          546,
+          560,
+          604
+        ],
+        "medianMs": 598,
+        "p95Ms": 604,
+        "budgetMs": 8000,
+        "passed": true
+      },
+      "cli": {
+        "samplesMs": [
+          1417,
+          1384,
+          1260,
+          1264,
+          1541
+        ],
+        "medianMs": 1384,
+        "p95Ms": 1541,
+        "budgetMs": 8000,
+        "passed": true
+      }
+    },
+    {
+      "name": "large-expanded",
+      "files": 1001,
+      "direct": 40,
+      "indirect": 960,
+      "displayLimit": 100,
+      "repetitionsPerMode": 5,
+      "firstMcpMs": 676,
+      "mcp": {
+        "samplesMs": [
+          613,
+          574,
+          555,
+          571,
+          544
+        ],
+        "medianMs": 571,
+        "p95Ms": 613
+      },
+      "cli": {
+        "samplesMs": [
+          1333,
+          1203,
+          1243,
+          1328,
+          1271
+        ],
+        "medianMs": 1271,
+        "p95Ms": 1333
+      }
+    }
+  ],
+  "connectMs": 561,
+  "takeNoteBurst": {
+    "concurrentRequests": 4,
+    "batches": 4,
+    "samplesMs": [
+      860,
+      821,
+      803,
+      860,
+      880,
+      887,
+      827,
+      880,
+      854,
+      904,
+      864,
+      869,
+      890,
+      832,
+      852,
+      870
+    ],
+    "medianMs": 860,
+    "p95Ms": 904,
+    "budgetMs": 4000,
+    "passed": true
+  },
+  "finished": "2026-11-25T06:22:37.661Z"
+}

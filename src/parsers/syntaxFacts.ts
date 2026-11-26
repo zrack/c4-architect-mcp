@@ -19,12 +19,6 @@ export interface SourceFacts {
   parseStatus: "complete" | "partial";
 }
 
-function location(node: Parser.SyntaxNode, filePath: string, kind: string, specifier?: string, typeOnly?: boolean): SourceEvidence {
-  return { path: filePath, line: node.startPosition.row + 1, column: node.startPosition.column + 1,
-    endLine: node.endPosition.row + 1, endColumn: node.endPosition.column + 1, kind,
-    ...(specifier === undefined ? {} : { specifier }), ...(typeOnly === undefined ? {} : { typeOnly }) };
-}
-
 function literalValue(node: Parser.SyntaxNode | null): string | undefined {
   if (!node || !["string", "template_string"].includes(node.type)) return undefined;
   if (node.type === "template_string" && node.namedChildren.some(child => child.type === "template_substitution")) return undefined;
@@ -64,6 +58,56 @@ function recoverTypeStarExport(node: Parser.SyntaxNode): Parser.SyntaxNode | und
   return modifier;
 }
 
+// A named re-export can be split into valid-looking statements by the native grammar
+// when both the export clause and the contextual keyword "from" end their lines.
+function looksLikeSplitExport(node: Parser.SyntaxNode) {
+  if (node.type !== "export_statement" || node.childForFieldName("source")
+    || !node.namedChildren.some(child => child.type === "export_clause") || hasKeyword(node, ";")) return false;
+  let next = node.nextNamedSibling;
+  while (next?.type === "comment") next = next.nextNamedSibling;
+  return next?.type === "expression_statement" && next.firstNamedChild?.type === "identifier"
+    && next.firstNamedChild.text === "from";
+}
+
+function reconcileNamedExports(original: ts.SourceFile, root: Parser.SyntaxNode) {
+  const native = new Map(root.namedChildren.map(node => [node.startIndex, node]));
+  const ends = new Map<number, number>();
+  const chunks: string[] = [];
+  let offset = 0;
+  let diagnostics: readonly ts.DiagnosticWithLocation[] | undefined;
+  for (const declaration of original.statements) {
+    if (!ts.isExportDeclaration(declaration) || !declaration.exportClause || !ts.isNamedExports(declaration.exportClause)
+      || !declaration.moduleSpecifier || !ts.isStringLiteral(declaration.moduleSpecifier)) continue;
+    const start = declaration.getStart(original);
+    const source = declaration.moduleSpecifier;
+    const sourceStart = source.getStart(original);
+    const node = native.get(start);
+    if (node?.type === "export_statement" && !node.hasError && node.childForFieldName("source")?.startIndex === sourceStart) continue;
+
+    // Verify this declaration with the compiler before reconciling a grammar disagreement.
+    // Invalid syntax elsewhere in the file must still be reported by the normal parser.
+    if (!diagnostics) {
+      const options = { noResolve: true, noLib: true, types: [] };
+      const host = ts.createCompilerHost(options);
+      host.getSourceFile = name => name === original.fileName ? original : undefined;
+      diagnostics = ts.createProgram([original.fileName], options, host).getSyntacticDiagnostics(original);
+    }
+    if (diagnostics.some(item => item.start >= start && item.start <= declaration.end)) continue;
+
+    // Supply the native parser with the equivalent supported spelling. Keep UTF-16
+    // offsets identical and derive line/column evidence from the original text.
+    const clauseEnd = declaration.exportClause.end;
+    chunks.push(original.text.slice(offset, clauseEnd), "from".padEnd(sourceStart - clauseEnd), original.text.slice(sourceStart, source.end));
+    const attributeEnd = declaration.attributes?.end ?? source.end;
+    chunks.push(" ".repeat(attributeEnd - source.end));
+    offset = attributeEnd;
+    ends.set(start, declaration.end);
+  }
+  if (chunks.length === 0) return;
+  chunks.push(original.text.slice(offset));
+  return { text: chunks.join(""), ends };
+}
+
 function inTypeContext(node: Parser.SyntaxNode): boolean {
   for (let ancestor = node.parent; ancestor; ancestor = ancestor.parent) {
     if (["type_alias_declaration", "type_annotation", "type_query", "type_arguments", "interface_declaration"].includes(ancestor.type)) return true;
@@ -90,12 +134,38 @@ export function extractSourceFacts(sourceCode: string, filePath: string, isTsx =
   const parser = new Parser();
   parser.setLanguage(isTsx ? TypeScriptGrammar.tsx : TypeScriptGrammar.typescript);
   // Supply UTF-16 chunks that fit in the native input buffer, including its terminator.
-  const tree = parser.parse(offset => {
-    const end = offset + 16 * 1024;
-    const last = sourceCode.charCodeAt(end - 1);
-    // Keep surrogate pairs together at chunk boundaries.
-    return sourceCode.slice(offset, last >= 0xd800 && last <= 0xdbff ? end - 1 : end);
-  });
+  function parse(text: string) {
+    return parser.parse(offset => {
+      const end = offset + 16 * 1024;
+      const last = text.charCodeAt(end - 1);
+      return text.slice(offset, last >= 0xd800 && last <= 0xdbff ? end - 1 : end);
+    });
+  }
+  let tree = parse(sourceCode);
+  let original: ts.SourceFile | undefined;
+  let exportEnds: Map<number, number> | undefined;
+  const compilerSource = () => original ??= ts.createSourceFile(filePath, sourceCode, ts.ScriptTarget.Latest, false, isTsx ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  if (sourceCode.includes("export") && sourceCode.includes("from")
+    && (tree.rootNode.hasError || tree.rootNode.namedChildren.some(looksLikeSplitExport))) {
+    const reconciled = reconcileNamedExports(compilerSource(), tree.rootNode);
+    if (reconciled) {
+      tree = parse(reconciled.text);
+      exportEnds = reconciled.ends;
+    }
+  }
+  // Native points count LF only. TypeScript also treats CR, U+2028 and U+2029 as line breaks.
+  if (/[\u2028\u2029]|\r(?!\n)/.test(sourceCode)) compilerSource();
+  function position(offset: number, native: Parser.Point) {
+    const point = original?.getLineAndCharacterOfPosition(offset);
+    return point ? { line: point.line + 1, column: point.character + 1 } : { line: native.row + 1, column: native.column + 1 };
+  }
+  function location(node: Parser.SyntaxNode, path: string, kind: string, specifier?: string, typeOnly?: boolean): SourceEvidence {
+    const start = position(node.startIndex, node.startPosition);
+    const endOffset = kind === "export" ? exportEnds?.get(node.startIndex) : undefined;
+    const end = position(endOffset ?? node.endIndex, node.endPosition);
+    return { path, ...start, endLine: end.line, endColumn: end.column, kind,
+      ...(specifier === undefined ? {} : { specifier }), ...(typeOnly === undefined ? {} : { typeOnly }) };
+  }
   const dependencies: DependencyFact[] = [], diagnostics: GraphDiagnostic[] = [];
   const exports = new Set<string>();
   const exportEvidence: SourceEvidence[] = [];
@@ -106,7 +176,7 @@ export function extractSourceFacts(sourceCode: string, filePath: string, isTsx =
     const specifier = literalValue(source);
     if (specifier === undefined) {
       diagnostics.push({ code: "NON_LITERAL_DEPENDENCY", severity: "warning", path: filePath,
-        line: node.startPosition.row + 1, column: node.startPosition.column + 1,
+        ...position(node.startIndex, node.startPosition),
         message: `A ${kind} uses a computed module specifier; no dependency target was guessed.` });
       return;
     }
@@ -119,7 +189,7 @@ export function extractSourceFacts(sourceCode: string, filePath: string, isTsx =
     let recoveredModifier: Parser.SyntaxNode | undefined;
     if ((node.type === "ERROR" || node.isMissing) && syntaxErrors++ < 10) {
       diagnostics.push({ code: "PARSE_ERROR", severity: "error", path: filePath,
-        line: node.startPosition.row + 1, column: node.startPosition.column + 1,
+        ...position(node.startIndex, node.startPosition),
         message: "Tree-sitter found invalid or incomplete syntax; extracted dependencies may be partial." });
     }
     if (node.type === "import_statement") {

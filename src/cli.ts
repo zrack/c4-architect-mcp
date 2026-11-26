@@ -7,6 +7,7 @@ import { graphFocusSchema } from "./model/neighborhood.js";
 import { diagramSchema } from "./model/diagram.js";
 import { renderArchitectureGraph, renderArtifacts, renderDrawioArtifacts, renderDrawioGraph, renderStructurizrArtifacts } from "./renderers/artifacts.js";
 import { explainFile } from "./renderers/explainFile.js";
+import { fileImpact } from "./renderers/fileImpact.js";
 import { writeArchitectureReview } from "./renderers/review.js";
 import { writeWalkthroughReview } from "./renderers/walkthroughReview.js";
 import { writeReplayWalkthrough } from "./renderers/replayWalkthrough.js";
@@ -16,6 +17,8 @@ import { runNotion } from "./publishers/notion.js";
 import { version } from "./version.js";
 
 const explainUsage = `explain-file <directory> <file> --out FILE.md [--tsconfig tsconfig.json] [--nodes 25] [--edges 50]
+    [--github-repo OWNER/REPO --commit SHA [--source-root REPO_RELATIVE_PATH]]`;
+const impactUsage = `impact-file <directory> <file> --out FILE.md [--tsconfig tsconfig.json] [--depth 3] [--nodes 25]
     [--github-repo OWNER/REPO --commit SHA [--source-root REPO_RELATIVE_PATH]]`;
 
 const renderDiagramUsage = "render-diagram <diagram.json> --out DIAGRAM.md";
@@ -36,6 +39,7 @@ No arguments: start the MCP server over stdio.
   demo replay     Try the bundled Kafka and Oracle RAC replay walkthrough.
   analyze <directory> --level Component --out graph.json [--config config.json] [--tsconfig tsconfig.json] [--commit SHA] [--summary]
   ${explainUsage}
+  ${impactUsage}
   render <graph.json> --out ARCHITECTURE.md [--title "Architecture"] [--node ID [--direction both] [--depth 1] [--nodes 25] [--edges 50]]
   ${renderDiagramUsage}
   render-drawio <diagram-or-graph.json> --out DIAGRAM.drawio
@@ -125,13 +129,20 @@ export async function runCli(args: string[]): Promise<boolean> {
     process.stdout.write(`${renderDiagramUsage}\n\n${dataFlowHelp}\n`);
     return true;
   }
-  if (command === "explain-file" && rest.length === 1 && ["--help", "-h"].includes(rest[0])) {
-    process.stdout.write(`${explainUsage}\n\nUse a scan-relative path or unique filename. Writes a Markdown report and a focused PNG.\n`);
+  const isFileReport = command === "explain-file" || command === "impact-file";
+  if (isFileReport && rest.length === 1 && ["--help", "-h"].includes(rest[0])) {
+    const usage = command === "explain-file" ? explainUsage : impactUsage;
+    process.stdout.write(`${usage}\n\nUse a scan-relative path or unique filename. Writes a Markdown report and a focused PNG.\n`);
+    if (command === "impact-file") {
+      process.stdout.write("Trace incoming import paths from direct and indirect dependents. Depth is 1–5. The node limit is 1–100 including the selected file.\n");
+    }
     return true;
   }
+  const fileFlags = ["out", "tsconfig", "nodes", "github-repo", "commit", "source-root"];
   const specs: Record<string, string[]> = {
     analyze: ["level", "out", "config", "tsconfig", "commit", "summary"], render: ["out", "title", "node", "direction", "depth", "nodes", "edges"], summary: [],
-    "explain-file": ["out", "tsconfig", "nodes", "edges", "github-repo", "commit", "source-root"],
+    "explain-file": [...fileFlags, "edges"],
+    "impact-file": [...fileFlags, "depth"],
     "render-diagram": ["out"],
     "render-drawio": ["out"],
     "render-structurizr": ["out"],
@@ -157,7 +168,7 @@ export async function runCli(args: string[]): Promise<boolean> {
       flags.set(flag, value);
     }
   }
-  if (positional.length !== (["diff", "review", "review-walkthrough", "explain-file"].includes(command) ? 2 : 1)) throw new Error(`Invalid arguments for ${command}. Use --help.`);
+  if (positional.length !== (isFileReport || ["diff", "review", "review-walkthrough"].includes(command) ? 2 : 1)) throw new Error(`Invalid arguments for ${command}. Use --help.`);
   const str = (key: string) => flags.get(key) as string | undefined;
   const num = (key: string) => flags.has(key) ? Number(str(key)) : undefined;
   if (command === "analyze") {
@@ -172,13 +183,18 @@ export async function runCli(args: string[]): Promise<boolean> {
     await fs.mkdir(path.dirname(path.resolve(out)), { recursive: true });
     await writeArchitectureGraph(out, graph);
     json(flags.has("summary") ? { ...summarizeArchitectureGraph(graph), graphPath: path.resolve(out) } : graph);
-  } else if (command === "explain-file") {
+  } else if (isFileReport) {
     const out = str("out");
-    if (!out) throw new Error("explain-file requires --out FILE.md");
-    json(await explainFile(positional[0], positional[1], out, {
+    if (!out) throw new Error(`${command} requires --out FILE.md`);
+    const options = {
       tsconfigPath: str("tsconfig"), repository: str("github-repo"), sourceRoot: str("source-root"), commit: str("commit"),
-      maxNodes: num("nodes"), maxEdges: num("edges"),
-    }));
+      maxNodes: num("nodes"),
+    };
+    const [directory, file] = positional;
+    const result = command === "impact-file"
+      ? await fileImpact(directory, file, out, { ...options, maxDepth: num("depth") })
+      : await explainFile(directory, file, out, { ...options, maxEdges: num("edges") });
+    json(result);
   } else if (command === "render") {
     const out = str("out"); if (!out) throw new Error("render requires --out ARCHITECTURE.md");
     const nodeId = str("node");
