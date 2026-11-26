@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after, before, describe } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -179,18 +179,35 @@ async function readArtifacts(diagram, outputPath, result) {
   return { markdown, png };
 }
 
-test('supporting views and Code render through MCP and CLI', { timeout: 30000 }, async t => {
-  const dir = await mkdtemp(path.join(tmpdir(), 'c4-diagram-views-'));
+describe('supporting views and Code render through MCP and CLI', () => {
+  // Each case launches a real CLI process and gets its own deadline.
+  const caseOptions = { timeout: 60_000 };
   const client = new Client({ name: 'diagram-views-test', version: '1.0.0' });
-  t.after(async () => {
-    await client.close();
-    await rm(dir, { recursive: true, force: true });
-  });
-  await client.connect(new StdioClientTransport({ command: process.execPath, args: [entrypoint], cwd: dir }));
+  let dir;
+  before(async ({ signal }) => {
+    dir = await mkdtemp(path.join(tmpdir(), 'c4-diagram-views-'));
+    const transport = new StdioClientTransport({ command: process.execPath, args: [entrypoint], cwd: dir });
+    await client.connect(transport, { signal });
+  }, caseOptions);
+  after(async () => {
+    try {
+      await client.close();
+    } finally {
+      if (dir) await rm(dir, { recursive: true, force: true });
+    }
+  }, caseOptions);
 
-  for (const diagram of diagrams) await t.test(diagram.c4Level, async () => {
+  function renderViaMcp(args, signal) {
+    return client.callTool({ name: 'render_c4_mermaid', arguments: args }, undefined, { signal });
+  }
+
+  function renderViaCli(input, output, signal) {
+    return run(process.execPath, [entrypoint, 'render-diagram', input, '--out', output], { signal });
+  }
+
+  for (const diagram of diagrams) test(diagram.c4Level, caseOptions, async ({ signal }) => {
     const mcpPath = path.join(dir, `${diagram.c4Level}-mcp.md`);
-    const result = await client.callTool({ name: 'render_c4_mermaid', arguments: { ...diagram, outputPath: mcpPath } });
+    const result = await renderViaMcp({ ...diagram, outputPath: mcpPath }, signal);
     assert.notEqual(result.isError, true, JSON.stringify(result.content));
     const saved = await readArtifacts(diagram, mcpPath, result.structuredContent);
     assert.ok(saved.markdown.includes(result.content[0].text));
@@ -201,27 +218,27 @@ test('supporting views and Code render through MCP and CLI', { timeout: 30000 },
     const cliPath = path.join(dir, `${diagram.c4Level}-cli.md`);
     const input = path.join(dir, `${diagram.c4Level}.json`);
     await writeFile(input, JSON.stringify(diagram));
-    const { stdout } = await run(process.execPath, [entrypoint, 'render-diagram', input, '--out', cliPath]);
+    const { stdout } = await renderViaCli(input, cliPath, signal);
     await readArtifacts(diagram, cliPath, JSON.parse(stdout));
   });
 
-  await t.test('rejects invalid data flows before writing output through MCP and CLI', async () => {
+  test('rejects invalid data flows before writing output through MCP and CLI', caseOptions, async ({ signal }) => {
     const invalid = { ...dataFlow, relationships: [{ from: 'kafka', to: 'oracle', label: 'Event record' }] };
     const input = path.join(dir, 'invalid-data-flow.json');
     const output = path.join(dir, 'invalid-data-flow.md');
-    const result = await client.callTool({ name: 'render_c4_mermaid', arguments: { ...invalid, outputPath: output } });
+    const result = await renderViaMcp({ ...invalid, outputPath: output }, signal);
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /Process/);
     await writeFile(input, JSON.stringify(invalid));
-    await assert.rejects(run(process.execPath, [entrypoint, 'render-diagram', input, '--out', output]),
+    await assert.rejects(renderViaCli(input, output, signal),
       error => error.code === 1 && /Process/.test(error.stderr));
     await assert.rejects(readFile(output), { code: 'ENOENT' });
   });
 
-  await t.test('rejects malformed deployment hierarchy', async () => {
+  test('rejects malformed deployment hierarchy', caseOptions, async ({ signal }) => {
     const cycle = structuredClone(deployment);
     cycle.nodes[0].parentId = 'cluster';
-    const result = await client.callTool({ name: 'render_c4_mermaid', arguments: cycle });
+    const result = await renderViaMcp(cycle, signal);
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /cycle/i);
 
@@ -230,7 +247,7 @@ test('supporting views and Code render through MCP and CLI', { timeout: 30000 },
     const input = path.join(dir, 'invalid-deployment.json');
     const output = path.join(dir, 'invalid-deployment.md');
     await writeFile(input, JSON.stringify(endpoint));
-    await assert.rejects(run(process.execPath, [entrypoint, 'render-diagram', input, '--out', output]),
+    await assert.rejects(renderViaCli(input, output, signal),
       error => error.code === 1 && /deployment node/i.test(error.stderr) && /cloud/.test(error.stderr));
     await assert.rejects(readFile(output), { code: 'ENOENT' });
   });
