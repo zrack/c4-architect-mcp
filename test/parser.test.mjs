@@ -48,6 +48,70 @@ test('native Tree-sitter extracts TS/TSX module facts, named exports and type-on
   assert.ok(tsx.exports.includes('default'));
 });
 
+test('named re-exports with a newline before from retain the module source and type-only evidence', () => {
+  const source = [
+    'export { retry }',
+    "    from '../core/Token';",
+    'export type { Token as Alias }',
+    '  // Type-only public API',
+    '  from',
+    "    '../core/Token';",
+    'export { type Tag } /* another type */',
+    "  from /* source */ '../core/Tag'",
+    'export { retry }',
+    "from('../local-function-argument');",
+  ].join('\r\n');
+  const facts = extractSourceFacts(source, 'barrel.tsx', true);
+  assert.equal(facts.parseStatus, 'complete');
+  assert.deepEqual(facts.diagnostics, []);
+  assert.deepEqual(facts.dependencies.map(({ kind, specifier, typeOnly, evidence }) =>
+    [kind, specifier, typeOnly, evidence.line, evidence.column]), [
+    ['re-export', '../core/Token', false, 2, 10],
+    ['re-export', '../core/Token', true, 6, 5],
+    ['re-export', '../core/Tag', true, 8, 21],
+  ]);
+  assert.deepEqual(facts.exportEvidence.map(({ line, endLine }) => [line, endLine]), [[1, 2], [3, 6], [7, 8], [9, 9]]);
+  const unrelatedError = extractSourceFacts("export { retry }\nfrom './token';\nexport const broken = ;", 'mixed.ts');
+  assert.equal(unrelatedError.parseStatus, 'partial');
+  assert.equal(unrelatedError.dependencies.length, 1);
+  assert.ok(unrelatedError.diagnostics.some(item => item.code === 'PARSE_ERROR' && item.line === 3));
+  for (const malformed of ["export { retry };\nfrom './token';", "export { retry }\nfrom;\n'./token';"]) {
+    assert.deepEqual(extractSourceFacts(malformed, 'bad.ts').dependencies, []);
+  }
+});
+
+test('compiler-confirmed named exports retain their scope and evidence across grammar disagreements', () => {
+  const source = [
+    'export { A }',
+    "from './a'",
+    "[1].forEach(() => import('./lazy'));",
+    'export type { B }',
+    "from './b'",
+    '(() => 1)();',
+    'export { default as data }',
+    "from './data.json' with { type: 'json' };",
+    "export { type C } from './c' with { custom: 'v' }",
+    'export const end = 0;',
+  ].join('\n');
+  for (const isTsx of [false, true]) {
+    const facts = extractSourceFacts(source, isTsx ? 'barrel.tsx' : 'barrel.ts', isTsx);
+    assert.equal(facts.parseStatus, 'complete');
+    assert.deepEqual(facts.diagnostics, []);
+    assert.deepEqual(facts.dependencies.map(({ specifier, kind, evidence, typeOnly }) => [specifier, kind, evidence.line, typeOnly]), [
+      ['./a', 're-export', 2, false], ['./lazy', 'dynamic-import', 3, false], ['./b', 're-export', 5, true],
+      ['./data.json', 're-export', 8, false], ['./c', 're-export', 9, true],
+    ]);
+    assert.deepEqual(facts.exportEvidence.map(e => [e.line, e.endLine, e.endColumn]), [
+      [1, 2, 11], [4, 5, 11], [7, 8, 42], [9, 9, 50], [10, 10, 22],
+    ]);
+  }
+  const separated = extractSourceFacts("export { A }\u2028from './a';\rexport { B }\u2029from './b';", 'separators.ts');
+  assert.deepEqual(separated.dependencies.map(d => [d.specifier, d.evidence.line, d.evidence.column]), [['./a', 2, 6], ['./b', 4, 6]]);
+  const malformed = extractSourceFacts("export { A }\nfrom './a' with { type: };", 'bad.ts');
+  assert.equal(malformed.parseStatus, 'partial');
+  assert.ok(malformed.diagnostics.some(d => d.code === 'PARSE_ERROR'));
+});
+
 test('large TSX files preserve imports and source positions past the native input buffer', async t => {
   const directory = await temporary(t);
   const padding = [`// ${'x'.repeat(16 * 1024 - 4)}😀`, ...Array(2000).fill('// café 😀')];

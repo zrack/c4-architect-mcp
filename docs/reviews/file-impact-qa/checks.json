@@ -1,0 +1,250 @@
+{
+  "testedCommit": "a2e277e8f583af6600bf44c63d3a58e22680d262",
+  "platforms": {
+    "macOS 26.6 arm64 / Node 22.23.5": {
+      "tests": 99,
+      "pass": 99,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "suiteSecondsIncludingBuild": 54.78,
+      "runner": "npm test, default concurrency and timeouts",
+      "npm": "11.20.0",
+      "package": {
+        "passed": true,
+        "approvedFiles": 93,
+        "seconds": 31.77
+      }
+    },
+    "macOS 26.6 arm64 / Node 24.22.0": {
+      "tests": 99,
+      "pass": 99,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "suiteSecondsIncludingBuild": 46.56,
+      "runner": "npm test, default concurrency and timeouts",
+      "npm": "11.20.0",
+      "package": {
+        "passed": true,
+        "approvedFiles": 93,
+        "seconds": 46.73
+      }
+    },
+    "Debian 12 arm64 / Node 22.23.4": {
+      "tests": 99,
+      "pass": 99,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "suiteSeconds": 80.24,
+      "runner": "npm test, default concurrency and timeouts in network-disabled Docker, 4 CPU affinity",
+      "npm": "10.9.9",
+      "package": {
+        "passed": true,
+        "approvedFiles": 93,
+        "seconds": null
+      }
+    }
+  },
+  "regressionBrowserFixtures": [
+    {
+      "name": "component-12",
+      "passed": true,
+      "nodes": 12,
+      "edgeLabels": 20,
+      "arrowheads": 20,
+      "nodeOverlaps": 0,
+      "labelNodeOverlaps": 0,
+      "labelOverlaps": 0,
+      "edgeNodeIntersections": 0,
+      "edgeLabelIntersections": 0,
+      "svgWidth": 1697,
+      "svgHeight": 1145,
+      "pngWidth": 3394,
+      "pngHeight": 2290,
+      "primaryTextNativePx": 14,
+      "primaryTextFit736Px": 6.071891573364761,
+      "highlighted": 7,
+      "dimmed": 13,
+      "preservedSelectionAndZoom": true,
+      "interactiveTracing": true,
+      "standaloneExports": null,
+      "failures": []
+    },
+    {
+      "name": "component-20",
+      "passed": true,
+      "nodes": 20,
+      "edgeLabels": 35,
+      "arrowheads": 35,
+      "nodeOverlaps": 0,
+      "labelNodeOverlaps": 0,
+      "labelOverlaps": 0,
+      "edgeNodeIntersections": 0,
+      "edgeLabelIntersections": 0,
+      "svgWidth": 2222,
+      "svgHeight": 1393,
+      "pngWidth": 4444,
+      "pngHeight": 2786,
+      "primaryTextNativePx": 14,
+      "primaryTextFit736Px": 4.6372637263726375,
+      "highlighted": 10,
+      "dimmed": 25,
+      "preservedSelectionAndZoom": true,
+      "interactiveTracing": true,
+      "standaloneExports": true,
+      "failures": []
+    }
+  ],
+  "publicEntryPoints": {
+    "MCP": [
+      "analyze_architectural_boundaries",
+      "get_architecture_summary",
+      "query_architecture_graph",
+      "compare_architecture_graphs",
+      "explain_architecture_file",
+      "analyze_file_impact",
+      "render_architecture_graph",
+      "render_c4_mermaid",
+      "render_c4_drawio",
+      "render_structurizr_dsl",
+      "publish_to_ado_wiki",
+      "publish_to_confluence",
+      "publish_to_notion"
+    ],
+    "CLI": [
+      "analyze",
+      "summary",
+      "query",
+      "diff",
+      "explain-file",
+      "impact-file",
+      "render",
+      "render-diagram",
+      "render-drawio",
+      "render-structurizr",
+      "publish-ado-wiki",
+      "publish-confluence",
+      "publish-notion",
+      "review"
+    ]
+  },
+  "impactAcceptance": [
+    "MCP discovery exposes file-impact and inputs",
+    "five-hop bound, diamond, cycle, direct/indirect, hashed filenames, optional limits",
+    "local and immutable GitHub URLs resolve to the exact source literal, including multiline, spaces and #",
+    "persisted PNG and report agree on all five IDs, digest and full dimensions",
+    "node cap 1, depth 1, crossed caps, boundary exact",
+    "zero dependents, unique basename and absolute selection",
+    "subscriber sees fresh imports and alias rebinding on the same running server",
+    "ambiguous or missing input, malformed bounds and pin, invalid filename fail; next call succeeds",
+    "independent CLI parity with same on-disk output, and retries remain byte-stable",
+    "zero hits with unresolved imports is explicitly qualified",
+    "concurrent writes to one Markdown path always retain the matching PNG"
+  ],
+  "parserComparison": [
+    "ordinary export",
+    "multiline LF",
+    "multiline with type and CRLF",
+    "both newlines, comments",
+    "line comment after contextual from",
+    "block comment with newline",
+    "value and type on same statement",
+    "Unicode line separator",
+    "two consecutive multiline declarations",
+    "ASI followed by declaration",
+    "ordinary property called from",
+    "unrelated from function call",
+    "standalone identifier and string with semicolons",
+    "explicit statement break",
+    "unrelated identifier",
+    "unrelated binding",
+    "independent invalid statement following good module",
+    "namespace local, method called from",
+    "trailing addition on literal",
+    "split name with import attributes",
+    "normal name with import attributes",
+    "ASI followed by array expression",
+    "ASI followed by immediately invoked function",
+    "ASI followed by template literal"
+  ],
+  "denseComponent": {
+    "before": {
+      "total": 14714.353208,
+      "geometric": {
+        "boxOverlaps": 0,
+        "orthogonalCrossings": 175,
+        "min": [
+          40,
+          104
+        ],
+        "max": [
+          4230,
+          1830
+        ]
+      },
+      "svgSha": "2e78d3c048c3953e7adde6f51707697bc5ed9294863d0e0dbd1bb54fca213e20",
+      "pngSha": "9a2393b8ca9f9717d395afe75b45c700785a5e29745aa6911661819e06c7efaf",
+      "stage": {
+        "measure": 239.14712499999996,
+        "DOWN": 7314.4265,
+        "RIGHT": 5630.601875,
+        "position": 16.91729200000009,
+        "svg": 10.039542000000438,
+        "png": 1500.808916
+      },
+      "inputSha": "eedf279dfb7147d135314066acf446adf4515791ddf4851f5a62f6d3a9a1673f",
+      "layout": [
+        "RIGHT",
+        4270,
+        1871
+      ],
+      "png": 598870,
+      "arrows": 112,
+      "nodes": 41
+    },
+    "after": {
+      "total": 5503.1882080000005,
+      "geometric": {
+        "boxOverlaps": 0,
+        "orthogonalCrossings": 154,
+        "min": [
+          40,
+          104
+        ],
+        "max": [
+          4191,
+          3162.369696969697
+        ]
+      },
+      "svgSha": "dda653b506d29c74438fca3ff91023b64c108ff00e086402a56b4f5f9aa4d9f1",
+      "pngSha": "ebb04e6ac4ebd9f6e7e940d33d88949f5ef60a6e951ba4da02fcf80ab4c42a53",
+      "stage": {
+        "measure": 249.55766600000004,
+        "DOWN": 1297.2935830000001,
+        "RIGHT": 1259.1816250000002,
+        "position": 82.31908299999986,
+        "svg": 2.767707999999857,
+        "png": 2610.114209
+      },
+      "inputSha": "eedf279dfb7147d135314066acf446adf4515791ddf4851f5a62f6d3a9a1673f",
+      "layout": [
+        "RIGHT",
+        4231,
+        3204
+      ],
+      "png": 702285,
+      "arrows": 112,
+      "nodes": 41
+    },
+    "geometryMethod": "Count intersections strictly interior to vertical and horizontal segments from different relationships; count bounding-box overlaps among all nodes and relationship labels. Both pictures include all edge points and boxes in their native bounds.",
+    "uninstrumentedFinalDenseRenderMatched": true
+  },
+  "architectureWalkthroughEvidence": {
+    "NoteEditor.md": "cbd9831d68b84b93b6fad9d1f14ad37a247663dd6c166b3ddbf8cd22888931f7",
+    "NoteEditor.focus-6c9a79d70374087a.png": "6c9a79d70374087a017135b4927cca24ab0eda2dcfe31f6a743906aa1de4a351",
+    "contract.json": "2402fd9199011ab9c7982e56b132f555ba11bace8ab0cedd0b531954c9d503bd",
+    "performance.json": "4e77e968fde371ddf1c306007d4074db0ab2909c2e7ccf5032db2638590a5605"
+  }
+}
