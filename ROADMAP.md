@@ -18,11 +18,10 @@ The first release centers on TypeScript and TSX over local `stdio` MCP connectio
 - Follow named payloads across processes, external entities, and data stores in a data-flow diagram (alpha.13). [Kafka and Oracle RAC example](README.md#native-data-flow-diagrams)
 - Trace a design change to specific nodes and arrows across a walkthrough and see which decisions remain open (alpha.14). [Compare two bridge placements](README.md#kafka-and-oracle-rac-bridge-comparison)
 - Use `demo replay` to simulate success, a failed write, and a restart after commit in both bridge placements. Use the walkthrough skill with your own brief to create a first diagram and identify an open design question (alpha.15). [Try the example](README.md#try-the-example) · [Walk through my system](README.md#walk-through-my-system)
+- Trace direct and indirect importers of a TypeScript or TSX file with source evidence for every hop (alpha.16). [TakeNote file impact example](README.md#what-depends-on-this-file)
 - Export full-size PNG/SVG images with the current selection.
 - Maintain parser, graph, MCP, package, and browser layout regression checks.
 - Prepare documentation, licensing, contribution guidance, and CI for a public alpha.
-
-The `main` checkout also traces indirect importers of a file. Its report links each hop to the import statement and shows where a change could reach beyond the first caller. This feature is queued for a future npm release. [File impact example and instructions](README.md#what-depends-on-this-file)
 
 ## 2. Make repeated use practical — next
 

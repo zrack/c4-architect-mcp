@@ -9,10 +9,10 @@ Use the source directory that contains the candidate importers as well as the se
 
 Call C4 Architect's `analyze_file_impact` with `targetDir`, `file`, and a fresh Markdown `outputPath`. Supply `tsconfigPath` if aliases require a specific configuration. For a clean GitHub checkout, pass the verified `repository`, full `commit`, and repository-relative `sourceRoot`. For modified working files, use local evidence so links describe the code actually scanned.
 
-The corresponding command in a built C4 Architect checkout is:
+If the MCP tool is unavailable, run the installed CLI from the project you want to inspect.
 
 ```sh
-node dist/index.js impact-file /path/to/project/src NoteEditor.tsx \
+c4-architect-mcp impact-file /path/to/project/src NoteEditor.tsx \
   --out /path/to/output/NoteEditor-impact.md --depth 3 --nodes 25
 ```
 

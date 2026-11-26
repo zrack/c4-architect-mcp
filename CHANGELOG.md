@@ -2,9 +2,9 @@
 
 User-visible changes are recorded here. Unreleased work is not a published package or release.
 
-## Unreleased
+## 0.2.0-alpha.16 — 2026-11-26
 
-- Trace direct and indirect dependents of a TypeScript or TSX file with `$what-depends-on-this-file`, the `impact-file` command, or the `analyze_file_impact` MCP tool. The focused diagram and Markdown report show a shortest import path to the selected file with source evidence for each hop.
+- Trace direct and indirect dependents of a TypeScript or TSX file with `$what-depends-on-this-file`, the `impact-file` command, or the `analyze_file_impact` MCP tool. The focused diagram and Markdown report show a shortest import path to the selected file with source evidence for each hop. [TakeNote impact report](examples/takenote/impact/NoteEditor.md)
 
 ## 0.2.0-alpha.15 — 2026-11-26
 
