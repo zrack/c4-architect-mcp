@@ -1,5 +1,29 @@
 # Walkthrough input format
 
+## First diagram
+
+From a text brief, author `overview.json` directly. For example, the statement “the returns app receives a return form and records the request” supports these flows:
+
+```json
+{
+  "title": "Recording a return request",
+  "c4Level": "DataFlow",
+  "nodes": [
+    { "id": "sender", "label": "Form sender", "type": "ExternalEntity" },
+    { "id": "app", "label": "Record return request", "type": "Process" },
+    { "id": "requests", "label": "Return requests", "type": "DataStore" }
+  ],
+  "relationships": [
+    { "from": "sender", "to": "app", "label": "Return form" },
+    { "from": "app", "to": "requests", "label": "Return request" }
+  ]
+}
+```
+
+For System Context, use `"c4Level": "C4Context"` and the applicable `Person`, `System` and `System_Ext` node types. Keep ownership or infrastructure that the brief leaves open in the walkthrough note.
+
+## Comparing alternatives
+
 A manifest records the baseline for one solution. A scenario describes one possible change to it. Put diagram models beside the manifest or in its subdirectories. The models use C4 Architect's existing authored diagram JSON format.
 
 ## Manifest
@@ -67,6 +91,6 @@ The Kafka / Oracle example begins at `examples/three-tier-kafka-oracle/walkthrou
 }
 ```
 
-The example models a durable Oracle insert keyed by event ID. On redelivery, finding the committed ID satisfies the write without inserting another row. The Kafka checkpoint stores the **next** offset to read. The consumer may advance from 41 to 42 once it has evidence of the commit. For an upstream bridge, the application is that consumer. For a downstream bridge, `after-commit` means the application acknowledges persistence to the bridge, which owns the checkpoint. Set `bridgeAcknowledgment` to `unspecified` when the design gives no such promise. In that case the downstream checkpoint stays open.
+The example models a durable Oracle insert keyed by event ID. On redelivery, finding the committed ID satisfies the write without inserting another row. The Kafka checkpoint stores the **next** offset to read. The consumer may advance from 41 to 42 once it has evidence of the commit. For an upstream bridge, the application is that consumer. For a downstream bridge, `after-commit` means the application acknowledges persistence to the bridge, which owns the checkpoint. Set `bridgeAcknowledgment` to `unspecified` when the design gives no such promise. An acknowledgment on receipt also leaves persistence unconfirmed. Record what is known about receipt in the user's walkthrough. In the illustrative fixture the downstream checkpoint stays at 41 pending evidence of a durable write.
 
 Each run starts independently and processes the same event. The restart case retains the Oracle rows and Kafka checkpoint from the first attempt and loses the consumer's in-flight state. The failed-write case stops at the failure so the reviewer can inspect the offset before any retry.

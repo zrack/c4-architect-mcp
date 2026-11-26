@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { analyzeDirectory } from "./parsers/astParser.js";
 import { compareArchitectureGraphs, queryArchitectureGraph, readArchitectureGraph, summarizeArchitectureGraph, writeArchitectureGraph, type AbstractionLevel } from "./model/graph.js";
 import { graphFocusSchema } from "./model/neighborhood.js";
@@ -20,12 +21,19 @@ const explainUsage = `explain-file <directory> <file> --out FILE.md [--tsconfig 
 const renderDiagramUsage = "render-diagram <diagram.json> --out DIAGRAM.md";
 const walkthroughUsage = "review-walkthrough <walkthrough.json> <scenario.json> --out REVIEW.md";
 const replayUsage = "review-replay <scenario.json> --out OUTPUT_DIRECTORY";
+const demoHelp = `c4-architect-mcp demo replay
+
+Run the bundled Kafka and Oracle RAC example from any directory. Open the generated Markdown
+report to compare success, a failed write, and a restart for both bridge placements.
+Files are saved in c4-replay under the current directory. A repeat run uses c4-replay-2, then c4-replay-3.
+`;
 const dataFlowHelp = "For a data-flow diagram, set c4Level to DataFlow and use ExternalEntity, Process, and DataStore nodes.\nEach relationship names the data and points from its origin to its receiver. At least one endpoint must be a Process.";
 
 const help = `C4-Architect ${version}
 
 No arguments: start the MCP server over stdio.
 
+  demo replay     Try the bundled Kafka and Oracle RAC replay walkthrough.
   analyze <directory> --level Component --out graph.json [--config config.json] [--tsconfig tsconfig.json] [--commit SHA] [--summary]
   ${explainUsage}
   render <graph.json> --out ARCHITECTURE.md [--title "Architecture"] [--node ID [--direction both] [--depth 1] [--nodes 25] [--edges 50]]
@@ -56,11 +64,55 @@ Notion uses NOTION_API_TOKEN.
 `;
 const json = (value: unknown) => process.stdout.write(JSON.stringify(value));
 
+async function reserveDemoDirectory(): Promise<string> {
+  for (let run = 1; ; run++) {
+    const directory = path.resolve(run === 1 ? "c4-replay" : `c4-replay-${run}`);
+    try {
+      await fs.mkdir(directory);
+      return directory;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+  }
+}
+
+async function runReplayDemo(): Promise<void> {
+  const scenario = fileURLToPath(new URL("../examples/three-tier-kafka-oracle/replay/scenario.json", import.meta.url));
+  const directory = await reserveDemoDirectory();
+  try {
+    const { artifacts, runs } = await writeReplayWalkthrough(scenario, directory);
+    const lines = [`Ran ${runs.length} cases for the Kafka and Oracle RAC replay walkthrough.`, "", "Open the report", artifacts.markdown];
+    for (const comparison of artifacts.comparisons) {
+      const placement = comparison.placement === "before-kafka" ? "Bridge before Kafka" : "Bridge after Kafka";
+      const run = runs.find(item => item.placement === comparison.placement)!;
+      const owner = run.checkpointOwner === "application" ? "Application server" : "Integration bridge";
+      lines.push("", `${placement} · ${owner} owns the checkpoint`, comparison.svg);
+    }
+    process.stdout.write(lines.join("\n") + "\n");
+  } catch (error) {
+    // Release the reservation when a failed render left it empty.
+    await fs.rmdir(directory).catch(() => {});
+    throw error;
+  }
+}
+
 export async function runCli(args: string[]): Promise<boolean> {
   if (!args.length) return false;
   if (args.length === 1 && ["--help", "-h", "help"].includes(args[0])) { process.stdout.write(help); return true; }
   if (args.length === 1 && ["--version", "-v"].includes(args[0])) { process.stdout.write(version + "\n"); return true; }
   const [command, ...rest] = args;
+  if (command === "demo") {
+    if (rest.length === 1 && rest[0] === "replay") {
+      await runReplayDemo();
+    } else {
+      const options = rest[0] === "replay" ? rest.slice(1) : rest;
+      if (options.length && !(options.length === 1 && ["--help", "-h"].includes(options[0]))) {
+        throw new Error("Use c4-architect-mcp demo replay to run the bundled example.");
+      }
+      process.stdout.write(demoHelp);
+    }
+    return true;
+  }
   if (command === "review-replay" && rest.length === 1 && ["--help", "-h"].includes(rest[0])) {
     process.stdout.write(`${replayUsage}\n\nRun six local Kafka and Oracle RAC simulations and save their traces, report, and side-by-side Dynamic diagrams.\n`);
     return true;

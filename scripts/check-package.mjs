@@ -77,6 +77,20 @@ try {
     assert.ok((await fs.stat(comparison.png)).size > 100);
     assert.match(await fs.readFile(comparison.svg, 'utf8'), /<svg\b/);
   }
+  const firstVisit = path.join(temporary, 'first visit');
+  await fs.mkdir(firstVisit);
+  const demoMessage = await runNpm(['exec', '--offline', '--', 'c4-architect-mcp', 'demo', 'replay'], firstVisit);
+  const demoDirectory = path.join(firstVisit, 'c4-replay');
+  assert.match(demoMessage, /report\.md/);
+  assert.equal(await fs.readFile(path.join(demoDirectory, 'report.md'), 'utf8'), await fs.readFile(replay.artifacts.markdown, 'utf8'));
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(demoDirectory, 'traces.json'), 'utf8')),
+    JSON.parse(await fs.readFile(replay.artifacts.traces, 'utf8')), 'The shortcut must run the same six outcomes as the explicit scenario');
+  for (const { placement } of replay.artifacts.comparisons) {
+    assert.ok(demoMessage.includes(placement + '.svg') || demoMessage.includes(placement + '.png'), `Missing diagram path for ${placement}`);
+    const png = await fs.readFile(path.join(demoDirectory, placement + '.png'));
+    assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+    assert.match(await fs.readFile(path.join(demoDirectory, placement + '.svg'), 'utf8'), /<svg\b/);
+  }
   const explanation = JSON.parse(await run(process.execPath, [entry, 'explain-file', 'src', 'value.ts', '--out', 'value.md']));
   assert.equal(explanation.counts.incoming, 1);
   assert.equal(explanation.counts.outgoing, 0);
@@ -106,5 +120,5 @@ try {
   assert.equal(await fs.readFile(path.join(fixture, 'consumer.ts'), 'utf8'), 'export const uncommitted = true;\n');
   assert.ok((await fs.stat(review.diagram.html)).size > 100);
   for (const extension of ['md','svg','png','html']) assert.ok((await fs.stat(path.join(temporary, `diagram.${extension}`))).size > 100);
-  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, rendering, PR review, both bridge placements and six replay cases.`);
+  console.log(`Package smoke passed: ${packed.files.length} approved files, production-only install, executable bin, parser, resolver, rendering, PR review, both bridge placements and all six replay cases from the first-run shortcut.`);
 } finally { await fs.rm(temporary, { recursive: true, force: true }); }
